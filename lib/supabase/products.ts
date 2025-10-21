@@ -1,0 +1,249 @@
+import { getSupabaseBrowserClient } from "./client"
+
+export type ProductWithDetails = {
+  id: string
+  name_ar: string
+  name_en: string
+  slug: string
+  description_ar: string | null
+  description_en: string | null
+  category_id: string | null
+  base_price: number
+  is_featured: boolean
+  is_active: boolean
+  shipping_type?: "free" | "paid" | null
+  shipping_cost?: number | null
+  created_at: string
+  category?: {
+    name_ar: string
+    name_en: string
+  }
+  product_images: Array<{
+    id: string
+    image_url: string
+    alt_text_ar?: string | null
+    display_order: number
+    is_primary: boolean
+  }>
+  product_variants: Array<{
+    id: string
+    name_ar: string
+    name_en: string
+    size: string | null
+    color: string | null
+    color_hex: string | null
+    price: number
+    inventory_quantity: number
+    sku?: string | null
+  }>
+}
+
+export type CreateProductData = {
+  name_ar: string
+  name_en: string
+  slug: string
+  description_ar: string | null
+  description_en: string | null
+  category_id: string | null
+  base_price: number
+  is_featured?: boolean
+  is_active?: boolean
+  sku?: string
+  inventory_quantity?: number
+  shipping_type?: "free" | "paid" | null
+  shipping_cost?: number | null
+}
+
+export type CreateVariantData = {
+  product_id: string
+  name_ar: string
+  name_en: string
+  size: string
+  color: string
+  color_hex: string
+  price: number
+  inventory_quantity: number
+  sku?: string
+}
+
+export type CreateImageData = {
+  product_id: string
+  image_url: string
+  alt_text_ar?: string
+  alt_text_en?: string
+  display_order: number
+  is_primary: boolean
+}
+
+// Get all products with details
+export async function getAllProducts() {
+  const response = await fetch("/api/admin/products")
+  if (!response.ok) throw new Error("Failed to fetch products")
+  const { data } = await response.json()
+  return data as ProductWithDetails[]
+}
+
+// Get product by ID
+export async function getProductById(id: string) {
+  const response = await fetch(`/api/admin/products/${id}`)
+  if (!response.ok) throw new Error("Failed to fetch product")
+  const { data } = await response.json()
+  return data as ProductWithDetails
+}
+
+// Create product
+export async function createProduct(productData: CreateProductData) {
+  const response = await fetch("/api/admin/products", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(productData),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || "Failed to create product")
+  }
+
+  const { data } = await response.json()
+  return data
+}
+
+// Update product
+export async function updateProduct(id: string, productData: Partial<CreateProductData>) {
+  const response = await fetch(`/api/admin/products/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(productData),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || "Failed to update product")
+  }
+
+  const { data } = await response.json()
+  return data
+}
+
+// Delete product
+export async function deleteProduct(id: string) {
+  const response = await fetch(`/api/admin/products/${id}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || "Failed to delete product")
+  }
+}
+
+// Create product variant
+export async function createProductVariant(variantData: CreateVariantData) {
+  console.log("[v0] Creating variant with data:", variantData)
+  
+  try {
+    const response = await fetch("/api/admin/products/variants", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(variantData),
+    })
+
+    const responseData = await response.json()
+    console.log("[v0] Variant response:", responseData)
+
+    if (!response.ok) {
+      throw new Error(responseData.error || `HTTP ${response.status}: Failed to create variant`)
+    }
+
+    return responseData.data
+  } catch (error) {
+    console.error("[v0] Error creating variant:", error)
+    throw error
+  }
+}
+
+// Update product variant
+export async function updateProductVariant(id: string, variantData: Partial<CreateVariantData>) {
+  const supabase = getSupabaseBrowserClient()
+
+  const { data, error } = await supabase.from("product_variants").update(variantData).eq("id", id).select().single()
+
+  if (error) {
+    console.error("[v0] Error updating variant:", error)
+    throw error
+  }
+
+  return data
+}
+
+// Delete product variant
+export async function deleteProductVariant(id: string) {
+  const supabase = getSupabaseBrowserClient()
+
+  const { error } = await supabase.from("product_variants").delete().eq("id", id)
+
+  if (error) {
+    console.error("[v0] Error deleting variant:", error)
+    throw error
+  }
+}
+
+// Create product image
+export async function createProductImage(imageData: CreateImageData) {
+  const response = await fetch("/api/admin/products/images", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(imageData),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || "Failed to create image")
+  }
+
+  const { data } = await response.json()
+  return data
+}
+
+// Delete product image
+export async function deleteProductImage(id: string) {
+  const supabase = getSupabaseBrowserClient()
+
+  const { error } = await supabase.from("product_images").delete().eq("id", id)
+
+  if (error) {
+    console.error("[v0] Error deleting image:", error)
+    throw error
+  }
+}
+
+// Get all categories
+export async function getAllCategories() {
+  const response = await fetch("/api/admin/categories")
+  if (!response.ok) throw new Error("Failed to fetch categories")
+  const { data } = await response.json()
+  return data
+}
+
+// Search products
+export async function searchProducts(query: string) {
+  const supabase = getSupabaseBrowserClient()
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(`
+      *,
+      category:categories(name_ar, name_en),
+      product_images(*),
+      product_variants(*)
+    `)
+    .or(`name_ar.ilike.%${query}%,name_en.ilike.%${query}%`)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("[v0] Error searching products:", error)
+    throw error
+  }
+
+  return data as ProductWithDetails[]
+}

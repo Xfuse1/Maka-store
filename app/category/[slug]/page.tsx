@@ -1,0 +1,444 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { ShoppingBag,  Star, Search, AlertCircle } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
+import { useCartStore } from "@/lib/cart-store"
+import { MainNavigation } from "@/components/main-navigation"
+import { MobileNavigation } from "@/components/mobile-navigation"
+import { Input } from "@/components/ui/input"
+import { useParams } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+
+export default function CategoryPage() {
+  const params = useParams()
+  const slug = decodeURIComponent(params.slug as string)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [products, setProducts] = useState<any[]>([])
+  const [categoryData, setCategoryData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [categoryNotFound, setCategoryNotFound] = useState(false)
+  const [availableCategories, setAvailableCategories] = useState<any[]>([])
+  const totalItems = useCartStore((state) => state.getTotalItems())
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        setLoading(true)
+        setCategoryNotFound(false)
+
+        const { data: allCategories, error: allCategoriesError } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("is_active", true)
+
+        if (allCategories) {
+          setAvailableCategories(allCategories)
+        }
+
+        if (allCategoriesError) {
+          console.error("[v0] ❌ خطأ في جلب الفئات:", allCategoriesError)
+        }
+
+        let foundCategory = null
+
+        const slugResult = await supabase.from("categories").select("*").eq("slug", slug).eq("is_active", true).single()
+
+        if (!slugResult.error && slugResult.data) {
+          foundCategory = slugResult.data
+        }
+
+        if (!foundCategory) {
+          const nameResult = await supabase
+            .from("categories")
+            .select("*")
+            .eq("name_ar", slug)
+            .eq("is_active", true)
+            .single()
+
+          if (!nameResult.error && nameResult.data) {
+            foundCategory = nameResult.data
+          }
+        }
+
+        if (!foundCategory) {
+          const enNameResult = await supabase
+            .from("categories")
+            .select("*")
+            .eq("name_en", slug)
+            .eq("is_active", true)
+            .single()
+
+          if (!enNameResult.error && enNameResult.data) {
+            foundCategory = enNameResult.data
+          }
+        }
+
+        if (!foundCategory) {
+          const result = await supabase.from("categories").select("*").eq("is_active", true)
+
+          if (result.data && result.data.length > 0) {
+            const searchTerm = slug.toLowerCase()
+            foundCategory = result.data.find((cat) => {
+              const nameAr = cat.name_ar?.toLowerCase() || ""
+              const nameEn = cat.name_en?.toLowerCase() || ""
+              const catSlug = cat.slug?.toLowerCase() || ""
+              return nameAr.includes(searchTerm) || nameEn.includes(searchTerm) || catSlug.includes(searchTerm)
+            })
+          }
+        }
+
+        if (!foundCategory) {
+          console.error("[v0] ❌ لم يتم العثور على الفئة:", slug)
+          setCategoryNotFound(true)
+          setProducts([])
+          setCategoryData(null)
+          setLoading(false)
+          return
+        }
+
+        setCategoryData(foundCategory)
+
+        const { data: productsData, error: productsError } = await supabase
+          .from("products")
+          .select(`
+            *,
+            product_images (image_url, alt_text_ar, alt_text_en, is_primary, display_order),
+            categories (id, name_ar, name_en, slug)
+          `)
+          .eq("category_id", foundCategory.id)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+
+        if (productsError) {
+          console.error("[v0] ❌ خطأ في جلب المنتجات:", productsError)
+          setProducts([])
+          setCategoryNotFound(true)
+        } else {
+          const processedProducts = (productsData || []).map((product) => ({
+            ...product,
+            product_images: (product.product_images || []).sort((a: any, b: any) => {
+              if (a.is_primary && !b.is_primary) return -1
+              if (!a.is_primary && b.is_primary) return 1
+              return (a.display_order || 0) - (b.display_order || 0)
+            }),
+          }))
+
+          setProducts(processedProducts)
+        }
+      } catch (error) {
+        console.error("[v0] ❌ خطأ غير متوقع:", error)
+        setProducts([])
+        setCategoryData(null)
+        setCategoryNotFound(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [slug])
+
+  const filteredProducts = searchQuery
+    ? products.filter(
+        (product) =>
+          product.name_ar?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.name_en?.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : products
+
+  const categoryName = categoryData?.name_ar || "المنتجات"
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-foreground">جاري تحميل المنتجات...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (categoryNotFound) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between gap-4">
+              <Link href="/" className="flex items-center gap-4">
+                <div className="relative w-20 h-20">
+                  <Image src="/logo-option-4.jpg" alt="مكة" fill className="object-contain" priority />
+                </div>
+                <h1 className="text-3xl font-bold text-foreground">مكة</h1>
+              </Link>
+
+              <MainNavigation />
+
+              <div className="flex items-center gap-3">
+                <MobileNavigation />
+                <Button
+                  asChild
+                  variant="default"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground relative"
+                >
+                  <Link href="/cart">
+                    <ShoppingBag className="h-5 w-5 ml-2" />
+                    <span className="hidden sm:inline">السلة</span>
+                    {totalItems > 0 && (
+                      <Badge className="absolute -top-2 -left-2 bg-accent text-accent-foreground px-2 py-0.5 text-xs">
+                        {totalItems}
+                      </Badge>
+                    )}
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="py-12">
+          <div className="container mx-auto px-4">
+            <div className="max-w-2xl mx-auto text-center py-20">
+              <AlertCircle className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
+              <h1 className="text-4xl font-bold mb-4 text-foreground">الفئة غير موجودة</h1>
+              <p className="text-xl text-muted-foreground mb-8">عذراً، لم نتمكن من العثور على الفئة "{slug}"</p>
+
+              {availableCategories.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold mb-6 text-foreground">الفئات المتاحة:</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {availableCategories.map((category) => (
+                      <Link key={category.id} href={`/category/${category.slug}`}>
+                        <Card className="hover:border-primary transition-all hover:shadow-lg cursor-pointer">
+                          <CardContent className="p-6">
+                            <h3 className="font-bold text-lg text-foreground">{category.name_ar}</h3>
+                            <p className="text-sm text-muted-foreground">{category.name_en}</p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white">
+                <Link href="/">العودة للرئيسية</Link>
+              </Button>
+            </div>
+          </div>
+        </main>
+
+        <footer className="border-t border-border bg-white py-12 mt-20">
+          <div className="container mx-auto px-4">
+            <div className="text-center pt-8">
+              <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/" className="flex items-center gap-4">
+              <div className="relative w-20 h-20">
+                <Image src="/logo-option-4.jpg" alt="مكة" fill className="object-contain" priority />
+              </div>
+              <h1 className="text-3xl font-bold text-foreground">مكة</h1>
+            </Link>
+
+            <div className="hidden md:flex flex-1 max-w-3xl mx-8">
+              <div className="relative w-full">
+                <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="ابحثي عن المنتجات..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-12 h-14 text-lg border-2 border-border focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <MainNavigation />
+
+            <div className="flex items-center gap-3">
+              <MobileNavigation />
+              <Button
+                asChild
+                variant="default"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground relative"
+              >
+                <Link href="/cart">
+                  <ShoppingBag className="h-5 w-5 ml-2" />
+                  <span className="hidden sm:inline">السلة</span>
+                  {totalItems > 0 && (
+                    <Badge className="absolute -top-2 -left-2 bg-accent text-accent-foreground px-2 py-0.5 text-xs">
+                      {totalItems}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="md:hidden mt-4">
+            <div className="relative w-full">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="ابحثي عن المنتجات..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10 border-2 border-border focus:border-primary"
+              />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="py-12">
+        <div className="container mx-auto px-4">
+          <h1 className="text-4xl font-bold mb-8 text-foreground text-right">{categoryName}</h1>
+
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-xl text-muted-foreground">لا توجد منتجات في هذه الفئة حالياً</p>
+              {products.length > 0 && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  تم جلب {products.length} منتج ولكن لا يتطابق مع البحث
+                </p>
+              )}
+              <Button asChild className="mt-6 bg-primary hover:bg-primary/90 text-white">
+                <Link href="/">العودة للرئيسية</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {filteredProducts.map((product) => (
+                <Link key={product.id} href={`/product/${product.id}`} className="group">
+                  <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
+                    <CardContent className="p-0">
+                      <div className="relative aspect-[3/4] bg-muted">
+                        <Image
+                          src={product.product_images?.[0]?.image_url || "/placeholder.svg"}
+                          alt={product.name_ar || product.name_en || "صورة المنتج"}
+                          width={300}
+                          height={400}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {product.is_featured && (
+                          <Badge className="absolute top-4 right-4 bg-primary text-white">مميز</Badge>
+                        )}
+                       
+                      </div>
+                      <div className="p-6 bg-white">
+                        <h4 className="text-xl font-bold mb-2 text-foreground text-right">
+                          {product.name_ar || product.name_en}
+                        </h4>
+                        <div className="flex items-center gap-2 mb-3 justify-end">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < Math.floor(product.rating || 0)
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "fill-gray-200 text-gray-200"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-muted-foreground">({product.reviews || 0})</span>
+                        </div>
+                        <p className="text-2xl font-bold text-primary text-right">{product.base_price} ج.م</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+
+      <footer className="border-t border-border bg-white py-12 mt-20">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h5 className="font-bold text-lg mb-4 text-foreground">عن مكة</h5>
+              <p className="text-muted-foreground leading-relaxed">
+                متجر مكة للأزياء النسائية الراقية - نقدم لكِ أفضل التصاميم العصرية التي تجمع بين الأصالة والحداثة
+              </p>
+            </div>
+            <div>
+              <h5 className="font-bold text-lg mb-4 text-foreground">روابط سريعة</h5>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/category/abayas" className="text-muted-foreground hover:text-primary transition-colors">
+                    العبايات
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/category/cardigans"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    الكارديجانات
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/category/jackets" className="text-muted-foreground hover:text-primary transition-colors">
+                    الجواكت
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-bold text-lg mb-4 text-foreground">معلومات</h5>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                    من نحن
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/return-policy" className="text-muted-foreground hover:text-primary transition-colors">
+                    سياسة الإرجاع
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-bold text-lg mb-4 text-foreground">تواصل معنا</h5>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                للاستفسارات والطلبات الخاصة
+                <br />
+                واتساب: 01234567890
+                <br />
+                البريد: info@mecca-fashion.com
+              </p>
+              <Link href="/contact">
+                <Button variant="outline" className="w-full bg-transparent">
+                  تواصل معنا
+                </Button>
+              </Link>
+            </div>
+          </div>
+          <div className="text-center pt-8 border-t border-border">
+            <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}

@@ -1,0 +1,42 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+)
+
+// POST - Create product image
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    console.log("[v0] Creating product image with data:", body)
+
+    const { data, error } = await supabase
+      .from("product_images")
+      .insert([
+        {
+          product_id: body.product_id,
+          image_url: body.image_url,
+          alt_text_ar: body.alt_text_ar,
+          alt_text_en: body.alt_text_en,
+          display_order: body.display_order,
+          is_primary: body.is_primary,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      console.error("[v0] Supabase error:", error)
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+
+    console.log("[v0] Product image created successfully:", data)
+    return NextResponse.json({ data }, { status: 201 })
+  } catch (err) {
+    console.error("[v0] Error:", err)
+    const message = err instanceof Error ? err.message : "Failed to create image"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
