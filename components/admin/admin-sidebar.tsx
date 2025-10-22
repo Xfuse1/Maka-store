@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Package, ShoppingBag, Settings, Palette, BarChart3, FileText, FolderTree } from "lucide-react"
+import { Home, Package, ShoppingBag, Settings, Palette, BarChart3, FileText, FolderTree, GalleryHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 
@@ -16,6 +16,11 @@ const menuItems = [
     title: "الصفحة الرئيسية",
     href: "/admin/homepage",
     icon: Home,
+  },
+  {
+    title: "شرائح العرض",
+    href: "/admin/hero-slides",
+    icon: GalleryHorizontal,
   },
   {
     title: "المنتجات",

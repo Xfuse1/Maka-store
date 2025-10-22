@@ -1,15 +1,18 @@
-"use client"
 
 import Link from "next/link"
 import Image from "next/image"
-import { ShoppingBag } from "lucide-react"
-import { useCartStore } from "@/lib/cart-store"
+import { cookies } from "next/headers"
+
+import { createClient } from "@/lib/supabase/server"
 import { MainNavigation } from "./main-navigation"
 import { MobileNavigation } from "./mobile-navigation"
+import { CartIcon } from "./cart-icon"
+import { SignOutButton } from "./sign-out-button"
 
-export function Header() {
-  const items = useCartStore((state) => state.items)
-  const cartCount = items.reduce((total, item) => total + item.quantity, 0)
+export async function Header() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+  const { data: { user } } = await supabase.auth.getUser()
 
   return (
     <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
@@ -24,19 +27,19 @@ export function Header() {
           {/* Desktop Navigation */}
           <MainNavigation />
 
-          {/* Cart Icon */}
-          <Link
-            href="/cart"
-            className="relative p-2 hover:bg-secondary/50 rounded-md transition-colors flex-shrink-0"
-            aria-label="Shopping cart"
-          >
-            <ShoppingBag className="h-6 w-6 text-foreground" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                {cartCount}
-              </span>
+          <div className="flex items-center gap-4">
+            {/* Cart Icon */}
+            <CartIcon />
+
+            {/* Auth Links */}
+            {user ? (
+              <SignOutButton />
+            ) : (
+              <Link href="/auth" className="text-sm font-medium hover:text-primary transition-colors">
+                تسجيل الدخول
+              </Link>
             )}
-          </Link>
+          </div>
 
           {/* Mobile Navigation */}
           <MobileNavigation />

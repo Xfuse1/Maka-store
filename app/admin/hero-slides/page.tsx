@@ -1,171 +1,401 @@
-import { getHeroSlides, createHeroSlide, deleteHeroSlide, toggleHeroSlideStatus } from "./actions"
+
+"use client"
+
+import type React from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
-import { Trash2, Eye, EyeOff } from "lucide-react"
+import { Plus, Edit, Trash2, Loader2, Eye } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
+import { useToast } from "@/hooks/use-toast"
+import type { HeroSlide } from "@/lib/supabase/homepage"
+import {
+  getHeroSlidesAction,
+  createHeroSlideAction,
+  updateHeroSlideAction,
+  deleteHeroSlideAction,
+} from "./actions"
 
-export default async function HeroSlidesPage() {
-  const slides: any[] = await getHeroSlides()
+type SlideForm = Omit<HeroSlide, "id" | "created_at" | "updated_at">
+
+export default function AdminHeroSlidesPage() {
+  const [slides, setSlides] = useState<HeroSlide[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showDialog, setShowDialog] = useState(false)
+  const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null)
+  const [saving, setSaving] = useState(false)
+  const { toast } = useToast()
+
+  const [formData, setFormData] = useState<SlideForm>({
+    title_ar: "",
+    title_en: "",
+    subtitle_ar: "",
+    subtitle_en: "",
+    image_url: "",
+    link_url: "",
+    display_order: 0,
+    is_active: true,
+  })
+
+  useEffect(() => {
+    loadSlides()
+  }, [])
+
+  const loadSlides = async () => {
+    try {
+      setLoading(true)
+      const result = await getHeroSlidesAction()
+      if (result.success && result.data) {
+        setSlides(result.data)
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error("Error loading slides:", error)
+      toast({
+        title: "خطأ",
+        description: "فشل تحميل شرائح العرض",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      title_ar: "",
+      title_en: "",
+      subtitle_ar: "",
+      subtitle_en: "",
+      image_url: "",
+      link_url: "",
+      display_order: slides.length + 1,
+      is_active: true,
+    })
+    setEditingSlide(null)
+  }
+
+  const handleEdit = (slide: HeroSlide) => {
+    setEditingSlide(slide)
+    setFormData({
+      title_ar: slide.title_ar || "",
+      title_en: slide.title_en || "",
+      subtitle_ar: slide.subtitle_ar || "",
+      subtitle_en: slide.subtitle_en || "",
+      image_url: slide.image_url || "",
+      link_url: slide.link_url || "",
+      display_order: slide.display_order,
+      is_active: slide.is_active,
+    })
+    setShowDialog(true)
+  }
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    try {
+      setSaving(true)
+
+      const slideData = {
+        ...formData,
+      }
+
+      let result
+      if (editingSlide) {
+        result = await updateHeroSlideAction(editingSlide.id, slideData)
+        if (result.success) {
+          toast({
+            title: "تم التحديث",
+            description: "تم تحديث الشريحة بنجاح",
+          })
+        }
+      } else {
+        result = await createHeroSlideAction(slideData)
+        if (result.success) {
+          toast({
+            title: "تم الإضافة",
+            description: "تم إضافة الشريحة بنجاح",
+          })
+        }
+      }
+
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+
+      setShowDialog(false)
+      resetForm()
+      await loadSlides()
+    } catch (error) {
+      console.error("Error saving slide:", error)
+      toast({
+        title: "خطأ",
+        description: "فشل حفظ الشريحة",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`هل أنت متأكد من حذف "${title}"؟`)) return
+
+    try {
+      const result = await deleteHeroSlideAction(id)
+      if (result.success) {
+        toast({
+          title: "تم الحذف",
+          description: "تم حذف الشريحة بنجاح",
+        })
+        await loadSlides()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error("Error deleting slide:", error)
+      toast({
+        title: "خطأ",
+        description: "فشل حذف الشريحة",
+        variant: "destructive",
+      })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8" dir="rtl">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">إدارة سلايدات العرض</h1>
-        <p className="text-muted-foreground">إضافة وتعديل سلايدات الصفحة الرئيسية</p>
+    <div className="p-8">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">إدارة شرائح العرض</h1>
+          <p className="text-muted-foreground text-base">تحكم في شرائح العرض في الصفحة الرئيسية</p>
+        </div>
+        <div className="flex gap-3">
+          <Button asChild variant="outline" className="gap-2 bg-transparent">
+            <a href="/" target="_blank" rel="noreferrer">
+              <Eye className="h-4 w-4" />
+              معاينة الموقع
+            </a>
+          </Button>
+          <Button
+            className="bg-primary hover:bg-primary/90 gap-2"
+            onClick={() => {
+              resetForm()
+              setShowDialog(true)
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            إضافة شريحة جديدة
+          </Button>
+        </div>
       </div>
 
-      {/* Add New Slide Form */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>إضافة سلايد جديد</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createHeroSlide} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name_ar">اسم السلايد (للإدارة)</Label>
-                <Input id="name_ar" name="name_ar" required placeholder="مثال: سلايد ترحيبي" />
+      <div className="grid gap-6">
+        {slides.map((slide) => (
+          <Card key={slide.id} className="border-2 border-border hover:border-primary/50 transition-all">
+            <CardContent className="p-6">
+              <div className="flex gap-6">
+                <div className="w-32 h-32 bg-muted rounded-md overflow-hidden">
+                  <img src={slide.image_url || "/placeholder.svg"} alt={slide.title_ar} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold text-foreground">{slide.title_ar || "بدون عنوان"}</h3>
+                        {!slide.is_active && (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            غير نشط
+                          </Badge>
+                        )}
+                      </div>
+                      {slide.title_en && <p className="text-sm text-muted-foreground mb-2">{slide.title_en}</p>}
+                    </div>
+                    <div className="text-sm text-muted-foreground">ترتيب: {slide.display_order}</div>
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-4">
+                    {slide.subtitle_ar}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 bg-transparent"
+                      onClick={() => handleEdit(slide)}
+                    >
+                      <Edit className="h-4 w-4" />
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
+                      onClick={() => handleDelete(slide.id, slide.title_ar || "")}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      حذف
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="display_order">الترتيب</Label>
-                <Input id="display_order" name="display_order" type="number" defaultValue="1" required />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="title_ar">العنوان الرئيسي</Label>
-              <Input id="title_ar" name="title_ar" required placeholder="مثال: مرحباً بكِ في مكة" />
-            </div>
-
-            <div>
-              <Label htmlFor="subtitle_ar">العنوان الفرعي</Label>
-              <Input id="subtitle_ar" name="subtitle_ar" placeholder="مثال: أزياء نسائية راقية" />
-            </div>
-
-            <div>
-              <Label htmlFor="description_ar">الوصف</Label>
-              <Textarea
-                id="description_ar"
-                name="description_ar"
-                placeholder="مثال: اكتشفي أحدث التصاميم العصرية"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="button_text_ar">نص الزر</Label>
-                <Input id="button_text_ar" name="button_text_ar" placeholder="مثال: تسوقي الآن" />
-              </div>
-              <div>
-                <Label htmlFor="button_link">رابط الزر</Label>
-                <Input id="button_link" name="button_link" placeholder="مثال: /category/abayas" />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="image_url">رابط الصورة</Label>
-              <Input
-                id="image_url"
-                name="image_url"
-                placeholder="مثال: /placeholder.svg?height=700&width=1920&query=fashion"
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                يمكنك استخدام placeholder.svg مع query لتوليد صورة تلقائية
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Switch id="is_active" name="is_active" defaultChecked />
-              <Label htmlFor="is_active">نشط</Label>
-            </div>
-
-            <Button type="submit" className="w-full">
-              إضافة السلايد
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Existing Slides */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">السلايدات الحالية ({slides.length})</h2>
-        {slides.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              لا توجد سلايدات حالياً. قم بإضافة سلايد جديد أعلاه.
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {slides.map((slide) => (
-              <Card key={slide.id}>
-                <CardContent className="p-6">
-                  <div className="flex gap-6">
-                    {/* Slide Preview */}
-                    <div className="relative w-48 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
-                      <Image
-                        src={slide.image_url || "/placeholder.svg"}
-                        alt={slide.title_ar || slide.name_ar}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-
-                    {/* Slide Info */}
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="text-xl font-bold">{slide.title_ar || slide.name_ar}</h3>
-                          <p className="text-sm text-muted-foreground">{slide.name_ar}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={slide.is_active ? "default" : "secondary"}>
-                            {slide.is_active ? "نشط" : "غير نشط"}
-                          </Badge>
-                          <Badge variant="outline">ترتيب {slide.display_order}</Badge>
-                        </div>
-                      </div>
-
-                      {slide.subtitle_ar && <p className="text-sm font-medium">{slide.subtitle_ar}</p>}
-                      {slide.description_ar && <p className="text-sm text-muted-foreground">{slide.description_ar}</p>}
-
-                      {slide.button_text_ar && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium">زر:</span>
-                          <span>{slide.button_text_ar}</span>
-                          <span className="text-muted-foreground">→ {slide.button_link}</span>
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex gap-2 pt-2">
-                        <form action={toggleHeroSlideStatus.bind(null, slide.id, slide.is_active)}>
-                          <Button type="submit" variant="outline" size="sm">
-                            {slide.is_active ? <EyeOff className="h-4 w-4 ml-2" /> : <Eye className="h-4 w-4 ml-2" />}
-                            {slide.is_active ? "إخفاء" : "إظهار"}
-                          </Button>
-                        </form>
-                        <form action={deleteHeroSlide.bind(null, slide.id)}>
-                          <Button type="submit" variant="destructive" size="sm">
-                            <Trash2 className="h-4 w-4 ml-2" />
-                            حذف
-                          </Button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        ))}
       </div>
+
+      {slides.length === 0 && (
+        <div className="text-center py-20">
+          <h3 className="text-2xl font-bold mb-4 text-foreground">لا توجد شرائح</h3>
+          <p className="text-muted-foreground mb-6">ابدأ بإضافة شرائح عرض للصفحة الرئيسية</p>
+          <Button
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              resetForm()
+              setShowDialog(true)
+            }}
+          >
+            <Plus className="h-4 w-4 ml-2" />
+            إضافة شريحة جديدة
+          </Button>
+        </div>
+      )}
+
+      <Dialog
+        open={showDialog}
+        onOpenChange={(open) => {
+          setShowDialog(open)
+          if (!open) resetForm()
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              {editingSlide ? "تعديل الشريحة" : "إضافة شريحة جديدة"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingSlide ? `تعديل "${editingSlide.title_ar}"` : "أضف شريحة جديدة للصفحة الرئيسية"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="title_ar">العنوان (عربي) *</Label>
+                <Input
+                  id="title_ar"
+                  value={formData.title_ar}
+                  onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="title_en">العنوان (إنجليزي)</Label>
+                <Input
+                  id="title_en"
+                  value={formData.title_en}
+                  onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
+                />
+              </div>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="subtitle_ar">العنوان الفرعي (عربي)</Label>
+                <Input
+                  id="subtitle_ar"
+                  value={formData.subtitle_ar}
+                  onChange={(e) => setFormData({ ...formData, subtitle_ar: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="subtitle_en">العنوان الفرعي (إنجليزي)</Label>
+                <Input
+                  id="subtitle_en"
+                  value={formData.subtitle_en}
+                  onChange={(e) => setFormData({ ...formData, subtitle_en: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="image_url">رابط الصورة *</Label>
+              <Input
+                id="image_url"
+                value={formData.image_url}
+                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="link_url">رابط الانتقال</Label>
+              <Input
+                id="link_url"
+                value={formData.link_url}
+                onChange={(e) => setFormData({ ...formData, link_url: e.target.value })}
+                placeholder="/products"
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="display_order">ترتيب العرض</Label>
+                <Input
+                  id="display_order"
+                  type="number"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: Number(e.target.value) })}
+                />
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse pt-6">
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                />
+                <Label htmlFor="is_active" className="cursor-pointer">
+                  نشط
+                </Label>
+              </div>
+            </div>
+
+            <div className="flex gap-4 pt-2">
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  "حفظ"
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDialog(false)
+                  resetForm()
+                }}
+                disabled={saving}
+              >
+                إلغاء
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
