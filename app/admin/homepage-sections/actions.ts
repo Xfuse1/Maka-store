@@ -22,10 +22,17 @@ export interface HomepageSection {
   updated_at: string
 }
 
+async function handleSupabaseError(error: any, errorMessage: string) {
+  console.error(errorMessage, error)
+  if (error instanceof Error) {
+    return { success: false, error: error.message }
+  }
+  return { success: false, error: "An unknown error occurred." }
+}
+
 export async function getAllSections() {
   try {
     const supabase = createAdminClient()
-
     const { data, error } = await supabase
       .from("homepage_sections")
       .select("*")
@@ -35,105 +42,78 @@ export async function getAllSections() {
 
     return { success: true, data: data as HomepageSection[] }
   } catch (error) {
-    console.error("Error fetching sections:", error)
-    return { success: false, error: "Failed to fetch sections" }
+    return handleSupabaseError(error, "Error fetching sections:")
   }
 }
 
 export async function createSection(section: Partial<HomepageSection>) {
   try {
     const supabase = createAdminClient()
-
     const { data, error } = await supabase.from("homepage_sections").insert([section]).select().single()
-
     if (error) throw error
-
     revalidatePath("/")
     revalidatePath("/admin/homepage-sections")
-
     return { success: true, data }
   } catch (error) {
-    console.error("Error creating section:", error)
-    return { success: false, error: "Failed to create section" }
+    return handleSupabaseError(error, "Error creating section:")
   }
 }
 
 export async function updateSection(id: string, updates: Partial<HomepageSection>) {
   try {
     const supabase = createAdminClient()
-
     const { data, error } = await supabase.from("homepage_sections").update(updates).eq("id", id).select().single()
-
     if (error) throw error
-
     revalidatePath("/")
     revalidatePath("/admin/homepage-sections")
-
     return { success: true, data }
   } catch (error) {
-    console.error("Error updating section:", error)
-    return { success: false, error: "Failed to update section" }
+    return handleSupabaseError(error, "Error updating section:")
   }
 }
 
 export async function deleteSection(id: string) {
   try {
     const supabase = createAdminClient()
-
     const { error } = await supabase.from("homepage_sections").delete().eq("id", id)
-
     if (error) throw error
-
     revalidatePath("/")
     revalidatePath("/admin/homepage-sections")
-
     return { success: true }
   } catch (error) {
-    console.error("Error deleting section:", error)
-    return { success: false, error: "Failed to delete section" }
+    return handleSupabaseError(error, "Error deleting section:")
   }
 }
 
 export async function toggleSectionVisibility(id: string, isActive: boolean) {
   try {
     const supabase = createAdminClient()
-
     const { data, error } = await supabase
       .from("homepage_sections")
       .update({ is_active: isActive })
       .eq("id", id)
       .select()
       .single()
-
     if (error) throw error
-
     revalidatePath("/")
     revalidatePath("/admin/homepage-sections")
-
     return { success: true, data }
   } catch (error) {
-    console.error("Error toggling visibility:", error)
-    return { success: false, error: "Failed to toggle visibility" }
+    return handleSupabaseError(error, "Error toggling visibility:")
   }
 }
 
 export async function reorderSections(sectionIds: string[]) {
   try {
     const supabase = createAdminClient()
-
-    // Update display_order for each section
     const updates = sectionIds.map((id, index) =>
       supabase.from("homepage_sections").update({ display_order: index }).eq("id", id),
     )
-
     await Promise.all(updates)
-
     revalidatePath("/")
     revalidatePath("/admin/homepage-sections")
-
     return { success: true }
   } catch (error) {
-    console.error("Error reordering sections:", error)
-    return { success: false, error: "Failed to reorder sections" }
+    return handleSupabaseError(error, "Error reordering sections:")
   }
 }

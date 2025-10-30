@@ -1,7 +1,6 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { cookies } from "next/headers"
 
 import { createClient } from "@/lib/supabase/server"
 import { MainNavigation } from "./main-navigation"
@@ -10,8 +9,7 @@ import { CartIcon } from "./cart-icon"
 import { SignOutButton } from "./sign-out-button"
 
 export async function Header() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
@@ -39,10 +37,10 @@ export async function Header() {
                 تسجيل الدخول
               </Link>
             )}
+            
+            {/* Mobile Navigation */}
+            <MobileNavigation />
           </div>
-
-          {/* Mobile Navigation */}
-          <MobileNavigation />
         </div>
       </div>
     </header>

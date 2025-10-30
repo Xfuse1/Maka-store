@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Eye, EyeOff, Edit, Trash2, Plus, GripVertical, Save, Loader2, ShoppingBag } from "lucide-react"
+import { Eye, EyeOff, Edit, Trash2, Plus, GripVertical, Save, Loader2, ShoppingBag, AlertTriangle } from "lucide-react"
 import {
   getAllSections,
   createSection,
@@ -31,7 +30,6 @@ import {
 } from "./actions"
 import { createClient } from "@/lib/supabase/client"
 
-// كومبوننت اختيار المنتجات
 function ProductSelector({ 
   selectedProducts, 
   onProductsChange 
@@ -122,6 +120,7 @@ export default function HomepageSectionsPage() {
   const [sections, setSections] = useState<HomepageSection[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [editingSection, setEditingSection] = useState<HomepageSection | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
@@ -133,28 +132,32 @@ export default function HomepageSectionsPage() {
 
   async function loadSections() {
     setLoading(true)
-    const result = await getAllSections()
-    if (result.success && result.data) {
-      setSections(result.data)
-      await calculateProductCounts(result.data)
+    setError(null)
+    try {
+      const result = await getAllSections()
+      if (result.success && result.data) {
+        setSections(result.data)
+        await calculateProductCounts(result.data)
+      } else {
+        setError(result.error || "An unknown error occurred.")
+      }
+    } catch (e: any) {
+      setError(e.message || "An unexpected error occurred.")
     }
     setLoading(false)
   }
 
   async function calculateProductCounts(sections: HomepageSection[]) {
     const counts: Record<string, number> = {}
-
     for (const section of sections) {
       if (section.section_type === "categories") {
         counts[section.id] = section.category_ids?.length || 9
       } else if (section.section_type === "reviews") {
         counts[section.id] = 3
       } else {
-        // للأقسام التي تعتمد على المنتجات
         counts[section.id] = section.product_ids?.length || section.max_items || 8
       }
     }
-
     setProductCounts(counts)
   }
 
@@ -170,52 +173,41 @@ export default function HomepageSectionsPage() {
     return labels[type] || type
   }
 
-  function getSyncStatus(section: HomepageSection): { icon: string; label: string; color: string } {
-    if (section.is_active) {
-      return { icon: "🟢", label: "متزامن", color: "text-green-600" }
-    }
-    return { icon: "🔴", label: "غير نشط", color: "text-red-600" }
-  }
-
-  async function handleToggleVisibility(id: string, currentState: boolean) {
+  async function handleAction(action: Promise<any>, successCallback?: () => void) {
     setSaving(true)
-    const result = await toggleSectionVisibility(id, !currentState)
-    if (result.success) {
-      await loadSections()
-    }
-    setSaving(false)
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm("هل أنت متأكد من حذف هذا القسم؟")) return
-
-    setSaving(true)
-    const result = await deleteSection(id)
-    if (result.success) {
-      await loadSections()
-    }
-    setSaving(false)
-  }
-
-  async function handleSave(section: Partial<HomepageSection>) {
-    setSaving(true)
-
-    if (editingSection) {
-      const result = await updateSection(editingSection.id, section)
+    setError(null)
+    try {
+      const result = await action
       if (result.success) {
         await loadSections()
-        setIsDialogOpen(false)
-        setEditingSection(null)
+        if (successCallback) successCallback()
+      } else {
+        setError(result.error || "An unknown error occurred.")
       }
-    } else {
-      const result = await createSection(section)
-      if (result.success) {
-        await loadSections()
-        setIsDialogOpen(false)
-      }
+    } catch (e: any) {
+      setError(e.message || "An unexpected error occurred.")
     }
-
     setSaving(false)
+  }
+
+  const handleToggleVisibility = (id: string, currentState: boolean) =>
+    handleAction(toggleSectionVisibility(id, !currentState))
+
+  const handleDelete = (id: string) => {
+    if (confirm("هل أنت متأكد من حذف هذا القسم؟")) {
+      handleAction(deleteSection(id))
+    }
+  }
+
+  const handleSave = (section: Partial<HomepageSection>) => {
+    const action = editingSection
+      ? updateSection(editingSection.id, section)
+      : createSection(section)
+    
+    handleAction(action, () => {
+      setIsDialogOpen(false)
+      setEditingSection(null)
+    })
   }
 
   function handleDragStart(id: string) {
@@ -225,27 +217,21 @@ export default function HomepageSectionsPage() {
   function handleDragOver(e: React.DragEvent, id: string) {
     e.preventDefault()
     if (!draggedItem || draggedItem === id) return
-
     const draggedIndex = sections.findIndex((s) => s.id === draggedItem)
     const targetIndex = sections.findIndex((s) => s.id === id)
-
     if (draggedIndex === -1 || targetIndex === -1) return
-
     const newSections = [...sections]
     const [removed] = newSections.splice(draggedIndex, 1)
     newSections.splice(targetIndex, 0, removed)
-
     setSections(newSections)
   }
 
   async function handleDragEnd() {
     if (!draggedItem) return
-
-    setSaving(true)
     const sectionIds = sections.map((s) => s.id)
-    await reorderSections(sectionIds)
-    setDraggedItem(null)
-    setSaving(false)
+    await handleAction(reorderSections(sectionIds), () => {
+      setDraggedItem(null)
+    })
   }
 
   if (loading) {
@@ -285,16 +271,25 @@ export default function HomepageSectionsPage() {
         </Dialog>
       </div>
 
-      {saving && (
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-red-600" />
+          <span className="text-red-700">خطأ: {error}</span>
+          <Button variant="outline" size="sm" onClick={loadSections} className="ml-auto">
+            إعادة المحاولة
+          </Button>
+        </div>
+      )}
+
+      {saving && !error && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
           <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-          <span className="text-blue-600">جاري الحفظ في قاعدة البيانات...</span>
+          <span className="text-blue-600">جاري تنفيذ العملية...</span>
         </div>
       )}
 
       <div className="grid gap-4">
-        {sections.map((section) => {
-          const syncStatus = getSyncStatus(section)
+        {sections.map((section, index) => {
           const productCount = productCounts[section.id] || 0
 
           return (
@@ -321,13 +316,10 @@ export default function HomepageSectionsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={syncStatus.color}>
-                      {syncStatus.icon} {syncStatus.label}
-                    </Badge>
                     <Badge variant={section.is_active ? "default" : "secondary"}>
                       {section.is_active ? "مرئي" : "مخفي"}
                     </Badge>
-                    <Badge variant="outline">ترتيب {section.display_order + 1}</Badge>
+                    <Badge variant="outline">ترتيب {index + 1}</Badge>
                   </div>
                 </div>
               </CardHeader>
@@ -336,7 +328,7 @@ export default function HomepageSectionsPage() {
                 <div className="flex items-center justify-between">
                   <div className="grid grid-cols-3 gap-4 flex-1">
                     <div>
-                      <p className="text-sm text-muted-foreground">عدد العناصر المعروضة</p>
+                      <p className="text-sm text-muted-foreground">عدد العناصر</p>
                       <p className="text-lg font-semibold">
                         {section.section_type === "categories"
                           ? `${productCount} تصنيفات`
@@ -344,25 +336,12 @@ export default function HomepageSectionsPage() {
                             ? `${productCount} تقييمات`
                             : `${productCount} منتجات`}
                       </p>
-                      {section.product_ids && section.product_ids.length > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          {section.product_ids.length} منتج محدد
-                        </p>
-                      )}
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">نوع العرض</p>
                       <p className="text-lg font-semibold">
-                        {section.layout_type === "grid"
-                          ? "شبكة"
-                          : section.layout_type === "slider"
-                            ? "سلايدر"
-                            : "قائمة"}
+                        {section.layout_type === "grid" ? "شبكة" : section.layout_type === "slider" ? "سلايدر" : "قائمة"}
                       </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">الحالة</p>
-                      <p className="text-lg font-semibold">{section.is_active ? "👁️ مرئي على الموقع" : "🚫 مخفي"}</p>
                     </div>
                   </div>
 
@@ -376,7 +355,6 @@ export default function HomepageSectionsPage() {
                     >
                       {section.is_active ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
                     </Button>
-
                     <Button
                       variant="outline"
                       size="icon"
@@ -389,7 +367,6 @@ export default function HomepageSectionsPage() {
                     >
                       <Edit className="h-5 w-5" />
                     </Button>
-
                     <Button
                       variant="outline"
                       size="icon"
@@ -407,7 +384,7 @@ export default function HomepageSectionsPage() {
         })}
       </div>
 
-      {sections.length === 0 && (
+      {sections.length === 0 && !error && (
         <Card className="p-12 text-center">
           <p className="text-xl text-muted-foreground">لا توجد أقسام حالياً</p>
           <p className="text-sm text-muted-foreground mt-2">قم بإضافة قسم جديد للبدء في إدارة الصفحة الرئيسية</p>
@@ -443,6 +420,12 @@ function SectionForm({
       background_color: "background",
     },
   )
+
+  useEffect(() => {
+    if (section) {
+      setFormData(section)
+    }
+  }, [section])
 
   const showProductSelector = ["best_sellers", "new_arrivals", "featured", "custom"].includes(
     formData.section_type || ""
