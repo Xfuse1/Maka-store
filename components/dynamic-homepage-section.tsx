@@ -13,9 +13,9 @@ interface Product {
   name_ar: string
   base_price: number
   is_featured?: boolean
-  category: {
+  category: Array<{
     name_ar: string
-  }
+  }> | null
   product_images: Array<{
     image_url: string
     display_order: number

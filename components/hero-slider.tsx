@@ -77,7 +77,7 @@ export function HeroSlider() {
               alt={slide.title_ar || ""}
               fill
               className="object-cover"
-              priority={index === 0}
+              priority={index === 0 && !!slide.image_url}
               sizes="100vw"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />

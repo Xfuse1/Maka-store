@@ -5,10 +5,10 @@ export type Category = {
   name_ar: string
   name_en: string
   slug: string
-  description_ar: string | null
-  description_en: string | null
-  image_url: string | null
-  parent_id: string | null
+  description_ar?: string
+  description_en?: string
+  image_url?: string
+  parent_id?: string
   is_active: boolean
   display_order: number
   created_at: string
@@ -108,8 +108,17 @@ export async function getCategoryProductsCount(categoryId: string) {
 
 // Get all active categories (for public display)
 export async function getActiveCategories() {
-  const response = await fetch("/api/categories")
-  if (!response.ok) throw new Error("Failed to fetch categories")
-  const { data } = await response.json()
+  const supabase = getSupabaseBrowserClient()
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true })
+
+  if (error) {
+    console.error("[v0] Error fetching active categories:", error)
+    throw new Error("Failed to fetch active categories")
+  }
+
   return data as Category[]
 }

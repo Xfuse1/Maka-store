@@ -7,6 +7,7 @@ import { MainNavigation } from "./main-navigation"
 import { MobileNavigation } from "./mobile-navigation"
 import { CartIcon } from "./cart-icon"
 import { SignOutButton } from "./sign-out-button"
+import { Button } from "./ui/button"
 
 export async function Header() {
   const supabase = createClient()
@@ -33,9 +34,11 @@ export async function Header() {
             {user ? (
               <SignOutButton />
             ) : (
-              <Link href="/auth" className="text-sm font-medium hover:text-primary transition-colors">
-                تسجيل الدخول
-              </Link>
+              <Button variant="outline" asChild>
+                <Link href="/auth">
+                  تسجيل الدخول
+                </Link>
+              </Button>
             )}
             
             {/* Mobile Navigation */}

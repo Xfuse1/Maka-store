@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -21,9 +22,9 @@ interface Product {
   name_ar: string
   base_price: number
   is_featured?: boolean
-  category: {
+  category: Array<{
     name_ar: string
-  }
+  }> | null
   product_images: Array<{
     image_url: string
     display_order: number
@@ -48,6 +49,7 @@ export default function HomePage() {
   const [sections, setSections] = useState<HomepageSection[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [user, setUser] = useState<User | null>(null)
   const totalItems = useCartStore((state) => state.getTotalItems())
 
   useEffect(() => {
@@ -55,10 +57,14 @@ export default function HomePage() {
       try {
         console.log("[v0] 🔍 Fetching products, categories, and sections from Supabase...")
 
-        const [productsData, categoriesData, sectionsData] = await Promise.all([
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user ?? null)
+
+        const [productsResponse, categoriesResponse, sectionsResponse] = await Promise.all([
           supabase
             .from("products")
-            .select(`
+            .select(
+              `
               id,
               name_ar,
               base_price,
@@ -66,10 +72,11 @@ export default function HomePage() {
               created_at,
               category:categories(name_ar),
               product_images(image_url, display_order)
-            `)
+            `,
+            )
             .eq("is_active", true)
             .order("created_at", { ascending: false }),
-          getActiveCategories(),
+          getActiveCategories(), // This now returns data directly
           supabase
             .from("homepage_sections")
             .select("*")
@@ -77,21 +84,24 @@ export default function HomePage() {
             .order("display_order", { ascending: true }),
         ])
 
-        if (productsData.error) {
-          console.error("[v0] ❌ Error fetching products:", productsData.error)
+        // Handle products response
+        if (productsResponse.error) {
+          console.error("[v0] ❌ Error fetching products:", productsResponse.error)
         } else {
-          console.log("[v0] ✅ Products fetched:", productsData.data?.length)
-          setProducts(productsData.data || [])
+          console.log("[v0] ✅ Products fetched:", productsResponse.data?.length)
+          setProducts(productsResponse.data || [])
         }
 
-        console.log("[v0] ✅ Categories fetched:", categoriesData.length)
-        setCategories(categoriesData)
+        // Handle categories response
+        console.log("[v0] ✅ Categories fetched:", categoriesResponse.length)
+        setCategories(categoriesResponse)
 
-        if (sectionsData.error) {
-          console.error("[v0] ❌ Error fetching sections:", sectionsData.error)
+        // Handle sections response
+        if (sectionsResponse.error) {
+          console.error("[v0] ❌ Error fetching sections:", sectionsResponse.error)
         } else {
-          console.log("[v0] ✅ Sections fetched:", sectionsData.data?.length)
-          setSections(sectionsData.data || [])
+          console.log("[v0] ✅ Sections fetched:", sectionsResponse.data?.length)
+          setSections(sectionsResponse.data || [])
         }
       } catch (err) {
         console.error("[v0] ❌ Error:", err)
@@ -99,8 +109,13 @@ export default function HomePage() {
         setLoading(false)
       }
     }
-
     fetchData()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null)
+      },
+    )
 
     console.log("[v0] 🔄 Setting up real-time subscription for homepage sections...")
 
@@ -133,6 +148,7 @@ export default function HomePage() {
 
     // Cleanup subscription on unmount
     return () => {
+      authListener.subscription.unsubscribe()
       console.log("[v0] 🔌 Cleaning up real-time subscription...")
       supabase.removeChannel(channel)
     }
@@ -141,7 +157,7 @@ export default function HomePage() {
   const filteredProducts = products.filter((product) => {
     if (!searchQuery) return false
     const query = searchQuery.toLowerCase()
-    return product.name_ar.toLowerCase().includes(query) || product.category?.name_ar.toLowerCase().includes(query)
+    return product.name_ar.toLowerCase().includes(query) || product.category?.[0]?.name_ar.toLowerCase().includes(query)
   })
 
   const getFirstImage = (product: Product) => {
@@ -189,6 +205,21 @@ export default function HomePage() {
             <MainNavigation />
 
             <div className="flex items-center gap-3">
+              {user ? (
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    await supabase.auth.signOut()
+                    window.location.reload()
+                  }}
+                >
+                  تسجيل الخروج
+                </Button>
+              ) : (
+                <Button variant="outline" asChild>
+                  <Link href="/auth">تسجيل الدخول</Link>
+                </Button>
+              )}
               <MobileNavigation />
 
               <Button
