@@ -2,8 +2,20 @@
 // Handles payment creation, validation, and status updates
 
 import { createAdminClient } from "@/lib/supabase/admin"
-import { cashierClient } from "./cashier-client"
+import { 
+  buildKashierPaymentUrl, 
+  verifyKashierWebhookSignature, 
+  KashierPaymentParams, 
+  KashierPaymentResult,
+  KashierWebhookPayload 
+} from "./kashier-adapter"
 import { encryptPaymentData, generateSignature, generateSecureToken } from "./encryption"
+
+export interface KashierWebhookResult {
+  ok: boolean
+  statusCode: number
+  message: string
+}
 
 export interface CreatePaymentParams {
   orderId: string
@@ -31,6 +43,100 @@ export interface PaymentResult {
 
 export class PaymentService {
   private supabase = createAdminClient()
+
+  /**
+   * Initiate a new Kashier payment (Clean method)
+   */
+  async initiateKashierPayment(params: KashierPaymentParams): Promise<KashierPaymentResult> {
+    // Basic validation
+    if (!params.orderId || !params.amount) {
+      throw new Error("Missing required payment parameters")
+    }
+
+    // Build URL using pure adapter logic
+    const result = buildKashierPaymentUrl(params)
+    
+    // Log to console for now (DB logging to be migrated later)
+    console.log("[PaymentService] Initiated Kashier payment:", {
+      orderId: params.orderId,
+      transactionId: result.transactionId
+    })
+
+    return result
+  }
+
+  /**
+   * Handle Kashier Webhook
+   * Verifies signature and processes the event
+   */
+  async handleKashierWebhook(
+    payload: KashierWebhookPayload,
+    rawBody: string,
+    signature: string,
+    timestamp: string
+  ): Promise<KashierWebhookResult> {
+    // 1. Verify signature
+    const isValid = verifyKashierWebhookSignature(rawBody, signature, timestamp)
+    
+    if (!isValid) {
+      console.error("[PaymentService] Invalid webhook signature")
+      return { ok: false, statusCode: 401, message: "Invalid signature" }
+    }
+
+    try {
+      // 2. Log webhook
+      await this.supabase.from("payment_webhooks").insert({
+        source: "cashier",
+        event_type: payload.event_type,
+        payload: payload as any,
+        signature,
+        signature_verified: true,
+        status: "processing",
+      } as any)
+
+      // 3. Process event
+      const { transaction_id, order_id } = payload.data
+
+      switch (payload.event_type) {
+        case "payment.completed":
+          console.log("[PaymentService] Payment completed:", transaction_id)
+          await this.updatePaymentStatus(transaction_id, "completed", payload.data)
+          
+          // Update order status (Migrated from webhook route)
+          // @ts-ignore
+          await this.supabase.from("orders").update({
+            payment_status: "paid",
+            status: "processing",
+            updated_at: new Date().toISOString(),
+          }).eq("id", order_id)
+          break
+
+        case "payment.failed":
+          console.log("[PaymentService] Payment failed:", transaction_id)
+          await this.updatePaymentStatus(transaction_id, "failed", payload.data)
+          break
+
+        case "payment.refunded":
+          console.log("[PaymentService] Payment refunded:", transaction_id)
+          await this.supabase.from("payment_refunds").insert({
+            transaction_id,
+            refund_amount: payload.data.refund_amount,
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          } as any)
+          break
+
+        default:
+          console.log("[PaymentService] Unhandled event type:", payload.event_type)
+      }
+
+      return { ok: true, statusCode: 200, message: "OK" }
+
+    } catch (error: any) {
+      console.error("[PaymentService] Error processing webhook:", error)
+      return { ok: false, statusCode: 500, message: "Internal processing failed" }
+    }
+  }
 
   /**
    * Create a new payment transaction
@@ -83,7 +189,7 @@ export class PaymentService {
 
       // Handle different payment methods
       if (params.paymentMethod === "cashier") {
-        return await this.processCashierPayment(params, paymentMethod)
+        throw new Error("Use initiateKashierPayment for Kashier payments")
       } else if (params.paymentMethod === "cod") {
         return await this.processCODPayment(params, paymentMethod)
       } else if (params.paymentMethod === "bank_transfer") {
@@ -104,131 +210,6 @@ export class PaymentService {
     }
   }
 
-  /**
-   * Process Cashier payment gateway
-   */
-  private async processCashierPayment(params: CreatePaymentParams, paymentMethod: any): Promise<PaymentResult> {
-    try {
-      console.log("[Payment Service] Processing Cashier payment")
-
-      // Validate Cashier configuration
-      if (!process.env.CASHIER_API_KEY) {
-        console.error("[Payment Service] CASHIER_API_KEY not configured")
-        return {
-          success: false,
-          error: "Cashier payment gateway not configured. Please contact support.",
-        }
-      }
-
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-
-      // Create payment session with Cashier
-      let cashierResponse: any
-      try {
-        cashierResponse = await cashierClient.createPayment({
-          amount: params.amount,
-          currency: params.currency || "EGP",
-          orderId: params.orderId,
-          customerEmail: params.customerEmail,
-          customerName: params.customerName,
-          customerPhone: params.customerPhone,
-          returnUrl: `${baseUrl}/payment/return`,
-          callbackUrl: `${baseUrl}/api/payment/webhook`,
-          metadata: params.metadata,
-        })
-
-        console.log("[Payment Service] Cashier API response:", cashierResponse)
-
-        if (!cashierResponse?.success) {
-          throw new Error(cashierResponse?.error || "Cashier payment failed")
-        }
-      } catch (cashierError: any) {
-        console.error("[Payment Service] Cashier API error:", cashierError)
-        return {
-          success: false,
-          error: cashierError?.message || "Failed to create Cashier payment session",
-        }
-      }
-
-      // Extract transaction ID and payment URL
-      const transactionId = cashierResponse.transactionId || `cashier_${generateSecureToken(16)}`
-      const paymentUrl = 
-        cashierResponse.paymentUrl || 
-        cashierResponse.checkoutUrl || 
-        cashierResponse.url ||
-        cashierResponse.data?.payment_url ||
-        cashierResponse.data?.checkout_url
-
-      if (!paymentUrl) {
-        console.error("[Payment Service] No payment URL in Cashier response:", cashierResponse)
-        return {
-          success: false,
-          error: "Payment URL not available. Please try again.",
-        }
-      }
-
-      // Try to save to database (non-critical - don't fail if this errors)
-      try {
-        // Encrypt sensitive data
-        const sensitiveData = JSON.stringify({
-          customerEmail: params.customerEmail,
-          customerPhone: params.customerPhone,
-        })
-        const encryptedData = encryptPaymentData(sensitiveData)
-
-        // Generate signature
-        const signatureData = `${params.orderId}:${params.amount}:${transactionId}`
-        const signature = generateSignature(signatureData)
-
-        // Create transaction record
-        const { data: transaction, error } = await this.supabase
-          .from("payment_transactions")
-          .insert({
-            order_id: params.orderId,
-            payment_method_id: paymentMethod.id,
-            transaction_id: transactionId,
-            amount: params.amount,
-            currency: params.currency || "EGP",
-            status: "pending",
-            gateway_response: cashierResponse,
-            encrypted_data: encryptedData,
-            signature,
-            ip_address: params.ipAddress,
-            user_agent: params.userAgent,
-            initiated_at: new Date().toISOString(),
-          })
-          .select()
-          .single()
-
-        if (error) {
-          console.error("[Payment Service] Failed to create transaction record:", error)
-        } else {
-          // Log the payment initiation (non-critical)
-          await this.logPaymentEvent(transaction.id, "initiated", "Payment session created", {
-            paymentUrl,
-          }).catch((e) => console.warn("[Payment Service] Failed to log event:", e))
-        }
-      } catch (dbError: any) {
-        console.warn("[Payment Service] Database save error (continuing anyway):", dbError.message)
-      }
-
-      // Return success even if DB save failed - payment URL is what matters
-      return {
-        success: true,
-        transactionId,
-        paymentUrl,
-        checkoutUrl: paymentUrl,
-        url: paymentUrl,
-        message: "Payment session created successfully",
-      }
-    } catch (error: any) {
-      console.error("[Payment Service] Cashier payment error:", error)
-      return {
-        success: false,
-        error: error?.message || "Cashier payment failed",
-      }
-    }
-  }
 
   /**
    * Process Cash on Delivery payment
@@ -253,14 +234,14 @@ export class PaymentService {
             ip_address: params.ipAddress,
             user_agent: params.userAgent,
             initiated_at: new Date().toISOString(),
-          })
+          } as any)
           .select()
           .single()
 
         if (error) {
           console.warn("[Payment Service] COD DB save error:", error)
-        } else {
-          await this.logPaymentEvent(transaction.id, "initiated", "COD payment created").catch((e) =>
+        } else if (transaction) {
+          await this.logPaymentEvent((transaction as any).id, "initiated", "COD payment created").catch((e) =>
             console.warn("[Payment Service] Log error:", e),
           )
         }
@@ -305,14 +286,14 @@ export class PaymentService {
             ip_address: params.ipAddress,
             user_agent: params.userAgent,
             initiated_at: new Date().toISOString(),
-          })
+          } as any)
           .select()
           .single()
 
         if (error) {
           console.warn("[Payment Service] Bank transfer DB error:", error)
-        } else {
-          await this.logPaymentEvent(transaction.id, "initiated", "Bank transfer payment created").catch((e) =>
+        } else if (transaction) {
+          await this.logPaymentEvent((transaction as any).id, "initiated", "Bank transfer payment created").catch((e) =>
             console.warn("[Payment Service] Log error:", e),
           )
         }
@@ -358,7 +339,11 @@ export class PaymentService {
         updateData.gateway_response = details
       }
 
-      const { error } = await this.supabase.from("payment_transactions").update(updateData).eq("id", transactionId)
+      const supabase = this.supabase as any
+      const { error } = await supabase
+        .from("payment_transactions")
+        .update(updateData)
+        .eq("id", transactionId)
 
       if (error) throw error
 
@@ -388,7 +373,7 @@ export class PaymentService {
         event_type: eventType,
         message,
         details: details || {},
-      })
+      } as any)
     } catch (error) {
       console.error("[Payment Service] Failed to log event:", error)
     }

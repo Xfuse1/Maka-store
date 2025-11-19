@@ -1,4 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { paymentService } from "@/services/payment/payment-service"
+import type { KashierPaymentParams } from "@/services/payment/kashier-adapter"
 
 export const dynamic = "force-dynamic"
 
@@ -39,45 +41,32 @@ export async function POST(request: NextRequest) {
     }
 
     if (paymentMethod === "cashier") {
-      const kashierApiKey = process.env.KASHIER_API_KEY
-      const kashierMerchantId = process.env.KASHIER_MERCHANT_ID  
-      const kashierPaymentUrl = process.env.KASHIER_PAYMENT_URL || "https://payments.kashier.io"
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL
-
-      if (!kashierApiKey || !kashierMerchantId || !appUrl) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Kashier payment gateway is not configured",
-          },
-          { status: 500 }
-        )
-      }
-
       try {
-        const crypto = await import("crypto")
-        const amt = Number(amount).toFixed(2)
-        
-        const path = `/?payment=${kashierMerchantId}.${orderId}.${amt}.${currency}`
-        const hash = crypto.createHmac("sha256", kashierApiKey).update(path).digest("hex")
-        
-        const successUrl = encodeURIComponent(`${appUrl}/payment/success?orderId=${orderId}`)
-        const failureUrl = encodeURIComponent(`${appUrl}/payment/cancel?orderId=${orderId}`)
-        const webhookUrl = encodeURIComponent(`${appUrl}/api/payment/webhook`)
-        
-        const paymentUrl = `${kashierPaymentUrl}/?merchantId=${kashierMerchantId}&orderId=${orderId}&mode=test&amount=${amt}&currency=${currency}&hash=${hash}&merchantRedirect=${successUrl}&failureRedirect=${failureUrl}&serverWebhook=${webhookUrl}&allowedMethods=card,wallet,bank_installments&display=en`
+        // Map request body to service params
+        const kashierParams: KashierPaymentParams = {
+          orderId,
+          amount: Number(amount),
+          currency,
+          customerEmail,
+          customerName,
+        }
+
+        // Call the service to generate payment URL using the new adapter
+        const result = await paymentService.initiateKashierPayment(kashierParams)
 
         return NextResponse.json({
           success: true,
-          paymentUrl,
-          transactionId: `kashier_${orderId}`,
+          paymentUrl: result.paymentUrl,
+          transactionId: result.transactionId,
           message: "Kashier payment URL generated successfully",
         })
 
       } catch (error: any) {
         console.error("[Payment API] Kashier error:", error)
+        
         if (isDev) {
-          // Only fallback in dev if Kashier completely fails
+          // Only fallback in dev if Kashier completely fails (e.g. missing config)
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
           return NextResponse.json({
             success: true,
             paymentUrl: `${appUrl}/order-success?orderId=${orderId}&amount=${amount}&test=true&payment=fallback&error=kashier-failed`,
@@ -89,7 +78,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: "Failed to generate Kashier payment URL",
+            error: error.message || "Failed to generate Kashier payment URL",
           },
           { status: 500 }
         )
@@ -102,6 +91,7 @@ export async function POST(request: NextRequest) {
     )
 
   } catch (error: any) {
+    console.error("[Payment API] Internal error:", error)
     return NextResponse.json(
       {
         success: false,

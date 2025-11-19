@@ -51,7 +51,15 @@ export default function CheckoutPage() {
     return items.reduce((sum, it: any) => sum + toNum(it?.product?.price, 0) * toNum(it?.quantity, 0), 0)
   }, [getTotalPrice, items])
 
-  const shippingCost = 50
+  // Calculate shipping cost from products
+  const shippingCost = useMemo(() => {
+    return items.reduce((sum, it: any) => {
+      const productShipping = toNum(it?.product?.shipping_cost, 0)
+      const quantity = toNum(it?.quantity, 0)
+      return sum + (productShipping * quantity)
+    }, 0)
+  }, [items])
+
   const total = toNum(subtotal) + toNum(shippingCost)
 
   const validateBeforeSubmit = () => {
