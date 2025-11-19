@@ -12,10 +12,15 @@ import { useCartStore } from "@/lib/cart-store"
 import { HeroSlider } from "@/components/hero-slider"
 import { MainNavigation } from "@/components/main-navigation"
 import { MobileNavigation } from "@/components/mobile-navigation"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client" 
 import { getActiveCategories, type Category } from "@/lib/supabase/categories"
 import { DynamicHomepageSection } from "@/components/dynamic-homepage-section"
+import { BestsellerSection } from "@/components/bestseller-section"
 import { Card, CardContent } from "@/components/ui/card"
+import { AnimatedSection } from "@/components/animated-section"
+
+// Create a Supabase client instance
+const supabase = createClient();
 
 interface Product {
   id: string
@@ -43,7 +48,7 @@ interface HomepageSection {
   show_title: boolean
 }
 
-// Fallback mock data to keep the homepage usable when Supabase is unreachable
+// Fallback mock data
 const FALLBACK_CATEGORIES: Category[] = [
   { id: "fallback-cat-1", name_ar: "عبايات", name_en: "Abayas", slug: "abayas", is_active: true, display_order: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
 ]
@@ -85,105 +90,51 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        console.log("[v0] 🔍 Fetching products, categories, and sections from Supabase...")
-
         const { data: { session } } = await supabase.auth.getSession()
         setUser(session?.user ?? null)
 
         const [productsResponse, categoriesResponse, sectionsResponse] = await Promise.all([
-          supabase
-            .from("products")
-            .select(
-              `
-              id,
-              name_ar,
-              base_price,
-              is_featured,
-              created_at,
-              category:categories(name_ar),
-              product_images(image_url, display_order)
-            `,
-            )
-            .eq("is_active", true)
-            .order("created_at", { ascending: false }),
-          getActiveCategories(), // This now returns data directly
-          supabase
-            .from("homepage_sections")
-            .select("*")
-            .eq("is_active", true)
-            .order("display_order", { ascending: true }),
+          supabase.from("products").select(`id,name_ar,base_price,is_featured,created_at,category:categories(name_ar),product_images(image_url,display_order)`).eq("is_active", true).order("created_at", { ascending: false }),
+          getActiveCategories(),
+          supabase.from("homepage_sections").select("*").eq("is_active", true).order("display_order", { ascending: true }),
         ])
 
-        // Handle products response
         if (productsResponse.error) {
-          console.error("[v0] ❌ Error fetching products:", productsResponse.error)
-          // Use fallback products so UI remains populated during network issues
+          console.error("Error fetching products:", productsResponse.error)
           setProducts(FALLBACK_PRODUCTS)
         } else {
-          console.log("[v0] ✅ Products fetched:", productsResponse.data?.length)
           setProducts(productsResponse.data || FALLBACK_PRODUCTS)
         }
 
-        // Handle categories response
-        console.log("[v0] ✅ Categories fetched:", categoriesResponse.length)
         setCategories((categoriesResponse && categoriesResponse.length > 0) ? categoriesResponse : FALLBACK_CATEGORIES)
 
-        // Handle sections response
         if (sectionsResponse.error) {
-          console.error("[v0] ❌ Error fetching sections:", sectionsResponse.error)
-          // Use fallback sections when Supabase is unreachable
+          console.error("Error fetching sections:", sectionsResponse.error)
           setSections(FALLBACK_SECTIONS)
         } else {
-          console.log("[v0] ✅ Sections fetched:", sectionsResponse.data?.length)
           setSections(sectionsResponse.data || FALLBACK_SECTIONS)
         }
       } catch (err) {
-        console.error("[v0] ❌ Error:", err)
+        console.error("Error:", err)
       } finally {
         setLoading(false)
       }
     }
     fetchData()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null)
-      },
-    )
+    const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    });
 
-    console.log("[v0] 🔄 Setting up real-time subscription for homepage sections...")
+    const channel = supabase.channel("homepage_sections_changes").on("postgres_changes", { event: "*", schema: "public", table: "homepage_sections" }, async (payload) => {
+      const { data, error } = await supabase.from("homepage_sections").select("*").eq("is_active", true).order("display_order", { ascending: true })
+      if (!error && data) {
+        setSections(data)
+      }
+    }).subscribe()
 
-    const channel = supabase
-      .channel("homepage_sections_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "homepage_sections",
-        },
-        async (payload) => {
-          console.log("[v0] 🔔 Homepage sections changed:", payload)
-
-          // Refetch sections when any change occurs
-          const { data, error } = await supabase
-            .from("homepage_sections")
-            .select("*")
-            .eq("is_active", true)
-            .order("display_order", { ascending: true })
-
-          if (!error && data) {
-            console.log("[v0] ✅ Sections updated in real-time:", data.length)
-            setSections(data)
-          }
-        },
-      )
-      .subscribe()
-
-    // Cleanup subscription on unmount
     return () => {
-      authListener.subscription.unsubscribe()
-      console.log("[v0] 🔌 Cleaning up real-time subscription...")
+      authListener?.unsubscribe()
       supabase.removeChannel(channel)
     }
   }, [])
@@ -198,6 +149,8 @@ export default function HomePage() {
     const sortedImages = [...(product.product_images || [])].sort((a, b) => a.display_order - b.display_order)
     return sortedImages[0]?.image_url || "/placeholder.svg"
   }
+  
+  const bestsellerProduct = products.find(p => p.is_featured) || products[0];
 
   if (loading) {
     return (
@@ -212,7 +165,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between gap-4">
@@ -226,13 +178,7 @@ export default function HomePage() {
             <div className="hidden md:flex flex-1 max-w-3xl mx-8">
               <div className="relative w-full">
                 <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="ابحثي عن المنتجات..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-12 h-14 text-lg border-2 border-border focus:border-primary"
-                />
+                <Input type="text" placeholder="ابحثي عن المنتجات..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pr-12 h-14 text-lg border-2 border-border focus:border-primary" />
               </div>
             </div>
 
@@ -240,13 +186,7 @@ export default function HomePage() {
 
             <div className="flex items-center gap-3">
               {user ? (
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    await supabase.auth.signOut()
-                    window.location.reload()
-                  }}
-                >
+                <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
                   تسجيل الخروج
                 </Button>
               ) : (
@@ -256,11 +196,7 @@ export default function HomePage() {
               )}
               <MobileNavigation />
 
-              <Button
-                asChild
-                variant="default"
-                className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground relative shadow-md hover:shadow-lg transition-all"
-              >
+              <Button asChild variant="default" className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground relative shadow-md hover:shadow-lg transition-all">
                 <Link href="/cart">
                   <ShoppingBag className="h-5 w-5 ml-2" />
                   <span className="hidden sm:inline">السلة</span>
@@ -277,13 +213,7 @@ export default function HomePage() {
           <div className="md:hidden mt-4">
             <div className="relative w-full">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="ابحثي عن المنتجات..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10 border-2 border-border focus:border-primary"
-              />
+              <Input type="text" placeholder="ابحثي عن المنتجات..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pr-10 border-2 border-border focus:border-primary" />
             </div>
           </div>
         </div>
@@ -306,13 +236,7 @@ export default function HomePage() {
                     <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
                       <CardContent className="p-0">
                         <div className="relative aspect-[3/4] bg-muted">
-                          <Image
-                            src={getFirstImage(product) || "/placeholder.svg"}
-                            alt={product.name_ar}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          />
+                          <Image src={getFirstImage(product) || "/placeholder.svg"} alt={product.name_ar} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                         </div>
                         <div className="p-6 bg-white">
                           <h4 className="text-xl font-bold mb-2 text-foreground">{product.name_ar}</h4>
@@ -331,7 +255,13 @@ export default function HomePage() {
       {!searchQuery && (
         <>
           {sections.map((section) => (
-            <DynamicHomepageSection key={section.id} section={section} products={products} categories={categories} />
+            <AnimatedSection key={section.id}>
+              {section.section_type === 'best_sellers' ? (
+                <BestsellerSection product={bestsellerProduct} />
+              ) : (
+                <DynamicHomepageSection section={section} products={products} categories={categories} />
+              )}
+            </AnimatedSection>
           ))}
         </>
       )}
@@ -348,53 +278,24 @@ export default function HomePage() {
             <div>
               <h5 className="font-bold text-lg mb-4 text-foreground">روابط سريعة</h5>
               <ul className="space-y-2">
-                <li>
-                  <Link href="/category/abayas" className="text-muted-foreground hover:text-primary transition-colors">
-                    عبايات
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/category/cardigans"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    كارديجان
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/category/suits" className="text-muted-foreground hover:text-primary transition-colors">
-                    بدل
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/category/dresses" className="text-muted-foreground hover:text-primary transition-colors">
-                    فساتين
-                  </Link>
-                </li>
+                <li><Link href="/category/abayas" className="text-muted-foreground hover:text-primary transition-colors">عبايات</Link></li>
+                <li><Link href="/category/cardigans" className="text-muted-foreground hover:text-primary transition-colors">كارديجان</Link></li>
+                <li><Link href="/category/suits" className="text-muted-foreground hover:text-primary transition-colors">بدل</Link></li>
+                <li><Link href="/category/dresses" className="text-muted-foreground hover:text-primary transition-colors">فساتين</Link></li>
               </ul>
             </div>
             <div>
               <h5 className="font-bold text-lg mb-4 text-foreground">معلومات</h5>
               <ul className="space-y-2">
-                <li>
-                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                    من نحن
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/return-policy" className="text-muted-foreground hover:text-primary transition-colors">
-                    سياسة الإرجاع
-                  </Link>
-                </li>
+                <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">من نحن</Link></li>
+                <li><Link href="/return-policy" className="text-muted-foreground hover:text-primary transition-colors">سياسة الإرجاع</Link></li>
               </ul>
             </div>
             <div>
               <h5 className="font-bold text-lg mb-4 text-foreground">تواصل معنا</h5>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                للاستفسارات والطلبات الخاصة
-                <br />
-                واتساب: 01234567890
-                <br />
+                للاستفسارات والطلبات الخاصة<br />
+                واتساب: 01234567890<br />
                 البريد: info@mecca-fashion.com
               </p>
               <Link href="/contact">

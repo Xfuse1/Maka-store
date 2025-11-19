@@ -5,28 +5,28 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
-import { getAllHomepageSections, type HomepageSection } from "@/lib/supabase/homepage"
+import { getAllHeroSlides, type HeroSlide } from "@/lib/supabase/homepage"
+import { motion, AnimatePresence } from "framer-motion"
 
 export function HeroSlider() {
-  const [slides, setSlides] = useState<HomepageSection[]>([])
+  const [slides, setSlides] = useState<HeroSlide[]>([])
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchHeroSections() {
+    async function fetchHeroSlides() {
       try {
-        const sections = await getAllHomepageSections()
-        const heroSections = sections.filter((s) => s.section_type === "hero")
-        setSlides(heroSections)
+        const heroSlides = await getAllHeroSlides()
+        setSlides(heroSlides)
       } catch (error) {
-        console.error("[v0] Error fetching hero sections:", error)
+        console.error("[v0] Error fetching hero slides:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchHeroSections()
+    fetchHeroSlides()
   }, [])
 
   useEffect(() => {
@@ -57,61 +57,93 @@ export function HeroSlider() {
     setTimeout(() => setIsAutoPlaying(true), 10000)
   }
 
-  if (loading || slides.length === 0) {
+  if (loading) {
+    return (
+      <div className="relative w-full h-[600px] md:h-[700px] overflow-hidden bg-gray-200 animate-pulse" />
+    )
+  }
+  
+  if (slides.length === 0) {
     return null
   }
+
+  const contentVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
 
   return (
     <div className="relative w-full h-[600px] md:h-[700px] overflow-hidden bg-primary">
       {/* Slides */}
-      {slides.map((slide, index) => (
-        <div
-          key={slide.id}
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            index === currentSlide ? "opacity-100" : "opacity-0"
-          }`}
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={currentSlide}
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.0 }}
         >
           <div className="relative w-full h-full">
             <Image
-              src={slide.image_url || "/placeholder.svg"}
-              alt={slide.title_ar || ""}
+              src={slides[currentSlide].image_url || "/placeholder.svg"}
+              alt={slides[currentSlide].title_ar || "شريحة عرض"}
               fill
               className="object-cover"
-              priority={index === 0 && !!slide.image_url}
+              priority={currentSlide === 0 && !!slides[currentSlide].image_url}
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-black/20" />
           </div>
+        </motion.div>
+      </AnimatePresence>
 
-          {/* Content */}
-          <div className="absolute inset-0 flex items-center">
-            <div className="container mx-auto px-4">
-              <div className="max-w-2xl text-white">
-                <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in">{slide.title_ar}</h2>
-                {slide.subtitle_ar && (
-                  <p className="text-xl md:text-2xl mb-4 leading-relaxed animate-fade-in-delay-1">
-                    {slide.subtitle_ar}
-                  </p>
-                )}
-                {slide.description_ar && (
-                  <p className="text-lg md:text-xl mb-8 leading-relaxed animate-fade-in-delay-2">
-                    {slide.description_ar}
-                  </p>
-                )}
-                {slide.button_text_ar && slide.button_link && (
+      {/* Content */}
+      <div className="absolute inset-0 flex items-center">
+        <div className="container mx-auto px-4">
+          <AnimatePresence>
+            <motion.div
+              key={currentSlide}
+              className="max-w-2xl text-white"
+              variants={contentVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.h2 variants={itemVariants} className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                {slides[currentSlide].title_ar}
+              </motion.h2>
+              {slides[currentSlide].subtitle_ar && (
+                <motion.p variants={itemVariants} className="text-xl md:text-2xl mb-4 leading-relaxed">
+                  {slides[currentSlide].subtitle_ar}
+                </motion.p>
+              )}
+              {slides[currentSlide].link_url && (
+                <motion.div variants={itemVariants}>
                   <Button
                     asChild
                     size="lg"
-                    className="bg-white hover:bg-white/90 text-primary text-lg px-8 py-6 animate-fade-in-delay-3"
+                    className="bg-white hover:bg-white/90 text-primary text-lg px-8 py-6"
                   >
-                    <Link href={slide.button_link}>{slide.button_text_ar}</Link>
+                    <Link href={slides[currentSlide].link_url}>تسوق الآن</Link>
                   </Button>
-                )}
-              </div>
-            </div>
-          </div>
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
-      ))}
+      </div>
+
 
       {/* Navigation Arrows */}
       {slides.length > 1 && (
