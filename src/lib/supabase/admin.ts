@@ -6,7 +6,15 @@ export function getSupabaseAdminClient() {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Missing Supabase environment variables for admin client")
+    console.warn("Missing Supabase environment variables for admin client")
+    // Return a dummy client that will fail at runtime if actually used
+    // This allows the build to complete
+    return createClient<Database>("https://placeholder.supabase.co", "placeholder-key", {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
   }
 
   return createClient<Database>(supabaseUrl, supabaseServiceKey, {
