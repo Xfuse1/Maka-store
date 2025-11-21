@@ -8,8 +8,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log("[v0] Creating variant with data:", body)
 
-    const { data, error } = await supabase
-      .from("product_variants")
+    const { data, error } = await (supabase
+      .from("product_variants") as any)
       .insert([
         {
           product_id: body.product_id,

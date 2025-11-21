@@ -13,7 +13,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const supabase = createAdminClient()
   const body = await request.json()
-  const { data, error } = await supabase.from("categories").insert([body]).select().single()
+  const { data, error } = await (supabase.from("categories") as any).insert([body]).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ data }, { status: 201 })
 }

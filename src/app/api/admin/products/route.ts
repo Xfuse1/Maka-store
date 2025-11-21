@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log("[v0] Creating product with data:", body)
 
-    const { data, error } = await supabase
-      .from("products")
+    const { data, error } = await (supabase
+      .from("products") as any)
       .insert([
         {
           name_ar: body.name_ar,

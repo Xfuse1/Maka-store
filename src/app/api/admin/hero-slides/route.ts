@@ -43,8 +43,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data, error } = await supabase
-      .from("hero_slides")
+    const { data, error } = await (supabase
+      .from("hero_slides") as any)
       .insert([body])
       .select()
       .single()
