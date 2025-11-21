@@ -24,11 +24,12 @@ nextConfig.headers = async () => {
           key: 'Content-Security-Policy',
           // Allow Next.js dev server inline scripts and eval for HMR/Fast Refresh.
           // In production, consider tightening this further or using nonces.
+          // Added minimal origins required for Meta Pixel (connect.facebook.net and www.facebook.com)
           value:
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-            "connect-src 'self' https://bbzjxcjfmeoiojjnfvfa.supabase.co wss://bbzjxcjfmeoiojjnfvfa.supabase.co http://localhost:* ws://localhost:*; " +
-            "img-src 'self' data: blob: https:; " +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net; " +
+            "connect-src 'self' https://bbzjxcjfmeoiojjnfvfa.supabase.co wss://bbzjxcjfmeoiojjnfvfa.supabase.co http://localhost:* ws://localhost:* https://connect.facebook.net https://www.facebook.com; " +
+            "img-src 'self' data: blob: https: https://www.facebook.com; " +
             "style-src 'self' 'unsafe-inline'; " +
             "font-src 'self' data:;",
         },

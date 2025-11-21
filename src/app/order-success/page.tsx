@@ -1,5 +1,7 @@
 // app/order-success/page.tsx
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
+import { PurchaseTracker } from "./order-purchase-tracker"
 
 // Server Component (يدعم القراءة المباشرة من searchParams)
 export default async function OrderSuccessPage({
@@ -19,8 +21,48 @@ export default async function OrderSuccessPage({
 
   const orderNumber = Array.isArray(raw) ? raw[0] : raw
 
+  let orderDetails = null
+  let user = null
+
+  if (orderNumber) {
+    const supabase = await createClient()
+    
+    // Fetch order details
+    const { data: orderData } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderNumber)
+      .single()
+      
+    const order = orderData as any
+
+    if (order) {
+      // Fetch user if available
+      const { data: userData } = await supabase.auth.getUser()
+      user = userData.user
+
+      // Map items to the format expected by PurchaseTracker
+      const items = Array.isArray(order.items) 
+        ? order.items.map((item: any) => ({
+            id: item.product?.id || item.id || "unknown",
+            name: item.product?.name_ar || item.name || "Product",
+            price: item.price || item.product?.price || 0,
+            quantity: item.quantity || 1
+          }))
+        : []
+
+      orderDetails = {
+        orderId: order.id,
+        totalValue: order.total_price,
+        items: items,
+        userName: user?.email || "guest"
+      }
+    }
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-background px-4">
+      {orderDetails && <PurchaseTracker {...orderDetails} />}
       <div className="max-w-xl w-full rounded-2xl border border-border bg-background p-8 text-center shadow-sm">
         <h1 className="text-3xl font-bold mb-2">تم إرسال طلبك بنجاح 🎉</h1>
         <p className="text-muted-foreground mb-6">

@@ -49,7 +49,7 @@ export async function getAllSections() {
 export async function createSection(section: Partial<HomepageSection>) {
   try {
     const supabase = createAdminClient()
-    const { data, error } = await supabase.from("homepage_sections").insert([section]).select().single()
+    const { data, error } = await (supabase.from("homepage_sections") as any).insert([section]).select().single()
     if (error) throw error
     revalidatePath("/")
     revalidatePath("/admin/homepage-sections")
@@ -62,7 +62,7 @@ export async function createSection(section: Partial<HomepageSection>) {
 export async function updateSection(id: string, updates: Partial<HomepageSection>) {
   try {
     const supabase = createAdminClient()
-    const { data, error } = await supabase.from("homepage_sections").update(updates).eq("id", id).select().single()
+    const { data, error } = await (supabase.from("homepage_sections") as any).update(updates).eq("id", id).select().single()
     if (error) throw error
     revalidatePath("/")
     revalidatePath("/admin/homepage-sections")
@@ -88,8 +88,8 @@ export async function deleteSection(id: string) {
 export async function toggleSectionVisibility(id: string, isActive: boolean) {
   try {
     const supabase = createAdminClient()
-    const { data, error } = await supabase
-      .from("homepage_sections")
+    const { data, error } = await (supabase
+      .from("homepage_sections") as any)
       .update({ is_active: isActive })
       .eq("id", id)
       .select()
@@ -107,7 +107,7 @@ export async function reorderSections(sectionIds: string[]) {
   try {
     const supabase = createAdminClient()
     const updates = sectionIds.map((id, index) =>
-      supabase.from("homepage_sections").update({ display_order: index }).eq("id", id),
+      (supabase.from("homepage_sections") as any).update({ display_order: index }).eq("id", id),
     )
     await Promise.all(updates)
     revalidatePath("/")

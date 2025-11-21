@@ -8,6 +8,7 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { SiteLogo } from "@/components/site-logo"
 
 export default function CartPage() {
   const router = useRouter()
@@ -67,13 +68,13 @@ export default function CartPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <Image src="/logo-option-4.jpg" alt="مكة" width={80} height={80} priority />
+              <SiteLogo width={80} height={80} />
               <h1 className="text-2xl font-bold text-primary">مكة</h1>
             </Link>
             <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
               <Link href="/">
                 <ArrowRight className="h-4 w-4 ml-2" />
-                متابعة التسوق
+                العودة للتسوق
               </Link>
             </Button>
           </div>

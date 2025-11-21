@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { SiteLogo } from "@/components/site-logo"
 import { useRouter } from "next/navigation"
 // غيّر المسار حسب مكان الملف الفعلي:
 import { useCartStore } from "@/lib/cart-store"
@@ -27,12 +28,31 @@ export default function OrderStatusPage() {
   const router = useRouter()
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getOrderById(params.id as string)
-      .then(setOrder)
+    const orderId = params.id as string
+    
+    // Redirect to orders list if no ID provided
+    if (!orderId || orderId === 'undefined' || orderId === 'null') {
+      router.replace('/orders')
+      return
+    }
+
+    getOrderById(orderId)
+      .then((data) => {
+        if (!data) {
+          setError('رقم الطلب غير صالح')
+        } else {
+          setOrder(data)
+        }
+      })
+      .catch((err) => {
+        console.error('Error loading order:', err)
+        setError(err.message || 'حدث خطأ في تحميل الطلب')
+      })
       .finally(() => setLoading(false))
-  }, [params.id])
+  }, [params.id, router])
 
   const clearCart = useCartStore((state: any) => state.clearCart)
   const removeItem = useCartStore((state: any) => state.removeItem)
@@ -45,8 +65,25 @@ export default function OrderStatusPage() {
     router.push("/checkout")
   }
 
-  if (loading) return <div>جاري التحميل...</div>
-  if (!order) return <div>الطلب غير موجود</div>
+  if (loading) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-muted-foreground">جاري التحميل...</p>
+      </div>
+    </div>
+  )
+  
+  if (error || !order) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-xl text-foreground mb-4">{error || 'الطلب غير موجود'}</p>
+        <Button asChild>
+          <Link href="/">العودة للرئيسية</Link>
+        </Button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,7 +91,7 @@ export default function OrderStatusPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <Image src="/logo-option-4.jpg" alt="مكة" width={80} height={80} priority />
+              <SiteLogo width={80} height={80} />
               <h1 className="text-2xl font-bold text-primary">مكة</h1>
             </Link>
             <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">

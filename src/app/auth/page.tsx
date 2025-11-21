@@ -38,6 +38,12 @@ export default function AuthPage() {
               setServerMessage('الرجاء إدخال البريد الإلكتروني وكلمة المرور')
               return
             }
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            if (!emailRegex.test(email)) {
+              setServerMessage('الرجاء إدخال بريد إلكتروني صحيح')
+              return
+            }
             try {
               const supabase = getSupabaseBrowserClient()
               const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -69,6 +75,14 @@ export default function AuthPage() {
             <div className="space-y-2">
               <Label htmlFor="login-password">كلمة المرور</Label>
               <Input id="login-password" name="password" type="password" required />
+              <div className="text-sm text-left mt-2">
+                <a
+                  href="/auth/forgot-password"
+                  className="text-primary hover:underline"
+                >
+                  نسيت كلمة المرور؟
+                </a>
+              </div>
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
               تسجيل الدخول
@@ -93,6 +107,12 @@ export default function AuthPage() {
             const password = String(fd.get('password') || '').trim()
             if (!email || !password) {
               setServerMessage('Please enter both email and password to sign up')
+              return
+            }
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            if (!emailRegex.test(email)) {
+              setServerMessage('الرجاء إدخال بريد إلكتروني صحيح')
               return
             }
             try {

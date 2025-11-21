@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Loader2, Eye } from "lucide-react"
+import { Plus, Edit, Trash2, Loader2, Eye, Upload, X } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
@@ -19,6 +19,7 @@ import {
   updateHeroSlideAction,
   deleteHeroSlideAction,
 } from "./actions"
+import { uploadHeroSlideImage } from "./upload-actions"
 
 type SlideForm = Omit<HeroSlide, "id" | "created_at" | "updated_at">
 
@@ -28,6 +29,8 @@ export default function AdminHeroSlidesPage() {
   const [showDialog, setShowDialog] = useState(false)
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string>("")
   const { toast } = useToast()
 
   const [formData, setFormData] = useState<SlideForm>({
@@ -78,6 +81,7 @@ export default function AdminHeroSlidesPage() {
       is_active: true,
     })
     setEditingSlide(null)
+    setImagePreview("")
   }
 
   const handleEdit = (slide: HeroSlide) => {
@@ -92,7 +96,47 @@ export default function AdminHeroSlidesPage() {
       display_order: slide.display_order,
       is_active: slide.is_active,
     })
+    setImagePreview(slide.image_url || "")
     setShowDialog(true)
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploading(true)
+
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const result = await uploadHeroSlideImage(formData)
+
+      if (result.success && result.url) {
+        setFormData((prev) => ({ ...prev, image_url: result.url }))
+        setImagePreview(result.url)
+        toast({
+          title: "تم الرفع",
+          description: "تم رفع الصورة بنجاح",
+        })
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error: any) {
+      console.error("Error uploading image:", error)
+      toast({
+        title: "خطأ",
+        description: error?.message || "فشل رفع الصورة",
+        variant: "destructive",
+      })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removeImage = () => {
+    setFormData((prev) => ({ ...prev, image_url: "" }))
+    setImagePreview("")
   }
 
   const handleSave = async (e: React.FormEvent) => {
@@ -304,7 +348,7 @@ export default function AdminHeroSlidesPage() {
                 <Label htmlFor="title_en">العنوان (إنجليزي)</Label>
                 <Input
                   id="title_en"
-                  value={formData.title_en}
+                  value={formData.title_en || ""}
                   onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
                 />
               </div>
@@ -315,7 +359,7 @@ export default function AdminHeroSlidesPage() {
                 <Label htmlFor="subtitle_ar">العنوان الفرعي (عربي)</Label>
                 <Input
                   id="subtitle_ar"
-                  value={formData.subtitle_ar}
+                  value={formData.subtitle_ar || ""}
                   onChange={(e) => setFormData({ ...formData, subtitle_ar: e.target.value })}
                 />
               </div>
@@ -323,26 +367,93 @@ export default function AdminHeroSlidesPage() {
                 <Label htmlFor="subtitle_en">العنوان الفرعي (إنجليزي)</Label>
                 <Input
                   id="subtitle_en"
-                  value={formData.subtitle_en}
+                  value={formData.subtitle_en || ""}
                   onChange={(e) => setFormData({ ...formData, subtitle_en: e.target.value })}
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="image_url">رابط الصورة *</Label>
-              <Input
-                id="image_url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                required
-              />
+              <Label>صورة الشريحة *</Label>
+              <div className="mt-2 space-y-4">
+                {/* Image upload button */}
+                <div className="flex items-center gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={uploading}
+                    onClick={() => document.getElementById("image-upload")?.click()}
+                    className="gap-2"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        جاري الرفع...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4" />
+                        رفع صورة من الجهاز
+                      </>
+                    )}
+                  </Button>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                  {imagePreview && (
+                    <span className="text-sm text-muted-foreground">صورة محملة</span>
+                  )}
+                </div>
+
+                {/* Image preview */}
+                {imagePreview && (
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted border-2 border-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={removeImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Manual URL input (optional) */}
+                <div>
+                  <Label htmlFor="image_url" className="text-sm text-muted-foreground">
+                    أو أدخل رابط الصورة يدوياً
+                  </Label>
+                  <Input
+                    id="image_url"
+                    value={formData.image_url}
+                    onChange={(e) => {
+                      setFormData({ ...formData, image_url: e.target.value })
+                      setImagePreview(e.target.value)
+                    }}
+                    placeholder="https://example.com/image.jpg"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
             </div>
+
             <div>
               <Label htmlFor="link_url">رابط الانتقال</Label>
               <Input
                 id="link_url"
-                value={formData.link_url}
+                value={formData.link_url||''}
                 onChange={(e) => setFormData({ ...formData, link_url: e.target.value })}
                 placeholder="/products"
               />

@@ -247,6 +247,7 @@ export interface Database {
       orders: {
         Row: {
           id: string
+          user_id: string | null
           order_number: string
           customer_id: string | null
           customer_email: string
@@ -283,6 +284,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          user_id?: string | null
           order_number: string
           customer_id?: string | null
           customer_email: string
@@ -319,6 +321,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          user_id?: string | null
           order_number?: string
           customer_id?: string | null
           customer_email?: string
@@ -469,6 +472,106 @@ export interface Database {
           is_published?: boolean
           created_at?: string
           updated_at?: string
+        }
+      }
+      hero_slides: {
+        Row: {
+          id: string
+          title_ar: string
+          title_en: string | null
+          subtitle_ar: string | null
+          subtitle_en: string | null
+          image_url: string
+          link_url: string | null
+          display_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title_ar: string
+          title_en?: string | null
+          subtitle_ar?: string | null
+          subtitle_en?: string | null
+          image_url: string
+          link_url?: string | null
+          display_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title_ar?: string
+          title_en?: string | null
+          subtitle_ar?: string | null
+          subtitle_en?: string | null
+          image_url?: string
+          link_url?: string | null
+          display_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      analytics_events: {
+        Row: {
+          id: string
+          user_id: string | null
+          user_name: string | null
+          event_name: string
+          page_url: string | null
+          referrer: string | null
+          session_id: string | null
+          product_id: string | null
+          product_name: string | null
+          product_price: number | null
+          product_currency: string | null
+          order_id: string | null
+          order_total: number | null
+          order_currency: string | null
+          meta_event_id: string | null
+          raw_payload: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          user_name?: string | null
+          event_name: string
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          product_price?: number | null
+          product_currency?: string | null
+          order_id?: string | null
+          order_total?: number | null
+          order_currency?: string | null
+          meta_event_id?: string | null
+          raw_payload?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          user_name?: string | null
+          event_name?: string
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          product_price?: number | null
+          product_currency?: string | null
+          order_id?: string | null
+          order_total?: number | null
+          order_currency?: string | null
+          meta_event_id?: string | null
+          raw_payload?: Json | null
+          created_at?: string
         }
       }
     }

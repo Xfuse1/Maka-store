@@ -7,6 +7,7 @@ import {  TrendingUp, Sparkles } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { CustomerReviews } from "@/components/customer-reviews"
+import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 
 interface Product {
   id: string
@@ -184,7 +185,23 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {sectionProducts.map((product) => (
-            <Link key={product.id} href={`/product/${product.id}`} className="group">
+            <Link
+              key={product.id}
+              href={`/product/${product.id}`}
+              className="group"
+              onClick={() => {
+                const userMeta = buildUserMeta()
+                trackMetaEvent("ViewContent", {
+                  ...userMeta,
+                  content_ids: [product.id],
+                  content_name: product.name_ar,
+                  content_type: "product",
+                  content_category: product.category?.[0]?.name_ar ?? null,
+                  value: product.base_price,
+                  currency: "EGP",
+                })
+              }}
+            >
               <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
                 <CardContent className="p-0">
                   <div className="relative aspect-[3/4] bg-muted">

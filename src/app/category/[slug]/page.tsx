@@ -13,6 +13,7 @@ import { MobileNavigation } from "@/components/mobile-navigation"
 import { Input } from "@/components/ui/input"
 import { useParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 
 export default function CategoryPage() {
   const params = useParams()
@@ -153,6 +154,25 @@ export default function CategoryPage() {
 
   const categoryName = categoryData?.name_ar || "المنتجات"
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!searchQuery.trim()) return
+
+    const userMeta = buildUserMeta() // Guest
+    trackMetaEvent("Search", {
+      ...userMeta,
+      search_string: searchQuery,
+      search_source: "category_page",
+      results_count: filteredProducts.length,
+      contents: filteredProducts.slice(0, 5).map((product) => ({
+        id: product.id,
+        item_name: product.name_ar || product.name_en,
+        item_price: product.base_price,
+        category: categoryName,
+      })),
+    })
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -257,7 +277,7 @@ export default function CategoryPage() {
             </Link>
 
             <div className="hidden md:flex flex-1 max-w-3xl mx-8">
-              <div className="relative w-full">
+              <form onSubmit={handleSearchSubmit} className="relative w-full">
                 <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
                 <Input
                   type="text"
@@ -266,7 +286,7 @@ export default function CategoryPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pr-12 h-14 text-lg border-2 border-border focus:border-primary"
                 />
-              </div>
+              </form>
             </div>
 
             <MainNavigation />
@@ -292,7 +312,7 @@ export default function CategoryPage() {
           </div>
 
           <div className="md:hidden mt-4">
-            <div className="relative w-full">
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
@@ -301,7 +321,7 @@ export default function CategoryPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pr-10 border-2 border-border focus:border-primary"
               />
-            </div>
+            </form>
           </div>
         </div>
       </header>
@@ -325,7 +345,22 @@ export default function CategoryPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {filteredProducts.map((product) => (
-                <Link key={product.id} href={`/product/${product.id}`} className="group">
+                <Link
+                  key={product.id}
+                  href={`/product/${product.id}`}
+                  className="group"
+                  onClick={() => {
+                    trackMetaEvent("ViewContent", {
+                      content_ids: [product.id],
+                      content_name: product.name_ar || product.name_en,
+                      content_type: "product",
+                      content_category: categoryName,
+                      value: product.base_price,
+                      currency: "EGP",
+                      userName: "guest",
+                    })
+                  }}
+                >
                   <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
                     <CardContent className="p-0">
                       <div className="relative aspect-[3/4] bg-muted">

@@ -28,7 +28,7 @@ INSERT INTO hero_slides (
   'مرحباً بكِ في مكة',
   'Welcome to Mecca',
   'أزياء نسائية راقية',
-  'Elegant Women\'s Fashion',
+  'Elegant Women''s Fashion',
   'https://source.unsplash.com/random/1920x700?fashion,style',
   '/category/abayas',
   1,

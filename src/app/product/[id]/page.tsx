@@ -24,6 +24,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { ProductViewTracker } from "./product-view-tracker"
+import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 
 interface ProductImage {
   id: string
@@ -153,6 +155,16 @@ export default function ProductDetailPage() {
   }
 
   const selectedVariant = product.product_variants[selectedVariantIndex]
+
+  // Prepare data for pixel tracking
+  const pixelData = {
+    productId: product.id,
+    productName: product.name_ar,
+    productPrice: product.base_price, // Using base price for initial view, or could use selectedVariant.price
+    productCategory: product.category?.name_ar,
+    currency: "EGP",
+    userName: "guest", // Replace with actual user data if available
+  }
   const sortedImages = [...product.product_images].sort((a, b) => a.display_order - b.display_order)
 
   // Get unique colors and sizes
@@ -200,6 +212,25 @@ export default function ProductDetailPage() {
         selectedVariant.size,
         quantity
       )
+
+      // Track AddToCart event
+      const userMeta = buildUserMeta() // No user object available in this scope yet
+      
+      trackMetaEvent("AddToCart", {
+        ...userMeta,
+        content_ids: [product.id],
+        content_name: product.name_ar,
+        content_type: "product",
+        value: selectedVariant.price,
+        currency: "EGP",
+        quantity: quantity ?? 1,
+        productId: product.id,
+        productName: product.name_ar,
+        productPrice: selectedVariant.price,
+        productCategory: product.category?.name_ar,
+        size: selectedVariant.size,
+        color: selectedVariant.color,
+      })
 
       setShowSuccess(true)
       setTimeout(() => {
@@ -253,6 +284,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ProductViewTracker {...pixelData} />
       {showSuccess && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] animate-in slide-in-from-top">
           <Card className="bg-green-50 border-2 border-green-500 shadow-lg">

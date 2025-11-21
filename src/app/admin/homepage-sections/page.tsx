@@ -135,10 +135,10 @@ export default function HomepageSectionsPage() {
     setError(null)
     try {
       const result = await getAllSections()
-      if (result.success && result.data) {
+      if (result.success && 'data' in result) {
         setSections(result.data)
         await calculateProductCounts(result.data)
-      } else {
+      } else if ('error' in result) {
         setError(result.error || "An unknown error occurred.")
       }
     } catch (e: any) {

@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from "./client"
+import { getSupabaseAdminClient } from "./admin"
 
 export type Order = {
   id: string
@@ -15,6 +16,10 @@ export type Order = {
   billing_address: string
   payment_method: string
   payment_status: string
+  // Added fields based on actual schema usage
+  order_number?: string
+  total?: number
+  customer_email?: string
 }
 
 export async function createOrder(orderData: Partial<Order>) {
@@ -57,6 +62,12 @@ export async function updateOrderStatus(id: string, status: string) {
 }
 
 export async function getOrderById(id: string) {
+  // Validate UUID format to prevent "invalid input syntax for type uuid" errors
+  if (!id || id === 'undefined' || id === 'null') {
+    console.warn('[getOrderById] Invalid order ID provided:', id)
+    return null
+  }
+
   const supabase = getSupabaseBrowserClient()
   const { data, error } = await supabase.from("orders").select("*").eq("id", id).single()
   if (error) {
@@ -65,4 +76,67 @@ export async function getOrderById(id: string) {
     throw new Error(msg)
   }
   return data as Order
+}
+
+export async function getOrdersByEmail(email: string) {
+  const supabase = getSupabaseBrowserClient()
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("customer_email", email)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    throw error
+  }
+  return data as Order[]
+}
+
+export interface OrderSummary {
+  id: string
+  orderNumber: string
+  status: string
+  total: number
+  currency: string
+  createdAt: string
+  itemsCount: number | null
+}
+
+export async function getOrdersForUserId(userId: string): Promise<OrderSummary[]> {
+  const supabase = getSupabaseAdminClient() as any
+
+  // Select orders for this user
+  const { data: orders, error } = await supabase
+    .from("orders")
+    .select("id, order_number, status, total, currency, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+
+  if (!orders?.length) return []
+
+  // Optionally load items count from order_items
+  const orderIds = orders.map((o: any) => o.id)
+  const { data: items, error: itemsError } = await supabase
+    .from("order_items")
+    .select("order_id, quantity")
+    .in("order_id", orderIds)
+
+  if (itemsError) throw itemsError
+
+  const counts = new Map<string, number>()
+  items?.forEach((item: any) => {
+    counts.set(item.order_id, (counts.get(item.order_id) ?? 0) + (item.quantity ?? 0))
+  })
+
+  return orders.map((o: any) => ({
+    id: o.id,
+    orderNumber: o.order_number,
+    status: o.status,
+    total: o.total,
+    currency: o.currency ?? "EGP",
+    createdAt: o.created_at,
+    itemsCount: counts.get(o.id) ?? null,
+  }))
 }

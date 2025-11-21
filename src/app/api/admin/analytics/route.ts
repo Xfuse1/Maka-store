@@ -1,54 +1,88 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams
+    const fromParam = searchParams.get("from")
+    const toParam = searchParams.get("to")
+
+    const to = toParam ? new Date(toParam) : new Date()
+    const from = fromParam ? new Date(fromParam) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
+    // Calculate previous period
+    const duration = to.getTime() - from.getTime()
+    const prevTo = new Date(from.getTime())
+    const prevFrom = new Date(from.getTime() - duration)
+
     const supabase = getSupabaseAdminClient()
 
-    // total revenue (sum of total) and counts
-    const [{ data: ordersData, error: ordersError }, { data: productsData, error: productsError }] = await Promise.all([
-    supabase.from("orders").select("total"),
-    supabase.from("products").select("id, name_ar, base_price")
-    ])
+    // Fetch Current Period Orders
+    const { data: currentOrders, error: currentError } = await supabase
+      .from("orders")
+      .select("total, created_at")
+      .gte("created_at", from.toISOString())
+      .lte("created_at", to.toISOString())
 
-    if (ordersError || productsError) {
-      return NextResponse.json({ error: ordersError?.message || productsError?.message }, { status: 500 })
+    // Fetch Previous Period Orders
+    const { data: prevOrders, error: prevError } = await supabase
+      .from("orders")
+      .select("total")
+      .gte("created_at", prevFrom.toISOString())
+      .lte("created_at", prevTo.toISOString())
+
+    // Fetch Total Products & Customers (Total counts, not time-bound for now, or maybe time-bound for growth?)
+    // Instructions say: "products: { total: number }"
+    const { count: totalProducts } = await supabase.from("products").select("*", { count: "exact", head: true })
+    const { count: totalCustomers } = await supabase.from("customers").select("*", { count: "exact", head: true })
+
+    if (currentError || prevError) {
+      return NextResponse.json({ error: currentError?.message || prevError?.message }, { status: 500 })
     }
 
-    const totalRevenue = (ordersData || []).reduce((s: number, o: any) => s + (Number(o.total) || 0), 0)
-    const totalOrders = (ordersData || []).length
-    const totalProducts = (productsData || []).length
+    // Calculate Stats
+    const currentRevenue = (currentOrders as any[] || []).reduce((sum, o) => sum + (Number(o.total) || 0), 0)
+    const prevRevenue = (prevOrders as any[] || []).reduce((sum, o) => sum + (Number(o.total) || 0), 0)
+    const revenueChange = prevRevenue === 0 ? (currentRevenue > 0 ? 100 : 0) : ((currentRevenue - prevRevenue) / prevRevenue) * 100
 
-    // fetch raw order_items and aggregate in JS to avoid PostgREST aggregation/group issues
-    const { data: orderItems, error: orderItemsError } = await supabase
-      .from("order_items")
-      .select("product_id, product_name_ar, product_name_en, quantity, total_price")
+    const currentOrdersCount = (currentOrders || []).length
+    const prevOrdersCount = (prevOrders || []).length
+    const ordersChange = prevOrdersCount === 0 ? (currentOrdersCount > 0 ? 100 : 0) : ((currentOrdersCount - prevOrdersCount) / prevOrdersCount) * 100
 
-    let topProducts: Array<{ name: string; sales: number; revenue: number }> = []
-    if (!orderItemsError && Array.isArray(orderItems)) {
-      const map: Record<string, { name: string; sales: number; revenue: number }> = {}
-      for (const it of orderItems as any[]) {
-        const id = it.product_id || "unknown"
-        const name = it.product_name_ar || it.product_name_en || id
-        const qty = Number(it.quantity) || 0
-        const rev = Number(it.total_price) || 0
-        if (!map[id]) map[id] = { name, sales: 0, revenue: 0 }
-        map[id].sales += qty
-        map[id].revenue += rev
+    // Daily Breakdown
+    const dailyRevenueMap: Record<string, number> = {}
+    ;(currentOrders as any[])?.forEach(o => {
+      const day = new Date(o.created_at).toISOString().split("T")[0]
+      dailyRevenueMap[day] = (dailyRevenueMap[day] || 0) + (Number(o.total) || 0)
+    })
+
+    const dailyRevenue = Object.entries(dailyRevenueMap).map(([date, total]) => ({
+      date,
+      total,
+    })).sort((a, b) => a.date.localeCompare(b.date))
+
+    const response = {
+      revenue: {
+        total: currentRevenue,
+        previousTotal: prevRevenue,
+        changePercent: revenueChange,
+        daily: dailyRevenue
+      },
+      orders: {
+        total: currentOrdersCount,
+        previousTotal: prevOrdersCount,
+        changePercent: ordersChange
+      },
+      customers: {
+        total: totalCustomers || 0
+      },
+      products: {
+        total: totalProducts || 0
       }
-      topProducts = Object.values(map).sort((a, b) => b.sales - a.sales).slice(0, 5)
     }
 
-    const stats = {
-      revenue: { current: totalRevenue, previous: 0, change: 0 },
-      orders: { current: totalOrders, previous: 0, change: 0 },
-      customers: { current: 0, previous: 0, change: 0 },
-      products: { current: totalProducts, previous: 0, change: 0 },
-    }
-
-    return NextResponse.json({ stats, topProducts })
+    return NextResponse.json(response)
   } catch (err: any) {
-    // return helpful error info during development
-    return NextResponse.json({ error: err?.message || String(err), stack: err?.stack }, { status: 500 })
+    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 })
   }
 }

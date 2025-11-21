@@ -4,6 +4,7 @@
 
 import { NextResponse, type NextRequest } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic" // تأكد أنه سيرفر-سايد دائمًا
 const isDev = process.env.NODE_ENV !== "production"
@@ -87,7 +88,17 @@ export async function GET() {
 
 // ===== Handler =====
 export async function POST(req: NextRequest) {
-  const supabase = createAdminClient()
+  const supabase = createAdminClient() as any
+
+  // Get logged in user if any
+  let userId = null
+  try {
+    const supabaseUser = await createClient()
+    const { data: { user } } = await supabaseUser.auth.getUser()
+    if (user) userId = user.id
+  } catch (e) {
+    console.warn("Error checking auth user:", e)
+  }
 
   try {
     const contentType = req.headers.get("content-type") || ""
@@ -166,6 +177,7 @@ export async function POST(req: NextRequest) {
     const { data: order, error: orderErr } = await supabase
       .from("orders")
       .insert({
+        user_id: userId,
         order_number: orderNumber,
         customer_id: customerRow?.id ?? null,
         customer_email: customerEmail,

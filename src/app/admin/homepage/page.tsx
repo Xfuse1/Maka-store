@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
-import type { HomepageSection } from "@/lib/supabase/homepage"
+import type { HomepageSection } from "../homepage-sections/actions"
 import {
   getHomepageSectionsAction,
   createHomepageSectionAction,
@@ -39,9 +39,9 @@ export default function AdminHomepagePage() {
     background_color: "",
     show_title: true,
     show_description: true,
-    product_ids: null,
-    category_ids: null,
-    custom_content: null,
+    product_ids: [],
+    category_ids: [],
+    custom_content: {},
     max_items: 8,
     display_order: 0,
     is_active: true,
@@ -58,7 +58,14 @@ export default function AdminHomepagePage() {
       if (result.success && result.data) {
         setSections(result.data)
       } else {
-        throw new Error(result.error)
+        // Defensive: avoid throwing an Error object (may be undefined) — log and show toast instead
+        console.error('[v0] getHomepageSectionsAction failed', result)
+        toast({
+          title: 'خطأ',
+          description: result?.error || 'فشل تحميل أقسام الصفحة الرئيسية',
+          variant: 'destructive',
+        })
+        setSections([])
       }
     } catch (error) {
       console.error("[v0] Error loading sections:", error)
@@ -81,9 +88,9 @@ export default function AdminHomepagePage() {
       background_color: "",
       show_title: true,
       show_description: true,
-      product_ids: null,
-      category_ids: null,
-      custom_content: null,
+      product_ids: [],
+      category_ids: [],
+      custom_content: {},
       max_items: 8,
       display_order: sections.length + 1,
       is_active: true,
@@ -101,9 +108,9 @@ export default function AdminHomepagePage() {
       background_color: section.background_color || "",
       show_title: section.show_title,
       show_description: section.show_description,
-      product_ids: section.product_ids,
-      category_ids: section.category_ids,
-      custom_content: section.custom_content,
+      product_ids: section.product_ids || [],
+      category_ids: section.category_ids || [],
+      custom_content: section.custom_content || {},
       max_items: section.max_items || 8,
       display_order: section.display_order,
       is_active: section.is_active,
@@ -235,7 +242,7 @@ export default function AdminHomepagePage() {
         {sections.map((section) => (
           <Card key={section.id} className="border-2 border-border hover:border-primary/50 transition-all">
             <CardContent className="p-6">
-              <div className="flex gap-6">
+              <div className="flex gap-6 items-start">
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -278,6 +285,40 @@ export default function AdminHomepagePage() {
                       حذف
                     </Button>
                   </div>
+                </div>
+
+                {/* Right-side preview (image / subtitle) */}
+                <div className="w-40 flex-shrink-0">
+                  {(() => {
+                    const content: any = section.custom_content || {}
+                    // common keys: image_url, image, src, slides: [{ image_url }]
+                    const imageUrl = content?.image_url || content?.image || content?.src || (Array.isArray(content?.slides) && content.slides[0]?.image_url) || null
+                    const subtitle = content?.subtitle_ar || content?.subtitle || section.name_en || null
+                    if (imageUrl) {
+                      return (
+                        <div className="relative w-40 h-24 rounded-md overflow-hidden bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={imageUrl} alt={section.name_ar || "preview"} className="w-full h-full object-cover" />
+                        </div>
+                      )
+                    }
+
+                    if (subtitle) {
+                      return (
+                        <div className="w-40 h-24 rounded-md bg-muted p-3 flex items-center justify-center text-sm text-muted-foreground">
+                          <div>
+                            <div className="font-medium text-foreground mb-1">{subtitle}</div>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div className="w-40 h-24 rounded-md bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                        معاينة
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </CardContent>
@@ -377,7 +418,7 @@ export default function AdminHomepagePage() {
                 <Label htmlFor="name_en">الاسم (إنجليزي)</Label>
                 <Input
                   id="name_en"
-                  value={formData.name_en}
+                  value={formData.name_en || ""}
                   onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
                 />
               </div>
@@ -414,7 +455,7 @@ export default function AdminHomepagePage() {
                 <Input
                   id="background_color"
                   value={formData.background_color || ""}
-                  onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, background_color: e.target.value || "" })}
                   placeholder="#ffffff"
                 />
               </div>

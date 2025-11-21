@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
+import { CheckoutTracker } from "./checkout-tracker"
+import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 
 // تحويل مضمون للأرقام
 const toNum = (v: unknown, fallback = 0) => {
@@ -83,6 +85,17 @@ export default function CheckoutPage() {
       setUiError(validationMsg)
       return
     }
+
+    // Optional: Track "Proceed to Payment" click (InitiateCheckout step)
+    const userMeta = buildUserMeta()
+    trackMetaEvent("InitiateCheckout", {
+      ...userMeta,
+      value: total,
+      currency: "EGP",
+      num_items: items.length,
+      step: "payment_click",
+      payment_method: formData.paymentMethod,
+    })
 
     setIsProcessing(true)
     try {
@@ -251,6 +264,20 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <CheckoutTracker
+        items={items.map((item: any) => ({
+          id: item.product?.id || "unknown",
+          name: item.product?.name,
+          price: item.product?.price,
+          quantity: item.quantity,
+          product: item.product,
+          color: item.color,
+          size: item.size,
+        }))}
+        total={total}
+        currency="EGP"
+        user={undefined} // No user auth available in this scope yet
+      />
       <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">

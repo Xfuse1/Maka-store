@@ -1,5 +1,5 @@
-
 import { createClient } from "@/lib/supabase/client";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export interface HeroSlide {
     id: string;
@@ -17,25 +17,105 @@ export interface HeroSlide {
 
 /**
  * Fetches all active hero slides from the 'sliders' table.
- * 
- * @returns {Promise<HeroSlide[]>} A promise that resolves to an array of hero slides.
+ * Uses browser client (RLS applied).
  */
 export async function getAllHeroSlides(): Promise<HeroSlide[]> {
-  const supabase = createClient();
-  console.log("[v0] 🚀 Fetching active hero slides from the 'sliders' table...");
+  try {
+    const supabase = createClient();
+    
+    const { data, error } = await supabase
+      .from('hero_slides')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
 
+    if (error) {
+      // Log detailed error for debugging
+      console.error("[v0] ❌ Error fetching hero slides:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
+      // Return empty array instead of crashing - component will show fallback
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("[v0] ❌ Unexpected error in getAllHeroSlides:", err);
+    return [];
+  }
+}
+
+/**
+ * Fetches ALL hero slides (active and inactive) using Admin client.
+ * Bypasses RLS.
+ */
+export async function getAllHeroSlidesAdmin(): Promise<HeroSlide[]> {
+  const supabase = getSupabaseAdminClient();
+  
   const { data, error } = await supabase
-    .from('sliders')
+    .from('hero_slides')
     .select('*')
-    .eq('is_active', true)
     .order('display_order', { ascending: true });
 
   if (error) {
-    console.error("[v0] ❌ Error fetching hero slides:", error);
-    // In case of an error, return an empty array to prevent breaking the UI.
-    return [];
+    console.error("[Admin] Error fetching hero slides:", error);
+    throw new Error(error.message);
   }
 
-  console.log(`[v0] ✅ Found ${data.length} active hero slides.`);
   return data || [];
+}
+
+export async function createHeroSlide(slide: Omit<HeroSlide, "id" | "created_at" | "updated_at">) {
+  const supabase = getSupabaseAdminClient() as any;
+  
+  const { data, error } = await supabase
+    .from('hero_slides')
+    .insert([slide])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[Admin] Error creating hero slide:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export async function updateHeroSlide(id: string, updates: Partial<HeroSlide>) {
+  const supabase = getSupabaseAdminClient() as any;
+  
+  const { data, error } = await supabase
+    .from('hero_slides')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[Admin] Error updating hero slide:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export async function deleteHeroSlide(id: string) {
+  const supabase = getSupabaseAdminClient();
+  
+  const { error } = await supabase
+    .from('hero_slides')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error("[Admin] Error deleting hero slide:", error);
+    throw new Error(error.message);
+  }
+
+  return true;
 }
