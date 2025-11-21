@@ -14,15 +14,35 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [sessionReady, setSessionReady] = useState(false)
 
   useEffect(() => {
-    // Optionally check for valid session, though reset flow via email link sets the session automatically
+    // Check and handle the reset token from URL
     const checkSession = async () => {
       const supabase = getSupabaseBrowserClient()
-      const { data } = await supabase.auth.getSession()
-      // If no session is present, the user might have accessed this page directly without a link
-      // However, we'll let them try or show a hint if we want strict checking.
-      // For now, we assume Supabase handles the session via the link redirect.
+      
+      // First, check if we have a hash with access_token (from email link)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const type = hashParams.get('type')
+      
+      if (type === 'recovery' && accessToken) {
+        // This is a password recovery link, session should be set automatically
+        const { data } = await supabase.auth.getSession()
+        if (data.session) {
+          setSessionReady(true)
+        } else {
+          setError("الرابط غير صالح أو منتهي الصلاحية. الرجاء طلب رابط جديد.")
+        }
+      } else {
+        // No valid recovery link found
+        const { data } = await supabase.auth.getSession()
+        if (data.session) {
+          setSessionReady(true)
+        } else {
+          setError("الرجاء استخدام الرابط المرسل إلى بريدك الإلكتروني")
+        }
+      }
     }
     checkSession()
   }, [])
@@ -31,6 +51,11 @@ export default function ResetPasswordPage() {
     e.preventDefault()
     setError(null)
     setSuccess(false)
+
+    if (!sessionReady) {
+      setError("لا توجد جلسة صالحة. الرجاء استخدام الرابط المرسل إلى بريدك الإلكتروني")
+      return
+    }
 
     if (!password || password.length < 6) {
       setError("يجب أن تكون كلمة المرور 6 أحرف على الأقل")
@@ -54,6 +79,11 @@ export default function ResetPasswordPage() {
         setError("فشل تحديث كلمة المرور، حاول مرة أخرى.")
       } else {
         setSuccess(true)
+        // Sign out after password reset
+        setTimeout(() => {
+          supabase.auth.signOut()
+          router.push("/auth")
+        }, 2000)
       }
     } catch (err) {
       console.error("[Reset Password] Unexpected error:", err)
