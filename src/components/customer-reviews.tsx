@@ -63,7 +63,7 @@ export function CustomerReviews() {
                     <Star
                       key={i}
                       className={`h-5 w-5 ${
-                        i < review.rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"
+                        i < review.rating ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted"
                       }`}
                     />
                   ))}

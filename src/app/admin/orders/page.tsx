@@ -214,7 +214,7 @@ export default function AdminOrdersPage() {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-xl font-bold text-foreground">{order.id}</h3>
-                        <Badge className={`${getStatusColor(order.status)} text-white`}>
+                        <Badge className={`${getStatusColor(order.status)} text-primary-foreground`}>
                           {getStatusLabel(order.status)}
                         </Badge>
                       </div>

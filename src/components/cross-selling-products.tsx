@@ -43,10 +43,10 @@ export function CrossSellingProducts({ currentProduct, allProducts }: CrossSelli
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
-                  {product.featured && <Badge className="absolute top-4 right-4 bg-primary text-white">مميز</Badge>}
+                  {product.featured && <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">مميز</Badge>}
                  
                 </div>
-                <div className="p-6 bg-white">
+                <div className="p-6 bg-background">
                   <h4 className="text-xl font-bold mb-2 text-foreground">{product.name}</h4>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="flex items-center">
@@ -56,7 +56,7 @@ export function CrossSellingProducts({ currentProduct, allProducts }: CrossSelli
                           className={`h-4 w-4 ${
                             i < Math.floor(product.rating)
                               ? "fill-yellow-400 text-yellow-400"
-                              : "fill-gray-200 text-gray-200"
+                              : "fill-muted text-muted"
                           }`}
                         />
                       ))}

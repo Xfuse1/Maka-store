@@ -74,7 +74,7 @@ export default function AdminPaymentsPage() {
       pending: { variant: "secondary", icon: Clock, color: "text-yellow-600" },
       processing: { variant: "secondary", icon: TrendingUp, color: "text-blue-600" },
       failed: { variant: "destructive", icon: XCircle, color: "text-red-600" },
-      cancelled: { variant: "outline", icon: Ban, color: "text-gray-600" },
+      cancelled: { variant: "outline", icon: Ban, color: "text-muted-foreground" },
     }
 
     const config = variants[status] || variants.pending

@@ -10,6 +10,9 @@ export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text()
     
+    console.log("[Webhook] Received webhook request")
+    console.log("[Webhook] Headers:", Object.fromEntries(request.headers.entries()))
+    
     // Get webhook signature headers
     const signature = request.headers.get("x-cashier-signature") || ""
     const timestamp = request.headers.get("x-cashier-timestamp") || ""
@@ -17,6 +20,7 @@ export async function POST(request: NextRequest) {
     let payload: KashierWebhookPayload
     try {
       payload = JSON.parse(rawBody)
+      console.log("[Webhook] Parsed payload:", payload)
     } catch (e) {
       console.error("[Webhook] Invalid JSON body")
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
@@ -30,10 +34,21 @@ export async function POST(request: NextRequest) {
       timestamp
     )
 
+    console.log("[Webhook] Processing result:", result)
+
     return NextResponse.json({ message: result.message }, { status: result.statusCode })
 
   } catch (error) {
     console.error("[Webhook] Error processing webhook:", error)
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 })
   }
+}
+
+// GET method for testing webhook endpoint
+export async function GET() {
+  return NextResponse.json({ 
+    status: "ok", 
+    message: "Kashier webhook endpoint is active",
+    timestamp: new Date().toISOString()
+  })
 }

@@ -25,7 +25,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+        <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
@@ -63,7 +63,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
@@ -225,7 +225,7 @@ export default function CartPage() {
                 >
                   <ShoppingBag className="h-5 w-5 ml-2" />
                   إتمام الطلب
-                  {items.length > 0 && <span className="absolute -top-2 -left-2 bg-white text-primary text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{items.length}</span>}
+                  {items.length > 0 && <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{items.length}</span>}
                 </Button>
                 {/* زر متابعة طلباتي */}
                 <Button
@@ -250,7 +250,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      <footer className="border-t border-border bg-white py-8 mt-12">
+      <footer className="border-t border-border bg-background py-8 mt-12">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
         </div>

@@ -20,63 +20,98 @@ export default function AdminDesignPage() {
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
 
+  // Ensure all values are strings
+  const safeColors = {
+    primary: colors?.primary || "#f70824",
+    background: colors?.background || "#d06d6d",
+    foreground: colors?.foreground || "#1a1a1a"
+  }
+  const safeFonts = {
+    heading: fonts?.heading || "Cairo",
+    body: fonts?.body || "Cairo"
+  }
+  const safeLayout = {
+    containerWidth: layout?.containerWidth || "1280px",
+    radius: layout?.radius || "0.5rem"
+  }
+
   // Load current logo on mount
   useEffect(() => {
     loadCurrentLogo()
   }, [])
 
-  const handleSaveColors = () => {
-    // Force immediate application
-    setTimeout(() => applyColorsImmediately(), 0)
-    toast({
-      title: "تم بنجاح!",
-      description: "تم تطبيق الألوان على كل الموقع!"
-    })
+  const handleSaveColors = async () => {
+    try {
+      await saveDesignSettings("colors", safeColors)
+      // Force immediate application
+      setTimeout(() => applyColorsImmediately(), 0)
+      toast({
+        title: "تم بنجاح!",
+        description: "تم حفظ ألوان الموقع بنجاح!"
+      })
+    } catch (error) {
+      console.error("[AdminDesign] Error saving colors:", error)
+      toast({
+        title: "خطأ",
+        description: "فشل حفظ ألوان الموقع",
+        variant: "destructive",
+      })
+    }
   }
 
   const applyColorsImmediately = () => {
     const root = document.documentElement
     const body = document.body
     
-    console.log('Applying colors:', colors)
+    console.log('Applying colors:', safeColors)
     
-    root.style.setProperty("--primary-hex", colors.primary)
-    root.style.setProperty("--background-hex", colors.background)
-    root.style.setProperty("--foreground-hex", colors.foreground)
+    root.style.setProperty("--primary-hex", safeColors.primary)
+    root.style.setProperty("--background-hex", safeColors.background)
+    root.style.setProperty("--foreground-hex", safeColors.foreground)
     
-    body.style.backgroundColor = colors.background
-    root.style.backgroundColor = colors.background
-    body.style.color = colors.foreground
+    body.style.backgroundColor = safeColors.background
+    root.style.backgroundColor = safeColors.background
+    body.style.color = safeColors.foreground
     
     // Also apply to all major containers
     const containers = document.querySelectorAll('body, html, #__next, main, .bg-background')
     containers.forEach(el => {
-      (el as HTMLElement).style.backgroundColor = colors.background
+      (el as HTMLElement).style.backgroundColor = safeColors.background
     })
   }
 
   // Apply colors immediately when they change (live preview)
   useEffect(() => {
-    console.log('Colors changed, applying...', colors)
+    console.log('Colors changed, applying...', safeColors)
     applyColorsImmediately()
-  }, [colors.primary, colors.background, colors.foreground, colors])
+  }, [safeColors.primary, safeColors.background, safeColors.foreground])
 
-  const handleSaveFonts = () => {
-    const root = document.documentElement
-    root.style.setProperty("--font-heading", fonts.heading)
-    root.style.setProperty("--font-body", fonts.body)
-    document.body.style.fontFamily = fonts.body
-    
-    toast({
-      title: "تم بنجاح!",
-      description: "تم تطبيق الخطوط على كل الموقع!"
-    })
+  const handleSaveFonts = async () => {
+    try {
+      await saveDesignSettings("fonts", safeFonts)
+      const root = document.documentElement
+      root.style.setProperty("--font-heading", safeFonts.heading)
+      root.style.setProperty("--font-body", safeFonts.body)
+      document.body.style.fontFamily = safeFonts.body
+      
+      toast({
+        title: "تم بنجاح!",
+        description: "تم حفظ الخطوط بنجاح!"
+      })
+    } catch (error) {
+      console.error("[AdminDesign] Error saving fonts:", error)
+      toast({
+        title: "خطأ",
+        description: "فشل حفظ الخطوط",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleSaveLayout = () => {
     const root = document.documentElement
-    root.style.setProperty("--container-width", layout.containerWidth)
-    root.style.setProperty("--radius", layout.radius)
+    root.style.setProperty("--container-width", safeLayout.containerWidth)
+    root.style.setProperty("--radius", safeLayout.radius)
     
     toast({
       title: "تم بنجاح!",
@@ -184,13 +219,13 @@ export default function AdminDesignPage() {
               <div className="flex items-center gap-3">
                 <Input
                   type="color"
-                  value={colors.primary}
+                  value={safeColors.primary}
                   onChange={(e) => setColor("primary", e.target.value)}
                   className="w-20 h-12"
                 />
                 <Input
                   type="text"
-                  value={colors.primary}
+                  value={safeColors.primary}
                   onChange={(e) => setColor("primary", e.target.value)}
                   className="flex-1"
                 />
@@ -201,13 +236,13 @@ export default function AdminDesignPage() {
               <div className="flex items-center gap-3">
                 <Input
                   type="color"
-                  value={colors.background}
+                  value={safeColors.background}
                   onChange={(e) => setColor("background", e.target.value)}
                   className="w-20 h-12"
                 />
                 <Input
                   type="text"
-                  value={colors.background}
+                  value={safeColors.background}
                   onChange={(e) => setColor("background", e.target.value)}
                   className="flex-1"
                 />
@@ -218,13 +253,13 @@ export default function AdminDesignPage() {
               <div className="flex items-center gap-3">
                 <Input
                   type="color"
-                  value={colors.foreground}
+                  value={safeColors.foreground}
                   onChange={(e) => setColor("foreground", e.target.value)}
                   className="w-20 h-12"
                 />
                 <Input
                   type="text"
-                  value={colors.foreground}
+                  value={safeColors.foreground}
                   onChange={(e) => setColor("foreground", e.target.value)}
                   className="flex-1"
                 />
@@ -248,7 +283,7 @@ export default function AdminDesignPage() {
               <Label className="text-base font-medium mb-2 block">خط العناوين</Label>
               <Input 
                 type="text" 
-                value={fonts.heading} 
+                value={safeFonts.heading} 
                 onChange={(e) => setFont("heading", e.target.value)}
                 className="text-base" 
               />
@@ -257,7 +292,7 @@ export default function AdminDesignPage() {
               <Label className="text-base font-medium mb-2 block">خط النصوص</Label>
               <Input 
                 type="text" 
-                value={fonts.body} 
+                value={safeFonts.body} 
                 onChange={(e) => setFont("body", e.target.value)}
                 className="text-base" 
               />
@@ -324,7 +359,7 @@ export default function AdminDesignPage() {
                 <Label className="text-base font-medium mb-2 block">عرض الحاوية</Label>
                 <Input 
                   type="text" 
-                  value={layout.containerWidth} 
+                  value={safeLayout.containerWidth} 
                   onChange={(e) => setLayout("containerWidth", e.target.value)}
                   className="text-base" 
                 />
@@ -333,7 +368,7 @@ export default function AdminDesignPage() {
                 <Label className="text-base font-medium mb-2 block">نصف القطر</Label>
                 <Input 
                   type="text" 
-                  value={layout.radius} 
+                  value={safeLayout.radius} 
                   onChange={(e) => setLayout("radius", e.target.value)}
                   className="text-base" 
                 />

@@ -8,7 +8,7 @@ export default function ReturnPolicyPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-4">
@@ -198,7 +198,7 @@ export default function ReturnPolicyPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-white py-8">
+      <footer className="border-t border-border bg-background py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
         </div>

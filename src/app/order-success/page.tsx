@@ -21,7 +21,7 @@ export default async function OrderSuccessPage({
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="max-w-xl w-full rounded-2xl border border-border bg-white p-8 text-center shadow-sm">
+      <div className="max-w-xl w-full rounded-2xl border border-border bg-background p-8 text-center shadow-sm">
         <h1 className="text-3xl font-bold mb-2">تم إرسال طلبك بنجاح 🎉</h1>
         <p className="text-muted-foreground mb-6">
           شكراً لك! سنقوم بالتواصل معك لتأكيد تفاصيل الشحن والدفع.

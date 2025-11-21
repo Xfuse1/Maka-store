@@ -717,13 +717,13 @@ export default function AdminProductsPage() {
                         className="w-full h-full object-cover"
                       />
                       {i === 0 && (
-                        <div className="absolute top-1 right-1 bg-primary text-white text-xs px-2 py-0.5 rounded">
+                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded">
                           رئيسية
                         </div>
                       )}
                       <button
                         type="button"
-                        className="absolute top-1 left-1 bg-white/80 text-xs px-2 py-0.5 rounded hover:bg-white"
+                        className="absolute top-1 left-1 bg-background/80 text-foreground text-xs px-2 py-0.5 rounded hover:bg-background/90"
                         onClick={() => removeImage(i)}
                       >
                         حذف
@@ -1046,7 +1046,7 @@ export default function AdminProductsPage() {
                               className="object-cover"
                             />
                             {img.is_primary && (
-                              <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded">
+                              <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
                                 رئيسية
                               </div>
                             )}

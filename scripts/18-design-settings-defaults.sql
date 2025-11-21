@@ -1,39 +1,37 @@
--- Ensure design settings entries exist with default values
--- This script should be run after 01-create-tables.sql
+-- 1) إنشاء جدول إعدادات التصميم (صف واحد بس)
+create table if not exists public.design_settings (
+  id uuid primary key default gen_random_uuid(),
+  primary_color text not null default '#760614',
+  secondary_color text not null default '#a13030',
+  background_color text not null default '#ffffff',
+  text_color text not null default '#1a1a1a',
+  heading_font text not null default 'Cairo',
+  body_font text not null default 'Cairo',
+  updated_at timestamptz not null default now()
+);
 
--- Insert default colors if not exists
-INSERT INTO design_settings (key, value, description)
-VALUES (
-  'colors',
-  '{
-    "primary": "#FFB6C1",
-    "background": "#FFFFFF",
-    "foreground": "#1a1a1a"
-  }'::jsonb,
-  'Site color scheme'
+-- 2) ضامن إن فيه صف واحد بس (لو فاضي نضيف صف افتراضي)
+insert into public.design_settings (
+  primary_color,
+  secondary_color,
+  background_color,
+  text_color,
+  heading_font,
+  body_font
 )
-ON CONFLICT (key) DO NOTHING;
+select '#760614', '#a13030', '#ffffff', '#1a1a1a', 'Cairo', 'Cairo'
+where not exists (select 1 from public.design_settings);
 
--- Insert default fonts if not exists
-INSERT INTO design_settings (key, value, description)
-VALUES (
-  'fonts',
-  '{
-    "heading": "Cairo",
-    "body": "Cairo"
-  }'::jsonb,
-  'Site font settings'
-)
-ON CONFLICT (key) DO NOTHING;
 
--- Insert default layout if not exists
-INSERT INTO design_settings (key, value, description)
-VALUES (
-  'layout',
-  '{
-    "containerWidth": "1280px",
-    "radius": "0.5rem"
-  }'::jsonb,
-  'Site layout settings'
-)
-ON CONFLICT (key) DO NOTHING;
+-- إضافة أعمدة اللوجو (لو مش موجودة)
+alter table public.design_settings
+  add column if not exists logo_bucket text not null default 'site-logo',
+  add column if not exists logo_path text not null default 'logo.png';
+
+-- إضافة عمود يحدد الإعدادات الحالية للموقع
+alter table public.design_settings
+add column if not exists site_key text not null default 'default';
+
+-- نجبر الجدول إنه يحتوي على site_key واحد فقط (unique)
+alter table public.design_settings
+add constraint design_settings_site_key_unique unique (site_key);

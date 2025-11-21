@@ -136,7 +136,7 @@ export default function AdminPagesPage() {
                   {pg.is_published ? (
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">منشور</span>
                   ) : (
-                    <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">مخفي</span>
+                    <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">مخفي</span>
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">

@@ -63,7 +63,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 border-l border-border bg-white flex-shrink-0 h-screen sticky top-0">
+    <aside className="w-64 border-l border-border bg-background flex-shrink-0 h-screen sticky top-0">
       <div className="p-6 border-b border-border">
         <Link href="/" className="flex items-center gap-3">
           <SiteLogo width={40} height={40} />
@@ -100,7 +100,7 @@ export function AdminSidebar() {
         </ul>
       </nav>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-white">
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-background">
         <Link
           href="/"
           className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-muted hover:bg-muted/80 transition-all text-foreground font-medium"

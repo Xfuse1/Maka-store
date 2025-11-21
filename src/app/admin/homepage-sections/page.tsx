@@ -95,7 +95,7 @@ function ProductSelector({
                   : "border-gray-300"
               }`}>
                 {selectedProducts.includes(product.id) && (
-                  <div className="w-2 h-2 bg-white rounded-sm" />
+                  <div className="w-2 h-2 bg-background rounded-sm" />
                 )}
               </div>
               <div>

@@ -6,6 +6,7 @@ import { persist } from "zustand/middleware"
 type DesignState = {
   colors: {
     primary: string
+    secondary: string
     background: string
     foreground: string
   }
@@ -17,7 +18,7 @@ type DesignState = {
     containerWidth: string
     radius: string
   }
-  logoUrl?: string
+  logoUrl: string
   isLoaded: boolean
 
   // setters
@@ -34,6 +35,7 @@ type DesignState = {
 const defaults: Omit<DesignState, "setColor" | "setFont" | "setLayout" | "setLogo" | "setColors" | "setFonts" | "setLayouts" | "reset"> = {
   colors: {
     primary: "#f70824", // أحمر (من الصورة)
+    secondary: "#a13030", // ثانوي (أحمر داكن)
     background: "#d06d6d", // وردي (من الصورة)
     foreground: "#1a1a1a", // أسود
   },

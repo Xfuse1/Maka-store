@@ -99,9 +99,9 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
       case "new_arrivals":
         return "bg-green-500 text-white"
       case "featured":
-        return "bg-primary text-white"
+        return "bg-primary text-primary-foreground"
       default:
-        return "bg-primary text-white"
+        return "bg-primary text-primary-foreground"
     }
   }
 
@@ -139,7 +139,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       />
                     </div>
-                    <div className="p-6 bg-white text-center">
+                    <div className="p-6 bg-background text-center">
                       <h4 className="text-2xl font-bold text-foreground">{category.name_ar}</h4>
                       {category.description_ar && (
                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{category.description_ar}</p>
@@ -198,7 +198,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                     {badgeText && <Badge className={`absolute top-4 right-4 ${badgeColor}`}>{badgeText}</Badge>}
                     
                   </div>
-                  <div className="p-6 bg-white">
+                  <div className="p-6 bg-background">
                     <h4 className="text-xl font-bold mb-2 text-foreground">{product.name_ar}</h4>
                     <p className="text-2xl font-bold text-primary">{product.base_price} د.م</p>
                   </div>

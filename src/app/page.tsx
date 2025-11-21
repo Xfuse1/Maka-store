@@ -12,6 +12,7 @@ import { useCartStore } from "@/lib/cart-store"
 import { HeroSlider } from "@/components/hero-slider"
 import { MainNavigation } from "@/components/main-navigation"
 import { MobileNavigation } from "@/components/mobile-navigation"
+import { SiteLogo } from "@/components/site-logo"
 import { createClient } from "@/lib/supabase/client" 
 import { getActiveCategories, type Category } from "@/lib/supabase/categories"
 import { DynamicHomepageSection } from "@/components/dynamic-homepage-section"
@@ -165,13 +166,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-4">
-              <div className="relative w-20 h-20 flex-shrink-0">
-                <Image src="/logo-option-4.jpg" alt="مكة" fill className="object-contain" priority />
-              </div>
+              <SiteLogo width={80} height={80} />
               <h1 className="text-3xl font-bold text-foreground">مكة</h1>
             </Link>
 
@@ -238,7 +237,7 @@ export default function HomePage() {
                         <div className="relative aspect-[3/4] bg-muted">
                           <Image src={getFirstImage(product) || "/placeholder.svg"} alt={product.name_ar} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                         </div>
-                        <div className="p-6 bg-white">
+                        <div className="p-6 bg-background">
                           <h4 className="text-xl font-bold mb-2 text-foreground">{product.name_ar}</h4>
                           <p className="text-2xl font-bold text-primary">{product.base_price} د.م</p>
                         </div>
@@ -266,7 +265,7 @@ export default function HomePage() {
         </>
       )}
 
-      <footer className="border-t border-border bg-white py-12">
+      <footer className="border-t border-border bg-background py-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>

@@ -167,7 +167,7 @@ export default function CategoryPage() {
   if (categoryNotFound) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+        <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between gap-4">
               <Link href="/" className="flex items-center gap-4">
@@ -226,14 +226,14 @@ export default function CategoryPage() {
                 </div>
               )}
 
-              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white">
+              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Link href="/">العودة للرئيسية</Link>
               </Button>
             </div>
           </div>
         </main>
 
-        <footer className="border-t border-border bg-white py-12 mt-20">
+        <footer className="border-t border-border bg-background py-12 mt-20">
           <div className="container mx-auto px-4">
             <div className="text-center pt-8">
               <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
@@ -246,7 +246,7 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-4">
@@ -318,7 +318,7 @@ export default function CategoryPage() {
                   تم جلب {products.length} منتج ولكن لا يتطابق مع البحث
                 </p>
               )}
-              <Button asChild className="mt-6 bg-primary hover:bg-primary/90 text-white">
+              <Button asChild className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Link href="/">العودة للرئيسية</Link>
               </Button>
             </div>
@@ -337,11 +337,11 @@ export default function CategoryPage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         {product.is_featured && (
-                          <Badge className="absolute top-4 right-4 bg-primary text-white">مميز</Badge>
+                          <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">مميز</Badge>
                         )}
                        
                       </div>
-                      <div className="p-6 bg-white">
+                      <div className="p-6 bg-background">
                         <h4 className="text-xl font-bold mb-2 text-foreground text-right">
                           {product.name_ar || product.name_en}
                         </h4>
@@ -353,7 +353,7 @@ export default function CategoryPage() {
                                 className={`h-4 w-4 ${
                                   i < Math.floor(product.rating || 0)
                                     ? "fill-yellow-400 text-yellow-400"
-                                    : "fill-gray-200 text-gray-200"
+                                    : "fill-muted text-muted"
                                 }`}
                               />
                             ))}
@@ -371,7 +371,7 @@ export default function CategoryPage() {
         </div>
       </main>
 
-      <footer className="border-t border-border bg-white py-12 mt-20">
+      <footer className="border-t border-border bg-background py-12 mt-20">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>

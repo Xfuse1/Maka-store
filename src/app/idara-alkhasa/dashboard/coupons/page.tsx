@@ -28,7 +28,7 @@ export default function CouponsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [newCoupon, setNewCoupon] = useState({
     code: "",
-    discount: "",
+    discountValue: "",
     expiresAt: "",
   })
 
@@ -43,7 +43,7 @@ export default function CouponsPage() {
   }, [isAuthenticated, router])
 
   const handleAddCoupon = () => {
-    if (!newCoupon.code || !newCoupon.discount) {
+    if (!newCoupon.code || !newCoupon.discountValue) {
       alert("الرجاء ملء جميع الحقول المطلوبة")
       return
     }
@@ -51,17 +51,20 @@ export default function CouponsPage() {
     const coupon: Coupon = {
       id: `coupon-${Date.now()}`,
       code: newCoupon.code.toUpperCase(),
-      discount: Number.parseFloat(newCoupon.discount),
-      expiresAt: newCoupon.expiresAt || undefined,
+      discountType: "percentage",
+      discountValue: Number.parseFloat(newCoupon.discountValue),
+      minPurchase: 0,
+      maxUses: 999999,
+      usedCount: 0,
+      expiresAt: newCoupon.expiresAt || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       isActive: true,
-      usageCount: 0,
       createdAt: new Date().toISOString(),
     }
 
     addCoupon(coupon)
     setCoupons([...coupons, coupon])
     setIsAddDialogOpen(false)
-    setNewCoupon({ code: "", discount: "", expiresAt: "" })
+    setNewCoupon({ code: "", discountValue: "", expiresAt: "" })
   }
 
   const handleDeleteCoupon = (id: string) => {
@@ -107,8 +110,8 @@ export default function CouponsPage() {
                 <Input
                   id="discount"
                   type="number"
-                  value={newCoupon.discount}
-                  onChange={(e) => setNewCoupon({ ...newCoupon, discount: e.target.value })}
+                  value={newCoupon.discountValue}
+                  onChange={(e) => setNewCoupon({ ...newCoupon, discountValue: e.target.value })}
                   placeholder="10"
                   min="1"
                   max="100"
@@ -148,7 +151,7 @@ export default function CouponsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-2xl font-bold mb-1 font-mono">{coupon.code}</h3>
-                    <Badge className="bg-primary text-white">خصم {coupon.discount}%</Badge>
+                    <Badge className="bg-primary text-primary-foreground">خصم {coupon.discountValue}%</Badge>
                   </div>
                   <Button
                     variant="destructive"
@@ -166,7 +169,7 @@ export default function CouponsPage() {
                       ينتهي في: {new Date(coupon.expiresAt).toLocaleDateString("ar-EG")}
                     </p>
                   )}
-                  <p className="text-muted-foreground">عدد مرات الاستخدام: {coupon.usageCount}</p>
+                  <p className="text-muted-foreground">عدد مرات الاستخدام: {coupon.usedCount}</p>
                   <p className="text-xs text-muted-foreground">
                     تم الإنشاء: {new Date(coupon.createdAt).toLocaleDateString("ar-EG")}
                   </p>

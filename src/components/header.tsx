@@ -14,7 +14,7 @@ export async function Header() {
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+    <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}

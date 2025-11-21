@@ -14,7 +14,7 @@ export default function LogoPreview() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {logos.map((logo) => (
             <div key={logo.id} className="bg-card rounded-lg p-8 shadow-lg border border-border">
-              <div className="bg-white rounded-lg p-8 mb-4 flex items-center justify-center min-h-[300px]">
+              <div className="bg-background rounded-lg p-8 mb-4 flex items-center justify-center min-h-[300px]">
                 <img
                   src={logo.src || "/placeholder.svg"}
                   alt={logo.title}

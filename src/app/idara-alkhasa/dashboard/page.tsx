@@ -77,8 +77,8 @@ export default function AdminDashboardPage() {
       icon: Tag,
       href: "/idara-alkhasa/dashboard/coupons",
       description: "إنشاء وإدارة كوبونات الخصم",
-      color: "text-pink-600",
-      bgColor: "bg-pink-50",
+      color: "text-primary",
+      bgColor: "bg-primary/5",
     },
     {
       title: "تصميم الموقع",
@@ -101,15 +101,15 @@ export default function AdminDashboardPage() {
       icon: Settings,
       href: "/idara-alkhasa/dashboard/settings",
       description: "إعدادات الموقع ومعلومات الاتصال",
-      color: "text-gray-600",
-      bgColor: "bg-gray-50",
+      color: "text-muted-foreground",
+      bgColor: "bg-muted",
     },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+      <header className="bg-background border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

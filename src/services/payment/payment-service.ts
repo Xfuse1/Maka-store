@@ -56,11 +56,33 @@ export class PaymentService {
     // Build URL using pure adapter logic
     const result = buildKashierPaymentUrl(params)
     
-    // Log to console for now (DB logging to be migrated later)
     console.log("[PaymentService] Initiated Kashier payment:", {
       orderId: params.orderId,
       transactionId: result.transactionId
     })
+
+    // Save transaction to database
+    try {
+      const { error } = await this.supabase.from("payment_transactions").insert({
+        order_id: params.orderId,
+        transaction_id: result.transactionId,
+        amount: params.amount,
+        currency: params.currency || "EGP",
+        status: "pending",
+        payment_method_id: "kashier",
+        initiated_at: new Date().toISOString(),
+      } as any)
+
+      if (error) {
+        console.error("[PaymentService] Failed to save transaction:", error)
+        // Don't throw - allow payment to continue even if DB save fails
+      } else {
+        console.log("[PaymentService] Transaction saved to database:", result.transactionId)
+      }
+    } catch (dbError: any) {
+      console.error("[PaymentService] Database error:", dbError)
+      // Continue with payment even if DB fails
+    }
 
     return result
   }

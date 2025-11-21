@@ -133,7 +133,7 @@ export default function AdminDashboard() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-bold text-foreground">{order.id}</span>
-                      <Badge className={`${getStatusColor(order.status)} text-white`}>{order.status}</Badge>
+                      <Badge className={`${getStatusColor(order.status)} text-primary-foreground`}>{order.status}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground font-medium">{order.customer}</p>
                     <p className="text-xs text-muted-foreground">{order.date}</p>

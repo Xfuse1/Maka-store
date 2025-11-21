@@ -13,7 +13,7 @@ export default function CardigansPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-4">
@@ -60,13 +60,13 @@ export default function CardigansPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="absolute top-4 left-4 bg-white/90 hover:bg-white border-2 border-border"
+                      className="absolute top-4 left-4 bg-background/90 hover:bg-background/90 border-2 border-border"
                       onClick={(e) => e.preventDefault()}
                     >
                      
                     </Button>
                   </div>
-                  <div className="p-6 bg-white">
+                  <div className="p-6 bg-background">
                     <h4 className="text-xl font-bold mb-2 text-foreground">{product.name}</h4>
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex items-center">
@@ -76,7 +76,7 @@ export default function CardigansPage() {
                             className={`h-4 w-4 ${
                               i < Math.floor(product.rating)
                                 ? "fill-yellow-400 text-yellow-400"
-                                : "fill-gray-200 text-gray-200"
+                                : "fill-muted text-muted"
                             }`}
                           />
                         ))}
@@ -94,7 +94,7 @@ export default function CardigansPage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-white py-8 mt-12">
+      <footer className="border-t border-border bg-background py-8 mt-12">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
         </div>

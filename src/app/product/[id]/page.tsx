@@ -269,7 +269,7 @@ export default function ProductDetailPage() {
         </div>
       )}
 
-      <header className="border-b border-border bg-white sticky top-0 z-50 shadow-sm">
+      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
@@ -459,7 +459,7 @@ export default function ProductDetailPage() {
                           sizes="(max-width: 768px) 100vw, 33vw"
                         />
                       </div>
-                      <div className="p-4 bg-white">
+                      <div className="p-4 bg-background">
                         <h4 className="text-lg font-bold mb-2 text-foreground">{relatedProduct.name_ar}</h4>
                         <p className="text-xl font-bold text-primary">{relatedProduct.base_price} د.م</p>
                       </div>
@@ -504,7 +504,7 @@ export default function ProductDetailPage() {
                                 className={`h-8 w-8 ${
                                   rating <= userRating
                                     ? "fill-yellow-400 text-yellow-400"
-                                    : "fill-gray-200 text-gray-200"
+                                    : "fill-muted text-muted"
                                 }`}
                               />
                             </button>
@@ -562,7 +562,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      <footer className="border-t border-border bg-white py-8 mt-12">
+      <footer className="border-t border-border bg-background py-8 mt-12">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
         </div>

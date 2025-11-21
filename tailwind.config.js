@@ -1,13 +1,19 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
+    "./src/**/*.{js,ts,jsx,tsx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      // Add your custom theme configurations here
+      colors: {
+        primary: "var(--primary-hex)",
+        secondary: "var(--secondary-hex)",
+        background: "var(--background-hex)",
+        foreground: "var(--foreground-hex)",
+      },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 }

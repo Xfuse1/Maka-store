@@ -59,7 +59,7 @@ export function HeroSlider() {
 
   if (loading) {
     return (
-      <div className="relative w-full h-[600px] md:h-[700px] overflow-hidden bg-gray-200 animate-pulse" />
+      <div className="relative w-full h-[600px] md:h-[700px] overflow-hidden bg-muted animate-pulse" />
     )
   }
   
@@ -115,7 +115,7 @@ export function HeroSlider() {
           <AnimatePresence>
             <motion.div
               key={currentSlide}
-              className="max-w-2xl text-white"
+              className="max-w-2xl text-foreground"
               variants={contentVariants}
               initial="hidden"
               animate="visible"
@@ -133,7 +133,7 @@ export function HeroSlider() {
                   <Button
                     asChild
                     size="lg"
-                    className="bg-white hover:bg-white/90 text-primary text-lg px-8 py-6"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6"
                   >
                     <Link href={slides[currentSlide].link_url}>تسوق الآن</Link>
                   </Button>
