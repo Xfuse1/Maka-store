@@ -24,7 +24,7 @@ export type Order = {
 
 export async function createOrder(orderData: Partial<Order>) {
   const supabase = getSupabaseBrowserClient()
-  const { data, error } = await supabase.from("orders").insert([orderData]).select().single()
+  const { data, error } = await supabase.from("orders").insert([orderData] as any).select().single()
   if (error) {
     const msg = typeof error.message === "string" ? error.message : JSON.stringify(error)
     console.error("[v0] Supabase createOrder error:", error, "->", msg)

@@ -1,3 +1,4 @@
+// [ANALYSIS] This file is part of forgot/reset password flow.
 "use client"
 
 import { useState } from "react"
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { APP_URL } from "@/lib/env"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -33,7 +35,7 @@ export default function ForgotPasswordPage() {
     try {
       const supabase = getSupabaseBrowserClient()
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${APP_URL}/auth/update-password`,
       })
 
       if (error) {
