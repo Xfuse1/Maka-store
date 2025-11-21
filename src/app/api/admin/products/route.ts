@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-)
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // GET - Fetch all products
 export async function GET() {
   try {
+    const supabase = createAdminClient()
     const { data, error } = await supabase
       .from("products")
       .select(`
@@ -33,6 +29,7 @@ export async function GET() {
 // POST - Create new product
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createAdminClient()
     const body = await request.json()
     console.log("[v0] Creating product with data:", body)
 
