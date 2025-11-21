@@ -19,29 +19,57 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     // Check and handle the reset token from URL
     const checkSession = async () => {
-      const supabase = getSupabaseBrowserClient()
-      
-      // First, check if we have a hash with access_token (from email link)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const accessToken = hashParams.get('access_token')
-      const type = hashParams.get('type')
-      
-      if (type === 'recovery' && accessToken) {
-        // This is a password recovery link, session should be set automatically
-        const { data } = await supabase.auth.getSession()
-        if (data.session) {
-          setSessionReady(true)
+      try {
+        const supabase = getSupabaseBrowserClient()
+        
+        // Check if we're coming from an email link with hash parameters
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        const type = hashParams.get('type')
+        
+        console.log('[Reset Password] Hash params:', { 
+          hasAccessToken: !!accessToken, 
+          hasRefreshToken: !!refreshToken, 
+          type 
+        })
+        
+        if (type === 'recovery') {
+          // This is a password recovery link
+          if (accessToken && refreshToken) {
+            // Manually set the session using the tokens from the URL
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
+            
+            if (error) {
+              console.error('[Reset Password] Error setting session:', error)
+              setError("خطأ في تفعيل الرابط. الرجاء المحاولة مرة أخرى.")
+            } else if (data.session) {
+              console.log('[Reset Password] Session set successfully')
+              setSessionReady(true)
+              // Clear the hash from URL for security
+              window.history.replaceState(null, '', window.location.pathname)
+            } else {
+              setError("الرابط غير صالح أو منتهي الصلاحية. الرجاء طلب رابط جديد.")
+            }
+          } else {
+            setError("الرابط غير مكتمل. الرجاء طلب رابط جديد.")
+          }
         } else {
-          setError("الرابط غير صالح أو منتهي الصلاحية. الرجاء طلب رابط جديد.")
+          // Check if there's already an active session
+          const { data } = await supabase.auth.getSession()
+          if (data.session) {
+            console.log('[Reset Password] Existing session found')
+            setSessionReady(true)
+          } else {
+            setError("الرجاء استخدام الرابط المرسل إلى بريدك الإلكتروني")
+          }
         }
-      } else {
-        // No valid recovery link found
-        const { data } = await supabase.auth.getSession()
-        if (data.session) {
-          setSessionReady(true)
-        } else {
-          setError("الرجاء استخدام الرابط المرسل إلى بريدك الإلكتروني")
-        }
+      } catch (err) {
+        console.error('[Reset Password] Error in checkSession:', err)
+        setError("حدث خطأ. الرجاء المحاولة مرة أخرى.")
       }
     }
     checkSession()
