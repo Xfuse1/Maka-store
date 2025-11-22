@@ -9,8 +9,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Mail, Phone, MapPin, MessageCircle } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -33,20 +33,7 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-4">
-              <Image src="/logo-option-4.jpg" alt="مكة" width={80} height={80} priority />
-              <h1 className="text-3xl font-bold text-foreground">مكة</h1>
-            </Link>
-            <Button asChild variant="outline">
-              <Link href="/">العودة للرئيسية</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Contact Section */}
       <section className="py-20">

@@ -119,6 +119,9 @@ export default function AdminHeroSlidesPage() {
           title: "تم الرفع",
           description: "تم رفع الصورة بنجاح",
         })
+        // Reset file input
+        const input = document.getElementById("image-upload") as HTMLInputElement
+        if (input) input.value = ""
       } else {
         throw new Error(result.error)
       }
@@ -336,12 +339,11 @@ export default function AdminHeroSlidesPage() {
           <form onSubmit={handleSave} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="title_ar">العنوان (عربي) *</Label>
+                <Label htmlFor="title_ar">العنوان (عربي)</Label>
                 <Input
                   id="title_ar"
                   value={formData.title_ar}
                   onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
-                  required
                 />
               </div>
               <div>
@@ -374,7 +376,7 @@ export default function AdminHeroSlidesPage() {
             </div>
 
             <div>
-              <Label>صورة الشريحة *</Label>
+              <Label>صورة الشريحة</Label>
               <div className="mt-2 space-y-4">
                 {/* Image upload button */}
                 <div className="flex items-center gap-4">

@@ -49,6 +49,20 @@ export async function getAllSections() {
 export async function createSection(section: Partial<HomepageSection>) {
   try {
     const supabase = createAdminClient()
+    // Prevent creating duplicate unique section types
+    const UNIQUE_TYPES = ["reviews", "hero", "featured"]
+    if (section.section_type && UNIQUE_TYPES.includes(section.section_type)) {
+      const { data: existing, error: checkErr } = await supabase
+        .from("homepage_sections")
+        .select("id")
+        .eq("section_type", section.section_type)
+        .limit(1)
+
+      if (checkErr) throw checkErr
+      if (existing && existing.length > 0) {
+        return { success: false, error: `لا يمكن إنشاء أكثر من قسم من النوع ${section.section_type}` }
+      }
+    }
     const { data, error } = await (supabase.from("homepage_sections") as any).insert([section]).select().single()
     if (error) throw error
     revalidatePath("/")
@@ -62,6 +76,21 @@ export async function createSection(section: Partial<HomepageSection>) {
 export async function updateSection(id: string, updates: Partial<HomepageSection>) {
   try {
     const supabase = createAdminClient()
+    // Prevent updating to a duplicate unique section type
+    const UNIQUE_TYPES = ["reviews", "hero", "featured"]
+    if (updates.section_type && UNIQUE_TYPES.includes(updates.section_type)) {
+      const { data: existing, error: checkErr } = await supabase
+        .from("homepage_sections")
+        .select("id")
+        .eq("section_type", updates.section_type)
+        .neq("id", id)
+        .limit(1)
+
+      if (checkErr) throw checkErr
+      if (existing && existing.length > 0) {
+        return { success: false, error: `لا يمكن وجود أكثر من قسم من النوع ${updates.section_type}` }
+      }
+    }
     const { data, error } = await (supabase.from("homepage_sections") as any).update(updates).eq("id", id).select().single()
     if (error) throw error
     revalidatePath("/")

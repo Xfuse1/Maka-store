@@ -66,7 +66,7 @@ export default function AuthPage() {
               console.error('[Auth] Login exception:', err)
               setServerMessage((err as any)?.message || 'حدث خطأ غير متوقع')
             }
-          }} className="space-y-4 p-6 border rounded-lg shadow-sm">
+          }} className="space-y-4 p-6 border rounded-lg shadow-sm bg-card">
             <h2 className="text-2xl font-bold text-center text-foreground">تسجيل الدخول</h2>
             <div className="space-y-2">
               <Label htmlFor="login-email">البريد الإلكتروني</Label>
@@ -130,7 +130,7 @@ export default function AuthPage() {
               console.error('Signup error', err)
               setServerMessage((err as any)?.message || 'An unexpected error occurred')
             }
-          }} className="space-y-4 p-6 border rounded-lg shadow-sm">
+          }} className="space-y-4 p-6 border rounded-lg shadow-sm bg-card">
             <h2 className="text-2xl font-bold text-center text-foreground">إنشاء حساب جديد</h2>
             <div className="space-y-2">
               <Label htmlFor="signup-email">البريد الإلكتروني</Label>

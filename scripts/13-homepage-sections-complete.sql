@@ -60,21 +60,21 @@ CREATE TRIGGER trigger_update_homepage_sections_updated_at
 -- Automatically detect and insert current homepage sections
 -- =====================================================
 
-INSERT INTO homepage_sections (name_ar, name_en, section_type, display_order, is_active, max_items, layout_type, background_color) VALUES
--- Best Sellers Section
-('الأكثر مبيعاً', 'Best Sellers', 'best_sellers', 1, true, 3, 'grid', 'background'),
+INSERT INTO homepage_sections (name_ar, name_en, section_type, display_order, is_active, max_items, layout_type, background_color, show_title, show_description) VALUES
+-- Best Sellers Section (Hero Layout)
+('الأكثر مبيعاً', 'Best Sellers', 'best_sellers', 1, true, 1, 'hero', 'secondary', true, true),
 
--- New Products Section
-('المنتجات الجديدة', 'New Products', 'new_arrivals', 2, true, 3, 'grid', 'secondary'),
+-- New Products Section (Grid Layout)
+('المنتجات الجديدة', 'New Products', 'new_arrivals', 2, true, 3, 'grid', 'background', true, true),
 
--- Featured Products Section
-('المنتجات المميزة', 'Featured Products', 'featured', 3, true, 3, 'grid', 'background'),
+-- Featured Products Section (Grid Layout)
+('المنتجات المميزة', 'Featured Products', 'featured', 3, true, 3, 'grid', 'secondary', true, true),
 
--- Categories Section
-('تسوقي حسب الفئة', 'Shop by Category', 'categories', 4, true, 8, 'grid', 'background'),
+-- Categories Section (Grid Layout)
+('تسوقي حسب الفئة', 'Shop by Category', 'categories', 4, true, 8, 'grid', 'background', true, false),
 
--- Customer Reviews Section
-('آراء العملاء', 'Customer Reviews', 'reviews', 5, true, 6, 'slider', 'background');
+-- Customer Reviews Section (Grid Layout)
+('آراء العملاء', 'Customer Reviews', 'reviews', 5, true, 6, 'grid', 'background', true, true);
 
 -- =====================================================
 -- ROW LEVEL SECURITY (RLS)

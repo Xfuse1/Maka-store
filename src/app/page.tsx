@@ -19,6 +19,8 @@ import { DynamicHomepageSection } from "@/components/dynamic-homepage-section"
 import { BestsellerSection } from "@/components/bestseller-section"
 import { Card, CardContent } from "@/components/ui/card"
 import { AnimatedSection } from "@/components/animated-section"
+import { useSettingsStore } from "@/lib/settings-store"
+import { SiteFooter } from "@/components/site-footer"
 
 // Create a Supabase client instance
 const supabase = createClient();
@@ -87,6 +89,11 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [user, setUser] = useState<User | null>(null)
   const totalItems = useCartStore((state) => state.getTotalItems())
+  const { settings, loadSettings } = useSettingsStore()
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   useEffect(() => {
     async function fetchData() {
@@ -171,7 +178,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-4">
               <SiteLogo width={80} height={80} />
-              <h1 className="text-3xl font-bold text-foreground">مكة</h1>
+              <h1 className="text-3xl font-bold text-primary">مكة</h1>
             </Link>
 
             <div className="hidden md:flex flex-1 max-w-3xl mx-8">
@@ -253,62 +260,29 @@ export default function HomePage() {
 
       {!searchQuery && (
         <>
-          {sections.map((section) => (
-            <AnimatedSection key={section.id}>
-              {section.section_type === 'best_sellers' ? (
-                <BestsellerSection product={bestsellerProduct} />
-              ) : (
+          {(() => {
+            // Prevent rendering duplicate unique sections (e.g. reviews, hero, featured)
+            const uniqueTypes = new Set(["reviews", "hero", "featured"])
+            const seen = new Set<string>()
+            const filtered = sections.filter((s) => {
+              if (uniqueTypes.has(s.section_type)) {
+                if (seen.has(s.section_type)) return false
+                seen.add(s.section_type)
+                return true
+              }
+              return true
+            })
+
+            return filtered.map((section) => (
+              <AnimatedSection key={section.id}>
                 <DynamicHomepageSection section={section} products={products} categories={categories} />
-              )}
-            </AnimatedSection>
-          ))}
+              </AnimatedSection>
+            ))
+          })()}
         </>
       )}
 
-      <footer className="border-t border-border bg-background py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h5 className="font-bold text-lg mb-4 text-foreground">عن مكة</h5>
-              <p className="text-muted-foreground leading-relaxed">
-                متجر مكة للأزياء النسائية الراقية - نقدم لكِ أفضل التصاميم العصرية التي تجمع بين الأصالة والحداثة
-              </p>
-            </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4 text-foreground">روابط سريعة</h5>
-              <ul className="space-y-2">
-                <li><Link href="/category/abayas" className="text-muted-foreground hover:text-primary transition-colors">عبايات</Link></li>
-                <li><Link href="/category/cardigans" className="text-muted-foreground hover:text-primary transition-colors">كارديجان</Link></li>
-                <li><Link href="/category/suits" className="text-muted-foreground hover:text-primary transition-colors">بدل</Link></li>
-                <li><Link href="/category/dresses" className="text-muted-foreground hover:text-primary transition-colors">فساتين</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4 text-foreground">معلومات</h5>
-              <ul className="space-y-2">
-                <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">من نحن</Link></li>
-                <li><Link href="/return-policy" className="text-muted-foreground hover:text-primary transition-colors">سياسة الإرجاع</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4 text-foreground">تواصل معنا</h5>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                للاستفسارات والطلبات الخاصة<br />
-                واتساب: 01234567890<br />
-                البريد: info@mecca-fashion.com
-              </p>
-              <Link href="/contact">
-                <Button variant="outline" className="w-full bg-transparent hover:bg-secondary active:bg-secondary/80">
-                  تواصل معنا
-                </Button>
-              </Link>
-            </div>
-          </div>
-          <div className="text-center pt-8 border-t border-border">
-            <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

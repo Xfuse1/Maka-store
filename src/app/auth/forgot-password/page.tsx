@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4" dir="rtl">
-      <div className="w-full max-w-md space-y-6 p-6 border rounded-lg shadow-sm bg-background">
+      <div className="w-full max-w-md space-y-6 p-6 border rounded-lg shadow-sm bg-card">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold text-foreground">إعادة تعيين كلمة المرور</h1>
           <p className="text-sm text-muted-foreground">
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {success ? (
-          <div className="bg-green-50 text-green-700 p-4 rounded-lg text-sm text-center">
+          <div className="bg-primary/10 text-primary p-4 rounded-lg text-sm text-center">
             تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني (إن كان مسجلاً لدينا). يرجى فحص البريد الوارد والرسائل غير المرغوب فيها.
           </div>
         ) : (

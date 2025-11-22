@@ -95,7 +95,7 @@ export function HeroSlider() {
           exit={{ opacity: 0 }}
           transition={{ duration: 1.0 }}
         >
-          <div className="relative w-full h-full">
+            <div className="relative w-full h-full">
             <Image
               src={slides[currentSlide].image_url || "/placeholder.svg"}
               alt={slides[currentSlide].title_ar || "شريحة عرض"}
@@ -104,7 +104,7 @@ export function HeroSlider() {
               priority={currentSlide === 0 && !!slides[currentSlide].image_url}
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-foreground/40 to-foreground/20" />
           </div>
         </motion.div>
       </AnimatePresence>
@@ -150,14 +150,14 @@ export function HeroSlider() {
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all z-10"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/20 hover:bg-background/30 backdrop-blur-sm text-foreground p-3 rounded-full transition-all z-10"
             aria-label="Previous slide"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-all z-10"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/20 hover:bg-background/30 backdrop-blur-sm text-foreground p-3 rounded-full transition-all z-10"
             aria-label="Next slide"
           >
             <ChevronRight className="w-6 h-6" />
@@ -170,7 +170,7 @@ export function HeroSlider() {
                 key={index}
                 onClick={() => goToSlide(index)}
                 className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentSlide ? "bg-white w-8" : "bg-white/50 hover:bg-white/75"
+                  index === currentSlide ? "bg-background w-8" : "bg-background/50 hover:bg-background/75"
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
