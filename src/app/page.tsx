@@ -188,7 +188,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <MainNavigation />
+              <MainNavigation />
 
             <div className="flex items-center gap-3">
               {user ? (
@@ -200,7 +200,7 @@ export default function HomePage() {
                   <Link href="/auth">تسجيل الدخول</Link>
                 </Button>
               )}
-              <MobileNavigation />
+              <MobileNavigation user={user} />
 
               <Button asChild variant="default" className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground relative shadow-md hover:shadow-lg transition-all">
                 <Link href="/cart">
