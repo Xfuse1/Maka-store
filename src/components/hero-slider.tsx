@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -115,7 +116,7 @@ export function HeroSlider() {
           <AnimatePresence>
             <motion.div
               key={currentSlide}
-              className="max-w-2xl text-foreground"
+              className="max-w-2xl text-white"
               variants={contentVariants}
               initial="hidden"
               animate="visible"

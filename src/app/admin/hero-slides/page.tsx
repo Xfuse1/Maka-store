@@ -187,29 +187,29 @@ export default function AdminHeroSlidesPage() {
     }
   }
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`هل أنت متأكد من حذف "${title}"؟`)) return
-
+  const handleDelete = async (id: string) => {
+    console.log(`Attempting to delete slide with ID: ${id}`);
     try {
-      const result = await deleteHeroSlideAction(id)
+      const result = await deleteHeroSlideAction(id);
+      console.log('Delete action result:', result);
       if (result.success) {
         toast({
           title: "تم الحذف",
           description: "تم حذف الشريحة بنجاح",
-        })
-        await loadSlides()
+        });
+        await loadSlides();
       } else {
-        throw new Error(result.error)
+        throw new Error(result.error);
       }
     } catch (error) {
-      console.error("Error deleting slide:", error)
+      console.error("Error deleting slide:", error);
       toast({
         title: "خطأ",
         description: "فشل حذف الشريحة",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -286,7 +286,7 @@ export default function AdminHeroSlidesPage() {
                       variant="outline"
                       size="sm"
                       className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
-                      onClick={() => handleDelete(slide.id, slide.title_ar || "")}
+                      onClick={() => handleDelete(slide.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                       حذف

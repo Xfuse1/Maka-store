@@ -1,6 +1,5 @@
 
 import Link from "next/link"
-
 import { createClient } from "@/lib/supabase/server"
 import { MainNavigation } from "./main-navigation"
 import { MobileNavigation } from "./mobile-navigation"
@@ -16,33 +15,39 @@ export async function Header() {
   return (
     <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 flex-shrink-0">
             <SiteLogo width={80} height={80} />
             <h1 className="text-2xl font-bold text-primary hidden sm:block">مكة</h1>
           </Link>
 
-          {/* Desktop Navigation */}
-          <MainNavigation />
+          {/* Desktop Navigation (visible on md screens and up) */}
+          <div className="hidden md:flex flex-grow justify-center">
+            <MainNavigation />
+          </div>
 
-          <div className="flex items-center gap-4">
-            {/* Cart Icon */}
-            <CartIcon />
-
+          <div className="flex items-center gap-2 md:gap-4">
             {/* Auth Links */}
             {user ? (
-              <SignOutButton />
+              <div className="hidden sm:block">
+                <SignOutButton />
+              </div>
             ) : (
-              <Button variant="outline" asChild>
+              <Button variant="outline" asChild className="hidden sm:inline-flex">
                 <Link href="/auth">
                   تسجيل الدخول
                 </Link>
               </Button>
             )}
             
-            {/* Mobile Navigation */}
-            <MobileNavigation />
+            {/* Cart Icon */}
+            <CartIcon />
+            
+            {/* Mobile Navigation (visible on screens smaller than md) */}
+            <div className="md:hidden">
+              <MobileNavigation user={user} />
+            </div>
           </div>
         </div>
       </div>

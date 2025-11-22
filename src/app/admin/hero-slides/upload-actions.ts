@@ -3,47 +3,52 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
 export async function uploadHeroSlideImage(formData: FormData) {
+  // First, check for the essential server-side configuration
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return {
+      success: false,
+      error: "إعدادات الخادم غير مكتملة. يرجى التأكد من أن متغير SUPABASE_SERVICE_ROLE_KEY تم إعداده بشكل صحيح.",
+    }
+  }
+
   try {
     const file = formData.get("file") as File
     if (!file) {
-      return { success: false, error: "No file provided" }
+      return { success: false, error: "لم يتم تقديم أي ملف" }
     }
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
-      return { success: false, error: "File must be an image" }
+      return { success: false, error: "يجب أن يكون الملف صورة" }
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      return { success: false, error: "File size must be less than 5MB" }
+      return { success: false, error: "يجب أن يكون حجم الملف أقل من 5 ميغابايت" }
     }
 
     const supabase = getSupabaseAdminClient()
 
-    // Create unique filename
     const fileExt = file.name.split(".").pop()
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
     const filePath = `hero-slides/${fileName}`
 
-    // Convert File to ArrayBuffer then to Buffer
     const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from("hero-slides")
-      .upload(filePath, buffer, {
+      .upload(filePath, arrayBuffer, {
         contentType: file.type,
         upsert: false,
       })
 
     if (error) {
-      console.error("Upload error:", error)
-      return { success: false, error: error.message }
+      console.error("Supabase Upload error:", error)
+      // Provide a more specific error message if available
+      if (error.message.includes("new row violates row-level security policy")) {
+        return { success: false, error: "خطأ في الأذونات. تحقق من سياسات الأمان في Supabase Storage." };
+      }
+      return { success: false, error: `فشل الرفع: ${error.message}` }
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage.from("hero-slides").getPublicUrl(filePath)
 
     return {
@@ -52,13 +57,20 @@ export async function uploadHeroSlideImage(formData: FormData) {
       path: filePath,
     }
   } catch (error: any) {
-    console.error("Error uploading hero slide image:", error)
-    return { success: false, error: error?.message || "Failed to upload image" }
+    console.error("Error in uploadHeroSlideImage function:", error)
+    return { success: false, error: error?.message || "فشل رفع الصورة لسبب غير معروف" }
   }
 }
 
 export async function deleteHeroSlideImage(filePath: string) {
   try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return {
+          success: false,
+          error: "إعدادات الخادم غير مكتملة. يرجى التأكد من أن متغير SUPABASE_SERVICE_ROLE_KEY تم إعداده بشكل صحيح.",
+        }
+    }
+    
     const supabase = getSupabaseAdminClient()
 
     const { error } = await supabase.storage.from("hero-slides").remove([filePath])
