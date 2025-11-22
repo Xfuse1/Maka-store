@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Package, Eye, Search, Filter } from "lucide-react"
 import { getOrders, updateOrderStatus } from "@/lib/local-db"
 import type { Order } from "@/lib/types"
+import { ClientOnlyDate } from "@/components/ClientOnlyDate"
 
 export default function OrdersManagementPage() {
   const router = useRouter()
@@ -162,7 +163,7 @@ export default function OrdersManagementPage() {
                         </p>
                         <p className="md:col-span-2">
                           <span className="text-muted-foreground">التاريخ:</span>{" "}
-                          <span className="font-medium">{new Date(order.createdAt).toLocaleDateString("ar-EG")}</span>
+                           <ClientOnlyDate date={order.createdAt} className="font-medium" />
                         </p>
                       </div>
                     </div>
@@ -284,15 +285,17 @@ export default function OrdersManagementPage() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">تاريخ الطلب</p>
-                      <p className="font-medium">
-                        {new Date(selectedOrder.createdAt).toLocaleDateString("ar-EG", {
+                       <ClientOnlyDate
+                        date={selectedOrder.createdAt}
+                        className="font-medium"
+                        options={{
                           year: "numeric",
                           month: "long",
                           day: "numeric",
                           hour: "2-digit",
                           minute: "2-digit",
-                        })}
-                      </p>
+                        }}
+                      />
                     </div>
                   </div>
                 </CardContent>

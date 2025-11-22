@@ -20,33 +20,22 @@ export interface HeroSlide {
  * Uses browser client (RLS applied).
  */
 export async function getAllHeroSlides(): Promise<HeroSlide[]> {
-  try {
-    const supabase = createClient();
-    
-    const { data, error } = await supabase
-      .from('hero_slides')
-      .select('*')
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
-
-    if (error) {
-      // Log detailed error for debugging
-      console.error("[v0] ❌ Error fetching hero slides:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      
-      // Return empty array instead of crashing - component will show fallback
-      return [];
-    }
-
-    return data || [];
-  } catch (err) {
-    console.error("[v0] ❌ Unexpected error in getAllHeroSlides:", err);
-    return [];
-  }
+  // Returning a hardcoded slide as requested by the user.
+  return [
+    {
+      id: "1",
+      title_ar: "مجموعة العيد",
+      subtitle_ar: "تشكيلة جديدة ومميزة",
+      image_url: "/slaydr-1.png",
+      link_url: "/category/all",
+      display_order: 1,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      title_en: "Eid Collection",
+      subtitle_en: "New and exclusive collection",
+    },
+  ];
 }
 
 /**

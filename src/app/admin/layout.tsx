@@ -1,28 +1,26 @@
+
 "use client"
 
 import type React from "react"
+import { useState } from "react"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
-
-// ✅ يطبّق قيم التصميم (ألوان/خطوط/تخطيط) كـ CSS variables على :root
-import DesignProvider from "@/components/providers/design-provider"
-
-// ✅ يهيّئ صفحات الافتراضيّة ويجهّز الستور
+import { AdminHeader } from "@/components/admin/admin-header"
 import { useInitializePages } from "@/lib/use-page-content"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  // مرّة واحدة: إنشاء الصفحات الافتراضية لو مش موجودة
   useInitializePages()
+  const [isSidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex min-h-screen bg-background" dir="rtl">
-      {/* يحقن قيم التصميم المتغيرة في :root */}
-      <DesignProvider />
+    <div className="flex min-h-screen bg-muted/40" dir="rtl">
+      <AdminSidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <AdminSidebar />
-
-      <main className="flex-1 overflow-x-hidden">
-        {children}
-      </main>
+      <div className="flex flex-col flex-1">
+        <AdminHeader setSidebarOpen={setSidebarOpen} />
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

@@ -1,8 +1,9 @@
+
 "use client"
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,11 +21,14 @@ import {
   updateHomepageSectionAction,
   deleteHomepageSectionAction,
 } from "./actions"
+import { getAllProducts, type ProductWithDetails } from "@/lib/supabase/products"
+import { ProductSelector } from "@/components/product-selector"
 
 type SectionForm = Omit<HomepageSection, "id" | "created_at" | "updated_at">
 
 export default function AdminHomepagePage() {
   const [sections, setSections] = useState<HomepageSection[]>([])
+  const [allProducts, setAllProducts] = useState<ProductWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [showDialog, setShowDialog] = useState(false)
   const [editingSection, setEditingSection] = useState<HomepageSection | null>(null)
@@ -48,30 +52,33 @@ export default function AdminHomepagePage() {
   })
 
   useEffect(() => {
-    loadSections()
+    loadData()
   }, [])
 
-  const loadSections = async () => {
+  const loadData = async () => {
     try {
       setLoading(true)
-      const result = await getHomepageSectionsAction()
-      if (result.success && result.data) {
-        setSections(result.data)
+      const [sectionsResult, productsData] = await Promise.all([
+        getHomepageSectionsAction(),
+        getAllProducts(),
+      ])
+      if (sectionsResult.success && sectionsResult.data) {
+        setSections(sectionsResult.data)
       } else {
-        // Defensive: avoid throwing an Error object (may be undefined) — log and show toast instead
-        console.error('[v0] getHomepageSectionsAction failed', result)
+        console.error('[v0] getHomepageSectionsAction failed', sectionsResult)
         toast({
           title: 'خطأ',
-          description: result?.error || 'فشل تحميل أقسام الصفحة الرئيسية',
+          description: sectionsResult?.error || 'فشل تحميل أقسام الصفحة الرئيسية',
           variant: 'destructive',
         })
         setSections([])
       }
+      setAllProducts(productsData)
     } catch (error) {
-      console.error("[v0] Error loading sections:", error)
+      console.error("[v0] Error loading data:", error)
       toast({
         title: "خطأ",
-        description: "فشل تحميل أقسام الصفحة الرئيسية",
+        description: "فشل تحميل البيانات",
         variant: "destructive",
       })
     } finally {
@@ -79,7 +86,7 @@ export default function AdminHomepagePage() {
     }
   }
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       section_type: "best_sellers",
       name_ar: "",
@@ -96,7 +103,7 @@ export default function AdminHomepagePage() {
       is_active: true,
     })
     setEditingSection(null)
-  }
+  }, [sections.length])
 
   const handleEdit = (section: HomepageSection) => {
     setEditingSection(section)
@@ -123,44 +130,26 @@ export default function AdminHomepagePage() {
 
     try {
       setSaving(true)
+      const sectionData = { ...formData }
 
-      const sectionData = {
-        ...formData,
-      }
+      const result = editingSection
+        ? await updateHomepageSectionAction(editingSection.id, sectionData)
+        : await createHomepageSectionAction(sectionData)
 
-      let result
-      if (editingSection) {
-        result = await updateHomepageSectionAction(editingSection.id, sectionData)
-        if (result.success) {
-          toast({
-            title: "تم التحديث",
-            description: "تم تحديث القسم بنجاح",
-          })
-        }
+      if (result.success) {
+        toast({
+          title: editingSection ? "تم التحديث" : "تم الإضافة",
+          description: `تم ${editingSection ? "تحديث" : "إضافة"} القسم بنجاح`,
+        })
+        setShowDialog(false)
+        resetForm()
+        await loadData()
       } else {
-        result = await createHomepageSectionAction(sectionData)
-        if (result.success) {
-          toast({
-            title: "تم الإضافة",
-            description: "تم إضافة القسم بنجاح",
-          })
-        }
-      }
-
-      if (!result.success) {
         throw new Error(result.error)
       }
-
-      setShowDialog(false)
-      resetForm()
-      await loadSections()
     } catch (error) {
       console.error("[v0] Error saving section:", error)
-      toast({
-        title: "خطأ",
-        description: "فشل حفظ القسم",
-        variant: "destructive",
-      })
+      toast({ title: "خطأ", description: "فشل حفظ القسم", variant: "destructive" })
     } finally {
       setSaving(false)
     }
@@ -172,23 +161,30 @@ export default function AdminHomepagePage() {
     try {
       const result = await deleteHomepageSectionAction(id)
       if (result.success) {
-        toast({
-          title: "تم الحذف",
-          description: "تم حذف القسم بنجاح",
-        })
-        await loadSections()
+        toast({ title: "تم الحذف", description: "تم حذف القسم بنجاح" })
+        await loadData()
       } else {
         throw new Error(result.error)
       }
     } catch (error) {
       console.error("[v0] Error deleting section:", error)
-      toast({
-        title: "خطأ",
-        description: "فشل حذف القسم",
-        variant: "destructive",
-      })
+      toast({ title: "خطأ", description: "فشل حذف القسم", variant: "destructive" })
     }
   }
+
+  const handleProductSelectionChange = useCallback((newSelectedIds: string[]) => {
+    setFormData((prev) => ({ ...prev, product_ids: newSelectedIds }))
+  }, [])
+
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      setShowDialog(open)
+      if (!open) {
+        resetForm()
+      }
+    },
+    [resetForm],
+  )
 
   const getSectionTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -286,38 +282,26 @@ export default function AdminHomepagePage() {
                     </Button>
                   </div>
                 </div>
-
-                {/* Right-side preview (image / subtitle) */}
                 <div className="w-40 flex-shrink-0">
                   {(() => {
                     const content: any = section.custom_content || {}
-                    // common keys: image_url, image, src, slides: [{ image_url }]
                     const imageUrl = content?.image_url || content?.image || content?.src || (Array.isArray(content?.slides) && content.slides[0]?.image_url) || null
                     const subtitle = content?.subtitle_ar || content?.subtitle || section.name_en || null
                     if (imageUrl) {
                       return (
                         <div className="relative w-40 h-24 rounded-md overflow-hidden bg-muted">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={imageUrl} alt={section.name_ar || "preview"} className="w-full h-full object-cover" />
                         </div>
                       )
                     }
-
                     if (subtitle) {
                       return (
                         <div className="w-40 h-24 rounded-md bg-muted p-3 flex items-center justify-center text-sm text-muted-foreground">
-                          <div>
-                            <div className="font-medium text-foreground mb-1">{subtitle}</div>
-                          </div>
+                          <div><div className="font-medium text-foreground mb-1">{subtitle}</div></div>
                         </div>
                       )
                     }
-
-                    return (
-                      <div className="w-40 h-24 rounded-md bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                        معاينة
-                      </div>
-                    )
+                    return <div className="w-40 h-24 rounded-md bg-muted flex items-center justify-center text-xs text-muted-foreground">معاينة</div>
                   })()}
                 </div>
               </div>
@@ -332,10 +316,7 @@ export default function AdminHomepagePage() {
           <p className="text-muted-foreground mb-6">ابدأ بإضافة أقسام للصفحة الرئيسية</p>
           <Button
             className="bg-primary hover:bg-primary/90"
-            onClick={() => {
-              resetForm()
-              setShowDialog(true)
-            }}
+            onClick={() => { resetForm(); setShowDialog(true); }}
           >
             <Plus className="h-4 w-4 ml-2" />
             إضافة قسم جديد
@@ -343,13 +324,7 @@ export default function AdminHomepagePage() {
         </div>
       )}
 
-      <Dialog
-        open={showDialog}
-        onOpenChange={(open) => {
-          setShowDialog(open)
-          if (!open) resetForm()
-        }}
-      >
+      <Dialog open={showDialog} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
@@ -366,11 +341,11 @@ export default function AdminHomepagePage() {
                 <Label htmlFor="section_type">نوع القسم *</Label>
                 <Select
                   value={formData.section_type}
-                  onValueChange={(value: any) => setFormData({ ...formData, section_type: value })}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, section_type: value as any }))
+                  }
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="best_sellers">الأكثر مبيعاً</SelectItem>
                     <SelectItem value="new_arrivals">المنتجات الجديدة</SelectItem>
@@ -388,7 +363,9 @@ export default function AdminHomepagePage() {
                   id="display_order"
                   type="number"
                   value={formData.display_order}
-                  onChange={(e) => setFormData({ ...formData, display_order: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, display_order: Number(e.target.value) }))
+                  }
                 />
               </div>
             </div>
@@ -397,7 +374,7 @@ export default function AdminHomepagePage() {
               <Switch
                 id="is_active"
                 checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))}
               />
               <Label htmlFor="is_active" className="cursor-pointer">
                 نشط
@@ -410,7 +387,7 @@ export default function AdminHomepagePage() {
                 <Input
                   id="name_ar"
                   value={formData.name_ar}
-                  onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name_ar: e.target.value }))}
                   required
                 />
               </div>
@@ -419,7 +396,7 @@ export default function AdminHomepagePage() {
                 <Input
                   id="name_en"
                   value={formData.name_en || ""}
-                  onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name_en: e.target.value }))}
                 />
               </div>
             </div>
@@ -429,11 +406,9 @@ export default function AdminHomepagePage() {
                 <Label htmlFor="layout_type">نوع التخطيط</Label>
                 <Select
                   value={formData.layout_type || "grid"}
-                  onValueChange={(value) => setFormData({ ...formData, layout_type: value })}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, layout_type: value }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="grid">شبكة</SelectItem>
                     <SelectItem value="carousel">عرض متحرك</SelectItem>
@@ -447,7 +422,9 @@ export default function AdminHomepagePage() {
                   id="max_items"
                   type="number"
                   value={formData.max_items || 8}
-                  onChange={(e) => setFormData({ ...formData, max_items: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, max_items: Number(e.target.value) }))
+                  }
                 />
               </div>
               <div>
@@ -455,7 +432,9 @@ export default function AdminHomepagePage() {
                 <Input
                   id="background_color"
                   value={formData.background_color || ""}
-                  onChange={(e) => setFormData({ ...formData, background_color: e.target.value || "" })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, background_color: e.target.value || "" }))
+                  }
                   placeholder="#ffffff"
                 />
               </div>
@@ -466,31 +445,32 @@ export default function AdminHomepagePage() {
                 <Switch
                   id="show_title"
                   checked={formData.show_title}
-                  onCheckedChange={(checked) => setFormData({ ...formData, show_title: checked })}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, show_title: checked }))}
                 />
-                <Label htmlFor="show_title" className="cursor-pointer">
-                  إظهار العنوان
-                </Label>
+                <Label htmlFor="show_title" className="cursor-pointer">إظهار العنوان</Label>
               </div>
               <div className="flex items-center space-x-2 space-x-reverse">
                 <Switch
                   id="show_description"
                   checked={formData.show_description}
-                  onCheckedChange={(checked) => setFormData({ ...formData, show_description: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, show_description: checked }))
+                  }
                 />
-                <Label htmlFor="show_description" className="cursor-pointer">
-                  إظهار الوصف
-                </Label>
+                <Label htmlFor="show_description" className="cursor-pointer">إظهار الوصف</Label>
               </div>
             </div>
+
+            <ProductSelector
+              allProducts={allProducts}
+              selectedProductIds={formData.product_ids || []}
+              onSelectionChange={handleProductSelectionChange}
+            />
 
             <div className="flex gap-4 pt-2">
               <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={saving}>
                 {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                    جاري الحفظ...
-                  </>
+                  <><Loader2 className="h-4 w-4 animate-spin ml-2" /> جاري الحفظ...</>
                 ) : (
                   "حفظ"
                 )}
@@ -498,10 +478,7 @@ export default function AdminHomepagePage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setShowDialog(false)
-                  resetForm()
-                }}
+                onClick={() => handleDialogOpenChange(false)}
                 disabled={saving}
               >
                 إلغاء

@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import {  Award, Users, Sparkles } from "lucide-react"
+import { Heart, Award, Users, Sparkles } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePageSection, useInitializePages } from "@/app/lib/use-page-content"
+import { usePageSection, useInitializePages } from "@/lib/use-page-content"
 
 export default function AboutPage() {
   useInitializePages()
@@ -79,7 +79,9 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="border-2 border-border hover:border-primary transition-all hover:shadow-xl">
               <CardContent className="p-8 text-center">
-               
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="h-8 w-8 text-primary" />
+                </div>
                 <h4 className="text-xl font-bold mb-3 text-foreground">{passionTitle}</h4>
                 <p className="text-muted-foreground leading-relaxed">{passionDesc}</p>
               </CardContent>
