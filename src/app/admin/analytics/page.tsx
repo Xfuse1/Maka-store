@@ -205,7 +205,7 @@ export default function AdminAnalyticsPage() {
                     )}
                   </div>
                 </div>
-                <div className="h-3 bg-secondary/30 rounded-full overflow-hidden">
+                <div className="h-3 bg-primary/30 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary rounded-full transition-all"
                     style={{

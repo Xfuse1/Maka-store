@@ -9,7 +9,7 @@ module.exports = {
     extend: {
       colors: {
         primary: "var(--primary-hex)",
-        secondary: "var(--secondary-hex)",
+        secondary: "var(--primary-hex)",
         background: "var(--background-hex)",
         foreground: "var(--foreground-hex)",
       },

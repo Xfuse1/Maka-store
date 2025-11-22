@@ -316,7 +316,7 @@ export default function HomepageSectionsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Badge variant={section.is_active ? "default" : "secondary"}>
+                    <Badge variant={section.is_active ? "default" : "outline"}>
                       {section.is_active ? "مرئي" : "مخفي"}
                     </Badge>
                     <Badge variant="outline">ترتيب {index + 1}</Badge>

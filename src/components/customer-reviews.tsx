@@ -33,7 +33,7 @@ const reviews = [
 
 export function CustomerReviews() {
   return (
-    <section className="py-20 bg-secondary/20">
+    <section className="py-20 bg-background/20">
       <div className="container mx-auto px-4">
         <h3 className="text-4xl font-bold text-center mb-4 text-foreground">آراء عملائنا</h3>
         <p className="text-center text-muted-foreground text-lg mb-16">ماذا يقول عملاؤنا عن تجربتهم معنا</p>

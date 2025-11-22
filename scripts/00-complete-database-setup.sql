@@ -479,7 +479,7 @@ ON CONFLICT (code) DO NOTHING;
 -- Insert design settings
 INSERT INTO design_settings (key, value, description) VALUES
   ('primary_color', '"#ec4899"', 'Primary brand color'),
-  ('secondary_color', '"#8b5cf6"', 'Secondary brand color'),
+  ('secondary_color','"#ec4899"', 'Primary brand color'),
   ('logo_url', '"/logo.png"', 'Store logo URL'),
   ('store_name_ar', '"مكة ستور"', 'Store name in Arabic'),
   ('store_name_en', '"Maka Store"', 'Store name in English')
@@ -488,7 +488,7 @@ ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 -- Insert homepage sections
 INSERT INTO homepage_sections (name_ar, name_en, section_type, display_order, is_active, max_items, layout_type, background_color) VALUES
   ('الأكثر مبيعاً', 'Best Sellers', 'best_sellers', 1, true, 3, 'grid', 'background'),
-  ('المنتجات الجديدة', 'New Products', 'new_arrivals', 2, true, 3, 'grid', 'secondary'),
+  ('المنتجات الجديدة', 'New Products', 'new_arrivals', 2, true, 3, 'grid', 'background'),
   ('المنتجات المميزة', 'Featured Products', 'featured', 3, true, 3, 'grid', 'background'),
   ('تسوقي حسب الفئة', 'Shop by Category', 'categories', 4, true, 8, 'grid', 'background')
 ON CONFLICT DO NOTHING;

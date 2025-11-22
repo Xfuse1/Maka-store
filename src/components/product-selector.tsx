@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, memo } from "react"
+import { useState, useMemo, useCallback, memo } from "react" // أزلت useRef و useEffect
 import Image from "next/image"
 import { type ProductWithDetails } from "@/lib/supabase/products"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -13,7 +13,6 @@ interface ProductSelectorProps {
   onSelectionChange: (newSelectedIds: string[]) => void
 }
 
-// Extract ProductRow to prevent unnecessary re-renders and stabilize Checkbox usage
 const ProductRow = memo(({ 
   product, 
   isSelected, 
@@ -23,17 +22,23 @@ const ProductRow = memo(({
   isSelected: boolean
   onToggle: (id: string) => void 
 }) => {
+  const handleToggle = useCallback(() => {
+    onToggle(product.id)
+  }, [onToggle, product.id])
+
+  // ✅ **السر: ثبت الـ ID**
+  const labelId = useMemo(() => `product-label-${product.id}`, [product.id])
+
   return (
     <div
-      onClick={() => onToggle(product.id)}
+      onClick={handleToggle}
       className="flex cursor-pointer items-center space-x-3 space-x-reverse rounded-md border-2 p-3 transition-colors hover:border-primary/50 data-[selected=true]:border-primary"
       data-selected={isSelected}
     >
       <Checkbox
         checked={isSelected}
-        onCheckedChange={() => onToggle(product.id)}
-        onClick={(e) => e.stopPropagation()}
-        aria-labelledby={`product-label-${product.id}`}
+        onCheckedChange={handleToggle}
+        aria-labelledby={labelId} // ✅ **مستقر**
       />
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted">
         {product.product_images?.[0]?.image_url ? (
@@ -51,7 +56,7 @@ const ProductRow = memo(({
         )}
       </div>
       <div className="flex-grow">
-        <span id={`product-label-${product.id}`} className="font-medium">
+        <span id={labelId} className="font-medium"> {/* ✅ **نفس الـ ID المستقر** */}
           {product.name_ar}
         </span>
         <p className="text-xs text-muted-foreground">{product.category?.name_ar || "غير مصنف"}</p>
@@ -64,7 +69,6 @@ ProductRow.displayName = "ProductRow"
 export function ProductSelector({ allProducts, selectedProductIds, onSelectionChange }: ProductSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Memoize filtered products to avoid recreating the array on every render
   const filteredProducts = useMemo(() => allProducts.filter(
     (p) =>
       p.name_ar.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,15 +76,11 @@ export function ProductSelector({ allProducts, selectedProductIds, onSelectionCh
       p.id.toString().includes(searchQuery.toLowerCase()),
   ), [allProducts, searchQuery])
 
-  // Memoize the toggle handler
   const handleProductToggle = useCallback((productId: string) => {
     const isSelected = selectedProductIds.includes(productId)
-    let newSelectedIds: string[]
-    if (isSelected) {
-      newSelectedIds = selectedProductIds.filter((id) => id !== productId)
-    } else {
-      newSelectedIds = [...selectedProductIds, productId]
-    }
+    const newSelectedIds = isSelected
+      ? selectedProductIds.filter((id) => id !== productId)
+      : [...selectedProductIds, productId]
     onSelectionChange(newSelectedIds)
   }, [selectedProductIds, onSelectionChange])
 
@@ -105,7 +105,7 @@ export function ProductSelector({ allProducts, selectedProductIds, onSelectionCh
         <div className="space-y-3">
           {filteredProducts.map((product) => (
             <ProductRow
-              key={product.id}
+              key={product.id}// ✅ **مفتاح مميز ومستقر**
               product={product}
               isSelected={selectedProductIds.includes(product.id)}
               onToggle={handleProductToggle}

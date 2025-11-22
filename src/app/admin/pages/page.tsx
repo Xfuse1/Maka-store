@@ -17,7 +17,9 @@ export default function AdminPagesPage() {
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<PageContent | null>(null)
-
+  const [newPath, setNewPath] = useState("")
+  const [newTitleAr, setNewTitleAr] = useState("")
+  const [newTitleEn, setNewTitleEn] = useState("")
 
   useEffect(() => {
     loadPages()
@@ -290,7 +292,7 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
 
         <div className="space-y-2 mt-4">
           {Object.entries(sections).map(([key, value]) => (
-            <div key={key} className="grid md:grid-cols-3 gap-2 p-3 bg-secondary/20 rounded-lg">
+            <div key={key} className="grid md:grid-cols-3 gap-2 p-3 bg-primary/20 rounded-lg">
               <Input value={key} disabled className="font-mono text-sm bg-background" />
               <Textarea value={value} onChange={(e) => updateSection(key, e.target.value)} rows={3} />
               <Button
