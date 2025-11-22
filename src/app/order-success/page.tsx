@@ -13,19 +13,57 @@ export default async function OrderSuccessPage({
   const params = await searchParams
   
   // ندعم أكتر من اسم للبارام عشان ما يحصلش لخبطة
+  // merchantOrderId هو الـ order ID الحقيقي اللي بنبعته لـ Kashier
   const raw =
-    (params?.orderNumber ??
+    (params?.merchantOrderId ??
+      params?.orderNumber ??
+      params?.orderId ??
       params?.orderNum ??
       params?.order ??
       params?.id) || ""
 
   const orderNumber = Array.isArray(raw) ? raw[0] : raw
+  
+  // استخرج معلومات الدفع من Kashier
+  const paymentStatus = params?.paymentStatus
+  const transactionId = params?.transactionId
+  const amount = params?.amount
 
   let orderDetails = null
   let user = null
 
   if (orderNumber) {
     const supabase = await createClient()
+    
+    // إذا كان الدفع نجح من Kashier، حدّث حالة الطلب
+    if (paymentStatus === 'SUCCESS' && transactionId) {
+      console.log('[OrderSuccess] Payment successful, updating order:', orderNumber)
+      
+      // حدّث حالة الطلب
+      await supabase
+        .from('orders')
+        .update({
+          payment_status: 'paid',
+          status: 'processing',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', orderNumber)
+      
+      // حدّث حالة معاملة الدفع
+      await supabase
+        .from('payment_transactions')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          gateway_response: {
+            transactionId: String(transactionId),
+            amount: String(amount),
+            paymentStatus: String(paymentStatus),
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('order_id', orderNumber)
+    }
     
     // Fetch order details
     const { data: orderData } = await supabase
@@ -73,6 +111,14 @@ export default async function OrderSuccessPage({
           <div className="mb-6 rounded-lg bg-green-50 border border-green-200 p-4">
             <p className="font-medium">رقم الطلب</p>
             <p className="text-lg font-bold mt-1">{orderNumber}</p>
+            {paymentStatus === 'SUCCESS' && (
+              <p className="text-sm text-green-600 mt-2">✓ تم الدفع بنجاح</p>
+            )}
+            {transactionId && (
+              <p className="text-xs text-muted-foreground mt-1">
+                رقم المعاملة: {transactionId}
+              </p>
+            )}
           </div>
         ) : (
           <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 p-4">

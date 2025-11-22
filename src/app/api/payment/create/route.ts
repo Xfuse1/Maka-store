@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
           return NextResponse.json({
             success: true,
-            paymentUrl: `${appUrl}/order-success?orderId=${orderId}&amount=${amount}&test=true&payment=fallback&error=kashier-failed`,
+            paymentUrl: `${appUrl}/order-success?orderNumber=${orderId}&amount=${amount}&test=true&payment=fallback&error=kashier-failed`,
             transactionId: `fallback_${Date.now()}`,
             message: "Kashier failed - using development fallback",
           })

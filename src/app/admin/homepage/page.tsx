@@ -99,11 +99,11 @@ export default function AdminHomepagePage() {
       category_ids: [],
       custom_content: {},
       max_items: 8,
-      display_order: sections.length + 1,
+      display_order: 0,
       is_active: true,
     })
     setEditingSection(null)
-  }, [sections.length])
+  }, [])
 
   const handleEdit = (section: HomepageSection) => {
     setEditingSection(section)

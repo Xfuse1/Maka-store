@@ -117,25 +117,73 @@ export class PaymentService {
       } as any)
 
       // 3. Process event
-      const { transaction_id, order_id } = payload.data
+      const { transaction_id, order_id, status: paymentStatus } = payload.data
 
       switch (payload.event_type) {
         case "payment.completed":
-          console.log("[PaymentService] Payment completed:", transaction_id)
-          await this.updatePaymentStatus(transaction_id, "completed", payload.data)
+        case "payment.success":
+          console.log("[PaymentService] Payment completed:", transaction_id, order_id)
           
-          // Update order status (Migrated from webhook route)
-          // @ts-ignore
-          await this.supabase.from("orders").update({
-            payment_status: "paid",
-            status: "processing",
-            updated_at: new Date().toISOString(),
-          }).eq("id", order_id)
+          // Update payment transaction status using transaction_id
+          const { error: txError } = await this.supabase
+            .from("payment_transactions")
+            .update({
+              status: "completed",
+              completed_at: new Date().toISOString(),
+              gateway_response: payload.data,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("transaction_id", transaction_id)
+          
+          if (txError) {
+            console.error("[PaymentService] Failed to update transaction:", txError)
+          } else {
+            console.log("[PaymentService] Transaction status updated to completed")
+          }
+          
+          // Update order status
+          if (order_id) {
+            const { error: orderError } = await this.supabase
+              .from("orders")
+              .update({
+                payment_status: "paid",
+                status: "processing",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", order_id)
+            
+            if (orderError) {
+              console.error("[PaymentService] Failed to update order:", orderError)
+            } else {
+              console.log("[PaymentService] Order status updated to paid")
+            }
+          }
           break
 
         case "payment.failed":
-          console.log("[PaymentService] Payment failed:", transaction_id)
-          await this.updatePaymentStatus(transaction_id, "failed", payload.data)
+          console.log("[PaymentService] Payment failed:", transaction_id, order_id)
+          
+          // Update transaction status
+          await this.supabase
+            .from("payment_transactions")
+            .update({
+              status: "failed",
+              failed_at: new Date().toISOString(),
+              gateway_response: payload.data,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("transaction_id", transaction_id)
+          
+          // Update order
+          if (order_id) {
+            await this.supabase
+              .from("orders")
+              .update({
+                payment_status: "failed",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", order_id)
+          }
           break
 
         case "payment.refunded":
@@ -146,6 +194,15 @@ export class PaymentService {
             status: "completed",
             completed_at: new Date().toISOString(),
           } as any)
+          
+          // Update transaction
+          await this.supabase
+            .from("payment_transactions")
+            .update({
+              status: "refunded",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("transaction_id", transaction_id)
           break
 
         default:
