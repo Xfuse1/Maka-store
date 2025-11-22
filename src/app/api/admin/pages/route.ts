@@ -5,14 +5,8 @@ export async function GET() {
   try {
     const adminClient = getAdminClient()
 
-    // Only return static pages
-    const STATIC_PAGE_PATHS = ["/about", "/contact", "/terms", "/privacy", "/return-policy", "/faq"]
-
-    const { data, error } = await adminClient
-      .from("page_content")
-      .select("*")
-      .in("page_path", STATIC_PAGE_PATHS)
-      .order("page_path")
+    // Return all pages from `page_content` so the admin list shows every page
+    const { data, error } = await adminClient.from("page_content").select("*").order("page_path")
 
     if (error) throw error
 

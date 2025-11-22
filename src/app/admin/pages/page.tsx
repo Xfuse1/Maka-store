@@ -18,10 +18,6 @@ export default function AdminPagesPage() {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<PageContent | null>(null)
 
-  // New page form
-  const [newPath, setNewPath] = useState("")
-  const [newTitleAr, setNewTitleAr] = useState("")
-  const [newTitleEn, setNewTitleEn] = useState("")
 
   useEffect(() => {
     loadPages()
@@ -97,34 +93,7 @@ export default function AdminPagesPage() {
         <p className="text-muted-foreground">إجمالي الصفحات: {pages.length}</p>
       </div>
 
-      <Card className="border-2 border-border mb-6">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">إضافة صفحة جديدة</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            الصفحات الثابتة فقط (من نحن، تواصل معنا، الشروط، سياسة الخصوصية، إلخ)
-          </p>
-        </CardHeader>
-        <CardContent className="grid md:grid-cols-4 gap-4">
-          <div>
-            <Label>المسار (Path)</Label>
-            <Input placeholder="/about" value={newPath} onChange={(e) => setNewPath(e.target.value)} />
-          </div>
-          <div>
-            <Label>العنوان بالعربية</Label>
-            <Input placeholder="من نحن" value={newTitleAr} onChange={(e) => setNewTitleAr(e.target.value)} />
-          </div>
-          <div>
-            <Label>العنوان بالإنجليزية</Label>
-            <Input placeholder="About Us" value={newTitleEn} onChange={(e) => setNewTitleEn(e.target.value)} />
-          </div>
-          <div className="flex items-end">
-            <Button className="w-full gap-2" onClick={handleCreatePage}>
-              <Plus className="h-4 w-4" />
-              إضافة صفحة
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      
 
       <div className="grid gap-4">
         {pages.map((pg) => (

@@ -9,9 +9,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Loader2, Eye } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Plus, Edit, Trash2, Loader2, Eye, X } from "lucide-react"
+// Use native selects here to avoid Radix portal/popper presence update cycles
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 import type { HomepageSection } from "../homepage-sections/actions"
@@ -74,6 +73,10 @@ export default function AdminHomepagePage() {
         setSections([])
       }
       setAllProducts(productsData)
+      if (!productsData || productsData.length === 0) {
+        // Non-blocking warning if products failed to load or there are none
+        toast({ title: 'تنبيه', description: 'فشل تحميل قائمة المنتجات أو لا توجد منتجات.', variant: 'destructive' })
+      }
     } catch (error) {
       console.error("[v0] Error loading data:", error)
       toast({
@@ -176,15 +179,12 @@ export default function AdminHomepagePage() {
     setFormData((prev) => ({ ...prev, product_ids: newSelectedIds }))
   }, [])
 
-  const handleDialogOpenChange = useCallback(
-    (open: boolean) => {
-      setShowDialog(open)
-      if (!open) {
-        resetForm()
-      }
-    },
-    [resetForm],
-  )
+  const handleDialogOpenChange = (open: boolean) => {
+    setShowDialog(open)
+    if (!open) {
+      resetForm()
+    }
+  }
 
   const getSectionTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -297,7 +297,7 @@ export default function AdminHomepagePage() {
                     if (subtitle) {
                       return (
                         <div className="w-40 h-24 rounded-md bg-muted p-3 flex items-center justify-center text-sm text-muted-foreground">
-                          <div><div className="font-medium text-foreground mb-1">{subtitle}</div></div>
+                          <div className="font-medium text-foreground mb-1">{subtitle}</div>
                         </div>
                       )
                     }
@@ -324,38 +324,46 @@ export default function AdminHomepagePage() {
         </div>
       )}
 
-      <Dialog open={showDialog} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
-              {editingSection ? "تعديل القسم" : "إضافة قسم جديد"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingSection ? `تعديل "${editingSection.name_ar}"` : "أضف قسم جديد للصفحة الرئيسية"}
-            </DialogDescription>
-          </DialogHeader>
+      {showDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => handleDialogOpenChange(false)}>
+          <div 
+            className="bg-background rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-background border-b px-6 py-4 flex items-center justify-between z-10">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  {editingSection ? "تعديل القسم" : "إضافة قسم جديد"}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {editingSection ? `تعديل "${editingSection.name_ar}"` : "أضف قسم جديد للصفحة الرئيسية"}
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => handleDialogOpenChange(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="p-6">
 
           <form onSubmit={handleSave} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="section_type">نوع القسم *</Label>
-                <Select
+                <select
+                  id="section_type"
                   value={formData.section_type}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, section_type: value as any }))
-                  }
+                  onChange={(e) => setFormData((prev) => ({ ...prev, section_type: e.target.value as any }))}
+                  className="border-input rounded-md bg-transparent px-3 py-2 text-sm w-full"
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="best_sellers">الأكثر مبيعاً</SelectItem>
-                    <SelectItem value="new_arrivals">المنتجات الجديدة</SelectItem>
-                    <SelectItem value="featured">المنتجات المميزة</SelectItem>
-                    <SelectItem value="categories">التصنيفات</SelectItem>
-                    <SelectItem value="reviews">آراء العملاء</SelectItem>
-                    <SelectItem value="hero">بانر رئيسي</SelectItem>
-                    <SelectItem value="promotional">قسم ترويجي</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="best_sellers">الأكثر مبيعاً</option>
+                  <option value="new_arrivals">المنتجات الجديدة</option>
+                  <option value="featured">المنتجات المميزة</option>
+                  <option value="categories">التصنيفات</option>
+                  <option value="reviews">آراء العملاء</option>
+                  <option value="hero">بانر رئيسي</option>
+                  <option value="promotional">قسم ترويجي</option>
+                </select>
               </div>
               <div>
                 <Label htmlFor="display_order">ترتيب العرض</Label>
@@ -371,10 +379,12 @@ export default function AdminHomepagePage() {
             </div>
 
             <div className="flex items-center space-x-2 space-x-reverse">
-              <Switch
+              <input
                 id="is_active"
-                checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))}
+                type="checkbox"
+                checked={!!formData.is_active}
+                onChange={(e) => setFormData((prev) => ({ ...prev, is_active: e.target.checked }))}
+                className="h-5 w-10 rounded-full appearance-none bg-input checked:bg-primary relative align-middle cursor-pointer transition-colors"
               />
               <Label htmlFor="is_active" className="cursor-pointer">
                 نشط
@@ -402,20 +412,7 @@ export default function AdminHomepagePage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="layout_type">نوع التخطيط</Label>
-                <Select
-                  value={formData.layout_type || "grid"}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, layout_type: value }))}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="grid">شبكة</SelectItem>
-                    <SelectItem value="carousel">عرض متحرك</SelectItem>
-                    <SelectItem value="list">قائمة</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+             
               <div>
                 <Label htmlFor="max_items">عدد العناصر</Label>
                 <Input
@@ -427,35 +424,27 @@ export default function AdminHomepagePage() {
                   }
                 />
               </div>
-              <div>
-                <Label htmlFor="background_color">لون الخلفية</Label>
-                <Input
-                  id="background_color"
-                  value={formData.background_color || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, background_color: e.target.value || "" }))
-                  }
-                  placeholder="#ffffff"
-                />
-              </div>
+             
             </div>
 
             <div className="flex gap-4">
               <div className="flex items-center space-x-2 space-x-reverse">
-                <Switch
+                <input
                   id="show_title"
-                  checked={formData.show_title}
-                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, show_title: checked }))}
+                  type="checkbox"
+                  checked={!!formData.show_title}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, show_title: e.target.checked }))}
+                  className="h-5 w-10 rounded-full appearance-none bg-input checked:bg-primary relative align-middle cursor-pointer transition-colors"
                 />
                 <Label htmlFor="show_title" className="cursor-pointer">إظهار العنوان</Label>
               </div>
               <div className="flex items-center space-x-2 space-x-reverse">
-                <Switch
+                <input
                   id="show_description"
-                  checked={formData.show_description}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, show_description: checked }))
-                  }
+                  type="checkbox"
+                  checked={!!formData.show_description}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, show_description: e.target.checked }))}
+                  className="h-5 w-10 rounded-full appearance-none bg-input checked:bg-primary relative align-middle cursor-pointer transition-colors"
                 />
                 <Label htmlFor="show_description" className="cursor-pointer">إظهار الوصف</Label>
               </div>
@@ -485,8 +474,10 @@ export default function AdminHomepagePage() {
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

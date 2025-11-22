@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -53,6 +54,11 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
   if (!section.is_active) return null
 
   const { colors } = useDesignStore()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const getFirstImage = (product: Product) => {
     const sortedImages = [...(product.product_images || [])].sort((a, b) => a.display_order - b.display_order)
@@ -75,9 +81,9 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
   const getSectionIcon = () => {
     switch (section.section_type) {
       case "best_sellers":
-        return <TrendingUp className="w-8 h-8" style={{ color: colors.primary }} />
+        return <TrendingUp className="w-8 h-8" style={mounted ? { color: colors.primary } : undefined} />
       case "new_arrivals":
-        return <Sparkles className="w-8 h-8" style={{ color: colors.primary }} />
+        return <Sparkles className="w-8 h-8" style={mounted ? { color: colors.primary } : undefined} />
       default:
         return null
     }
@@ -103,7 +109,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
       case "new_arrivals":
       case "featured":
       default:
-        return { backgroundColor: colors.primary, color: colors.foreground }
+        return mounted ? { backgroundColor: colors.primary, color: colors.foreground } : { backgroundColor: undefined }
     }
   }
 
@@ -118,13 +124,13 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
       <section 
         id="categories" 
         className="py-20 transition-colors duration-300"
-        style={{ backgroundColor: colors.background }}
+        style={mounted ? { backgroundColor: colors.background } : undefined}
       >
         <div className="container mx-auto px-4">
-          {section.show_title && (
+            {section.show_title && (
             <h3 
               className="text-4xl font-bold text-center mb-16 transition-colors duration-300" 
-              style={{ color: colors.foreground }}
+              style={mounted ? { color: colors.foreground } : undefined}
             >
               {section.name_ar}
             </h3>
@@ -134,14 +140,12 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
               <Link key={category.id} href={`/category/${category.slug}`} className="group">
                 <Card 
                   className="overflow-hidden border-2 transition-all hover:shadow-xl"
-                  style={{ 
-                    borderColor: colors.foreground + '20',
-                  }}
+                  style={mounted ? { borderColor: colors.foreground + '20' } : undefined}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = colors.primary
+                    if (mounted) e.currentTarget.style.borderColor = colors.primary
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = colors.foreground + '20'
+                    if (mounted) e.currentTarget.style.borderColor = colors.foreground + '20'
                   }}
                 >
                   <CardContent className="p-0">
@@ -156,18 +160,18 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                     </div>
                     <div 
                       className="p-6 text-center transition-colors duration-300" 
-                      style={{ backgroundColor: colors.background }}
+                      style={mounted ? { backgroundColor: colors.background } : undefined}
                     >
                       <h4 
                         className="text-2xl font-bold transition-colors duration-300" 
-                        style={{ color: colors.foreground }}
+                        style={mounted ? { color: colors.foreground } : undefined}
                       >
                         {category.name_ar}
                       </h4>
                       {category.description_ar && (
                         <p 
                           className="text-sm mt-2 line-clamp-2 transition-colors duration-300" 
-                          style={{ color: colors.foreground + 'CC' }}
+                          style={mounted ? { color: colors.foreground + 'CC' } : undefined}
                         >
                           {category.description_ar}
                         </p>
@@ -192,7 +196,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
   return (
     <section 
       className="py-20 transition-colors duration-300"
-      style={{ backgroundColor: colors.background }}
+      style={mounted ? { backgroundColor: colors.background } : undefined}
     >
       <div className="container mx-auto px-4">
         {section.show_title && (
@@ -201,15 +205,15 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
               {icon}
               <h3 
                 className="text-4xl font-bold text-center transition-colors duration-300" 
-                style={{ color: colors.foreground }}
+                style={mounted ? { color: colors.foreground } : undefined}
               >
                 {section.name_ar}
               </h3>
             </div>
-            {section.section_type === "best_sellers" && (
+              {section.section_type === "best_sellers" && (
               <p 
                 className="text-center text-lg mb-16 transition-colors duration-300" 
-                style={{ color: colors.foreground + 'CC' }}
+                style={mounted ? { color: colors.foreground + 'CC' } : undefined}
               >
                 المنتجات الأكثر طلباً من عملائنا
               </p>
@@ -217,7 +221,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
             {section.section_type === "new_arrivals" && (
               <p 
                 className="text-center text-lg mb-16 transition-colors duration-300" 
-                style={{ color: colors.foreground + 'CC' }}
+                style={mounted ? { color: colors.foreground + 'CC' } : undefined}
               >
                 أحدث إضافاتنا من التصاميم العصرية
               </p>
@@ -225,7 +229,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
             {section.section_type === "featured" && (
               <p 
                 className="text-center text-lg mb-16 transition-colors duration-300" 
-                style={{ color: colors.foreground + 'CC' }}
+                style={mounted ? { color: colors.foreground + 'CC' } : undefined}
               >
                 تشكيلة مختارة بعناية من أفضل منتجاتنا
               </p>
@@ -252,14 +256,14 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                 })
               }}
             >
-              <Card 
+                <Card 
                 className="overflow-hidden border-2 transition-all hover:shadow-xl"
-                style={{ borderColor: colors.foreground + '20' }}
+                style={mounted ? { borderColor: colors.foreground + '20' } : undefined}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = colors.primary
+                  if (mounted) e.currentTarget.style.borderColor = colors.primary
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = colors.foreground + '20'
+                  if (mounted) e.currentTarget.style.borderColor = colors.foreground + '20'
                 }}
               >
                 <CardContent className="p-0">
@@ -274,7 +278,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                     {badgeText && (
                       <Badge 
                         className="absolute top-4 right-4 border-0 transition-all duration-300"
-                        style={badgeColor}
+                        style={mounted ? badgeColor : undefined}
                       >
                         {badgeText}
                       </Badge>
@@ -283,17 +287,17 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                   </div>
                   <div 
                     className="p-6 transition-colors duration-300" 
-                    style={{ backgroundColor: colors.background }}
+                    style={mounted ? { backgroundColor: colors.background } : undefined}
                   >
                     <h4 
                       className="text-xl font-bold mb-2 transition-colors duration-300" 
-                      style={{ color: colors.foreground }}
+                      style={mounted ? { color: colors.foreground } : undefined}
                     >
                       {product.name_ar}
                     </h4>
                     <p 
                       className="text-2xl font-bold transition-colors duration-300" 
-                      style={{ color: colors.primary }}
+                      style={mounted ? { color: colors.primary } : undefined}
                     >
                       {product.base_price} د.م
                     </p>

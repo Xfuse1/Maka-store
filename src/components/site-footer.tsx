@@ -1,39 +1,54 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useSettingsStore } from "@/lib/settings-store"
 import { useDesignStore } from "@/store/design-store"
+import { getPublishedPages } from "@/lib/supabase/pages"
 
 export function SiteFooter() {
   const { settings, loadSettings } = useSettingsStore()
   const { colors } = useDesignStore()
 
+  const [mounted, setMounted] = useState(false)
+  const [pages, setPages] = useState<{ id: string; page_path: string; page_title_ar: string }[]>([])
+
   useEffect(() => {
     loadSettings()
   }, [loadSettings])
 
+  useEffect(() => {
+    // apply client-only styles after mount to avoid SSR/client mismatch
+    setMounted(true)
+    // load published pages for the footer
+    ;(async () => {
+      try {
+        const res = await getPublishedPages()
+        setPages(res)
+      } catch (err) {
+        console.error("[v0] Error loading footer pages:", err)
+      }
+    })()
+  }, [])
+
   return (
     <footer 
       className="border-t py-12 transition-colors duration-300"
-      style={{
-        backgroundColor: colors.background,
-        borderColor: colors.foreground + '20', // 20% opacity for subtle border
-      }}
+      style={mounted ? { backgroundColor: colors.background, borderColor: colors.foreground + '20' } : undefined}
     >
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <h5 
               className="font-bold text-lg mb-4 transition-colors duration-300"
-              style={{ color: colors.foreground }}
+              style={mounted ? { color: colors.foreground } : undefined}
             >
               عن {settings.siteName}
             </h5>
             <p 
               className="leading-relaxed transition-colors duration-300"
-              style={{ color: colors.foreground + 'CC' }} // 80% opacity
+              style={mounted ? { color: colors.foreground + 'CC' } : undefined} // 80% opacity
             >
               {settings.siteDescription}
             </p>
@@ -50,9 +65,9 @@ export function SiteFooter() {
                 <Link 
                   href="/category/abayas" 
                   className="transition-colors duration-300 hover:opacity-90"
-                  style={{ color: colors.foreground + 'CC' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = colors.primary}
-                  onMouseLeave={(e) => e.currentTarget.style.color = colors.foreground + 'CC'}
+                  style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+                  onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
+                  onMouseLeave={(e) => { if (mounted) e.currentTarget.style.color = colors.foreground + 'CC' }}
                 >
                   عبايات
                 </Link>
@@ -61,9 +76,9 @@ export function SiteFooter() {
                 <Link 
                   href="/category/cardigans" 
                   className="transition-colors duration-300 hover:opacity-90"
-                  style={{ color: colors.foreground + 'CC' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = colors.primary}
-                  onMouseLeave={(e) => e.currentTarget.style.color = colors.foreground + 'CC'}
+                  style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+                  onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
+                  onMouseLeave={(e) => { if (mounted) e.currentTarget.style.color = colors.foreground + 'CC' }}
                 >
                   كارديجان
                 </Link>
@@ -72,9 +87,9 @@ export function SiteFooter() {
                 <Link 
                   href="/category/suits" 
                   className="transition-colors duration-300 hover:opacity-90"
-                  style={{ color: colors.foreground + 'CC' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = colors.primary}
-                  onMouseLeave={(e) => e.currentTarget.style.color = colors.foreground + 'CC'}
+                  style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+                  onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
+                  onMouseLeave={(e) => { if (mounted) e.currentTarget.style.color = colors.foreground + 'CC' }}
                 >
                   بدل
                 </Link>
@@ -83,9 +98,9 @@ export function SiteFooter() {
                 <Link 
                   href="/category/dresses" 
                   className="transition-colors duration-300 hover:opacity-90"
-                  style={{ color: colors.foreground + 'CC' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = colors.primary}
-                  onMouseLeave={(e) => e.currentTarget.style.color = colors.foreground + 'CC'}
+                  style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+                  onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
+                  onMouseLeave={(e) => { if (mounted) e.currentTarget.style.color = colors.foreground + 'CC' }}
                 >
                   فساتين
                 </Link>
@@ -100,40 +115,57 @@ export function SiteFooter() {
               معلومات
             </h5>
             <ul className="space-y-2">
-              <li>
-                <Link 
-                  href="/about" 
-                  className="transition-colors duration-300 hover:opacity-90"
-                  style={{ color: colors.foreground + 'CC' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = colors.primary}
-                  onMouseLeave={(e) => e.currentTarget.style.color = colors.foreground + 'CC'}
-                >
-                  من نحن
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/return-policy" 
-                  className="transition-colors duration-300 hover:opacity-90"
-                  style={{ color: colors.foreground + 'CC' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = colors.primary}
-                  onMouseLeave={(e) => e.currentTarget.style.color = colors.foreground + 'CC'}
-                >
-                  سياسة الإرجاع
-                </Link>
-              </li>
+              {pages.map((p) => (
+                <li key={p.id}>
+                  <Link
+                    href={p.page_path}
+                    className="transition-colors duration-300 hover:opacity-90"
+                    style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+                    onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
+                    onMouseLeave={(e) => { if (mounted) e.currentTarget.style.color = colors.foreground + 'CC' }}
+                  >
+                    {p.page_title_ar}
+                  </Link>
+                </li>
+              ))}
+              {pages.length === 0 && (
+                <>
+                  <li>
+                    <Link 
+                      href="/about" 
+                      className="transition-colors duration-300 hover:opacity-90"
+                      style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+                      onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
+                      onMouseLeave={(e) => { if (mounted) e.currentTarget.style.color = colors.foreground + 'CC' }}
+                    >
+                      من نحن
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      href="/return-policy" 
+                      className="transition-colors duration-300 hover:opacity-90"
+                      style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+                      onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
+                      onMouseLeave={(e) => { if (mounted) e.currentTarget.style.color = colors.foreground + 'CC' }}
+                    >
+                      سياسة الإرجاع
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
           <div>
             <h5 
               className="font-bold text-lg mb-4 transition-colors duration-300"
-              style={{ color: colors.foreground }}
+              style={mounted ? { color: colors.foreground } : undefined}
             >
               تواصل معنا
             </h5>
             <p 
               className="leading-relaxed mb-4 transition-colors duration-300"
-              style={{ color: colors.foreground + 'CC' }}
+              style={mounted ? { color: colors.foreground + 'CC' } : undefined}
             >
               للاستفسارات والطلبات الخاصة<br />
               واتساب: {settings.contactWhatsapp}<br />
@@ -143,17 +175,9 @@ export function SiteFooter() {
               <Button 
                 variant="outline" 
                 className="w-full transition-all duration-300"
-                style={{
-                  backgroundColor: 'transparent',
-                  borderColor: colors.primary,
-                  color: colors.foreground,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.primary + '15' // 15% opacity
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
+                style={mounted ? { backgroundColor: 'transparent', borderColor: colors.primary, color: colors.foreground } : undefined}
+                onMouseEnter={(e) => { if (mounted) e.currentTarget.style.backgroundColor = colors.primary + '15' /* 15% opacity */ }}
+                onMouseLeave={(e) => { if (mounted) e.currentTarget.style.backgroundColor = 'transparent' }}
               >
                 تواصل معنا
               </Button>

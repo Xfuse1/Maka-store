@@ -50,6 +50,24 @@ export async function getPageByPath(path: string): Promise<PageContent | null> {
   return data
 }
 
+// Get published pages for storefront (client-side)
+export async function getPublishedPages(): Promise<Pick<PageContent, "id" | "page_path" | "page_title_ar">[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from("page_content")
+    .select("id, page_path, page_title_ar")
+    .eq("is_published", true)
+    .order("page_path")
+
+  if (error) {
+    console.error("[v0] Error fetching published pages:", error)
+    return []
+  }
+
+  return data || []
+}
+
 // Admin functions (server-side via API routes)
 export async function createPage(page: Omit<PageContent, "id" | "created_at" | "updated_at">) {
   const response = await fetch("/api/admin/pages", {

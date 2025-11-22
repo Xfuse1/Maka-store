@@ -77,10 +77,27 @@ export type CreateImageData = {
 
 // Get all products with details
 export async function getAllProducts() {
-  const response = await fetch("/api/admin/products")
-  if (!response.ok) throw new Error("Failed to fetch products")
-  const { data } = await response.json()
-  return data as ProductWithDetails[]
+  try {
+    const response = await fetch("/api/admin/products")
+
+    // If the response is not OK, try to extract server error message and return empty list
+    if (!response.ok) {
+      const body = await response.text().catch(() => null)
+      try {
+        const parsed = body ? JSON.parse(body) : null
+        console.error("[v0] getAllProducts: server error", parsed?.error ?? parsed)
+      } catch (e) {
+        console.error("[v0] getAllProducts: non-json error body", body)
+      }
+      return []
+    }
+
+    const json = await response.json().catch(() => ({ data: [] }))
+    return (json.data || []) as ProductWithDetails[]
+  } catch (err) {
+    console.error("[v0] getAllProducts: fetch failed", err)
+    return []
+  }
 }
 
 // Get product by ID
