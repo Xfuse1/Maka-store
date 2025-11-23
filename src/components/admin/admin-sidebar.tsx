@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Package, ShoppingBag, Settings, Palette, BarChart3, FileText, FolderTree, GalleryHorizontal, LogOut, X } from "lucide-react"
+import { Home, Package, ShoppingBag, Settings, Palette, BarChart3, FileText, FolderTree, GalleryHorizontal, LogOut, X, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SiteLogo } from "@/components/site-logo"
 import { Button } from "@/components/ui/button"
@@ -51,6 +51,11 @@ const menuItems = [
     title: "الصفحات",
     href: "/admin/pages",
     icon: FileText,
+  },
+  {
+    title: "تكاليف الشحن",
+    href: "/admin/shipping",
+    icon: Truck,
   },
   {
     title: "الإعدادات",

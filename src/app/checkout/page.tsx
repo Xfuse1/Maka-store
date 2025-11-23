@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -48,20 +48,66 @@ export default function CheckoutPage() {
     notes: "",
   })
 
+  const [shippingZones, setShippingZones] = useState<any[]>([])
+  const [selectedZoneCode, setSelectedZoneCode] = useState<string | null>(null)
+  const [zoneQuery, setZoneQuery] = useState<string>("")
+  const [showZoneDropdown, setShowZoneDropdown] = useState<boolean>(false)
+
   const subtotal = useMemo(() => {
     const fromStore = toNum(getTotalPrice(), NaN)
     if (!Number.isNaN(fromStore)) return fromStore
     return items.reduce((sum, it: any) => sum + toNum(it?.product?.price, 0) * toNum(it?.quantity, 0), 0)
   }, [getTotalPrice, items])
 
-  // Calculate shipping cost from products
+  // Fetch shipping zones for governorate-based shipping
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch('/api/admin/shipping')
+        if (!res.ok) return
+        const json = await res.json()
+        // API returns array of zones or { data: [...] }
+        const zones = Array.isArray(json) ? json : json?.data ?? json?.zones ?? []
+        if (!mounted) return
+        setShippingZones(zones)
+        if (zones.length && !selectedZoneCode) {
+          // try to match existing form state by governorate name (arabic/en), otherwise pick first
+          const matched = zones.find((z: any) => {
+            const nameAr = String(z.governorate_name_ar ?? z.name ?? "").trim()
+            const nameEn = String(z.governorate_name_en ?? "").trim()
+            return nameAr === String(formData.state).trim() || nameEn === String(formData.state).trim()
+          })
+          const pick = matched ? matched : zones[0]
+          const pickCode = pick.governorate_code ?? pick.code ?? pick.id
+          setSelectedZoneCode(pickCode)
+          // set initial query to the selected zone's Arabic name if available
+          setZoneQuery(String(pick.governorate_name_ar ?? pick.governorate_name_en ?? pick.name ?? ""))
+        }
+      } catch (e) {
+        // silent
+        console.error('Failed to load shipping zones', e)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
+  // Calculate shipping cost based on selected governorate and free_shipping flag
   const shippingCost = useMemo(() => {
-    return items.reduce((sum, it: any) => {
-      const productShipping = toNum(it?.product?.shipping_cost, 0)
-      const quantity = toNum(it?.quantity, 0)
-      return sum + (productShipping * quantity)
-    }, 0)
-  }, [items])
+    // If cart is empty, no shipping
+    if (!items || items.length === 0) return 0
+
+    // If every product in the cart has free_shipping true -> shipping 0
+    const allFree = items.every((it: any) => Boolean(it?.product?.free_shipping))
+    if (allFree) return 0
+
+    // Otherwise, find selected zone and use its shipping_price (fixed per order)
+    const zone = shippingZones.find((z) => String(z.governorate_code ?? z.code ?? z.id) === String(selectedZoneCode))
+    if (!zone) return 0
+    return toNum(zone.shipping_price, 0)
+  }, [items, shippingZones, selectedZoneCode])
+
+  const selectedZone = shippingZones.find((z) => String(z.governorate_code ?? z.code ?? z.id) === String(selectedZoneCode))
 
   const total = toNum(subtotal) + toNum(shippingCost)
 
@@ -135,7 +181,8 @@ export default function CheckoutPage() {
           line1: formData.addressLine1.trim(),
           line2: formData.addressLine2.trim(),
           city: formData.city.trim(),
-          state: formData.state.trim(),
+          // prefer sending zone code, fallback to free-text state name
+          state: (selectedZoneCode ?? formData.state.trim()),
           postalCode: formData.postalCode.trim(),
           country: "EG",
         },
@@ -393,13 +440,67 @@ export default function CheckoutPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="state">المحافظة *</Label>
-                      <Input
-                        id="state"
-                        value={formData.state}
-                        onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                        placeholder="القاهرة"
-                        required
-                      />
+                      {shippingZones && shippingZones.length > 0 ? (
+                        <div className="relative">
+                          <input
+                            id="state"
+                            autoComplete="off"
+                            className="w-full rounded-md border bg-input px-3 py-2"
+                            placeholder="ابحث عن المحافظة"
+                            value={zoneQuery}
+                            onChange={(e) => {
+                              const v = e.target.value
+                              setZoneQuery(v)
+                              setShowZoneDropdown(true)
+                              // if user cleared the input, clear the selected zone as well
+                              if (String(v).trim() === "") {
+                                setSelectedZoneCode(null)
+                                setFormData({ ...formData, state: "" })
+                              }
+                            }}
+                            onFocus={() => setShowZoneDropdown(true)}
+                            required
+                          />
+
+                          {showZoneDropdown && (
+                            <div className="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-auto rounded-md border bg-white shadow">
+                              {shippingZones
+                                .filter((z: any) => {
+                                  const q = String(zoneQuery || "").trim().toLowerCase()
+                                  const name = String(z.governorate_name_ar ?? z.governorate_name_en ?? z.name ?? "").toLowerCase()
+                                  return !q || name.includes(q)
+                                })
+                                .map((z: any) => (
+                                  <div
+                                    key={z.id ?? z.governorate_code ?? z.code ?? z.governorate_name_ar}
+                                    onMouseDown={(ev) => ev.preventDefault()}
+                                    onClick={() => {
+                                      const code = z.governorate_code ?? z.code ?? z.id
+                                      setSelectedZoneCode(String(code))
+                                      setFormData({ ...formData, state: String(z.governorate_name_ar ?? z.governorate_name_en ?? z.name) })
+                                      setZoneQuery(String(z.governorate_name_ar ?? z.governorate_name_en ?? z.name))
+                                      setShowZoneDropdown(false)
+                                    }}
+                                    className="px-3 py-2 hover:bg-accent/30 cursor-pointer"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span>{z.governorate_name_ar ?? z.governorate_name_en ?? z.name}</span>
+                                      <span className="text-sm text-muted-foreground">{toNum(z.shipping_price, 0)} ج</span>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <Input
+                          id="state"
+                          value={formData.state}
+                          onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                          placeholder="القاهرة"
+                          required
+                        />
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -506,7 +607,15 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">الشحن</span>
-                      <span>{toNum(shippingCost, 0)} جنيه</span>
+                      <span>
+                        {selectedZone ? (
+                          <span>
+                            {(selectedZone.governorate_name_ar ?? selectedZone.governorate_name_en ?? selectedZone.name)} — {toNum(shippingCost, 0)} جنيه
+                          </span>
+                        ) : (
+                          <span>{toNum(shippingCost, 0)} جنيه</span>
+                        )}
+                      </span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">

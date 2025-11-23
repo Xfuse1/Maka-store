@@ -119,7 +119,8 @@ export async function POST(req: NextRequest) {
     }, 0)
 
     const subtotal = toNum(body.subtotal, subtotalFromItems)
-    const shippingCost = toNum(body.shippingCost, 0)
+    // If shippingCost provided by client use it, otherwise compute server-side
+    let shippingCost = toNum(body.shippingCost, 0)
     const tax = toNum(body.tax, 0)
     const discount = toNum(body.discount, 0)
     const calculatedTotal = toNum(body.total, subtotal + shippingCost + tax - discount)
@@ -151,6 +152,81 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // ===== Compute shipping cost server-side when not provided =====
+    try {
+      if (!shippingCost || shippingCost === 0) {
+        // Try to resolve governorate from state or city
+        const governorateCandidate = (ship_state || ship_city || "").trim()
+        if (governorateCandidate) {
+          // Try to find a shipping zone by code or by name (AR/EN)
+          const admin = createAdminClient()
+          let zone: any = null
+          // match code (upper-case) first
+          try {
+            const code = governorateCandidate.toUpperCase().replace(/\s+/g, "_")
+            const { data: byCode } = await admin.from("shipping_zones").select("*").eq("governorate_code", code).single()
+            zone = byCode || null
+          } catch (e) {
+            // ignore
+          }
+          if (!zone) {
+            try {
+              const { data: byAr } = await admin
+                .from("shipping_zones")
+                .select("*")
+                .ilike("governorate_name_ar", `%${governorateCandidate}%`)
+                .limit(1)
+            if (byAr && byAr.length) zone = byAr[0]
+            } catch (e) {}
+          }
+          if (!zone) {
+            try {
+              const { data: byEn } = await admin
+                .from("shipping_zones")
+                .select("*")
+                .ilike("governorate_name_en", `%${governorateCandidate}%`)
+                .limit(1)
+              if (byEn && byEn.length) zone = byEn[0]
+            } catch (e) {}
+          }
+
+          if (zone && zone.shipping_price !== undefined && zone.shipping_price !== null) {
+            // If any ordered product has free_shipping=false (or missing), apply zone price.
+            // Check order items product ids for free_shipping flag.
+            const productIds = items.map((it) => it.productId).filter(Boolean)
+            let anyPaid = true
+            if (productIds.length) {
+              try {
+                const { data: products } = await admin.from("products").select("id, free_shipping").in("id", productIds)
+                if (products && products.length) {
+                  const allFree = products.every((p: any) => p.free_shipping === true)
+                  anyPaid = !allFree
+                }
+              } catch (e) {
+                // if error reading products assume paid
+                anyPaid = true
+              }
+            }
+
+            shippingCost = anyPaid ? Number(zone.shipping_price) : 0
+          } else {
+            // no zone found: leave shippingCost as 0 and let client handle messaging
+            shippingCost = 0
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Failed computing shipping zone:", e)
+      shippingCost = shippingCost || 0
+    }
+
+    // Recalculate total with computed shippingCost
+    const finalTotal = subtotal + shippingCost + tax - discount
+    // override calculatedTotal if client didn't supply or differs
+    // but keep the validation earlier (total must be > 0)
+    // We'll set calculatedTotal to finalTotal for insertion
+    const finalTotalNumber = Number(finalTotal)
+
     // Upsert customer
     const { data: customerRow, error: upsertErr } = await supabase
       .from("customers")
@@ -173,7 +249,7 @@ export async function POST(req: NextRequest) {
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 9).toUpperCase()}`
 
-    // Insert order
+    // Insert order (use server computed shippingCost if available)
     const { data: order, error: orderErr } = await supabase
       .from("orders")
       .insert({
@@ -192,7 +268,7 @@ export async function POST(req: NextRequest) {
         shipping_cost: shippingCost,
         tax,
         discount,
-        total: calculatedTotal,
+        total: finalTotalNumber,
         currency: "EGP",
 
         shipping_address_line1: ship_line1,

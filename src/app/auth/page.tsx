@@ -99,38 +99,8 @@ export default function AuthPage() {
             </p>
           </form>
         ) : (
-          <form onSubmit={async (e) => {
-            e.preventDefault()
-            const form = e.currentTarget as HTMLFormElement
-            const fd = new FormData(form)
-            const email = String(fd.get('email') || '').trim()
-            const password = String(fd.get('password') || '').trim()
-            if (!email || !password) {
-              setServerMessage('Please enter both email and password to sign up')
-              return
-            }
-            // Email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-            if (!emailRegex.test(email)) {
-              setServerMessage('الرجاء إدخال بريد إلكتروني صحيح')
-              return
-            }
-            try {
-              const { error } = await signUpWithAdmin(fd)
-              if (error) {
-                setServerMessage(error)
-                return
-              }
-              setServerMessage('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.')
-              // Clear form and switch to login view
-              form.reset()
-              setSelectedImage(null)
-              setIsLoginView(true)
-            } catch (err) {
-              console.error('Signup error', err)
-              setServerMessage((err as any)?.message || 'An unexpected error occurred')
-            }
-          }} className="space-y-4 p-6 border rounded-lg shadow-sm bg-card">
+          // Use server action form submission so browsers send files reliably (works better on mobile)
+          <form action={signUpWithAdmin} method="post" encType="multipart/form-data" className="space-y-4 p-6 border rounded-lg shadow-sm bg-card">
             <h2 className="text-2xl font-bold text-center text-foreground">إنشاء حساب جديد</h2>
             <div className="space-y-2">
               <Label htmlFor="signup-email">البريد الإلكتروني</Label>

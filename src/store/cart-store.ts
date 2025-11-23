@@ -7,6 +7,7 @@ export interface Product {
   price: number
   image?: string
   product_images?: Array<{ image_url: string }>
+  free_shipping?: boolean
 }
 
 export interface Color {

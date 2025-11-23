@@ -11,6 +11,7 @@ export type ProductWithDetails = {
   base_price: number
   is_featured: boolean
   is_active: boolean
+  free_shipping?: boolean
   shipping_type?: "free" | "paid" | null
   shipping_cost?: number | null
   created_at: string
