@@ -72,7 +72,7 @@ export function HeroSlider() {
 
   if (loading) {
     return (
-      <div className="relative w-full h-[70vh] overflow-hidden bg-muted animate-pulse" />
+      <div className="relative w-full h-[50vh] min-h-[400px] md:h-[70vh] md:min-h-[500px] overflow-hidden bg-muted animate-pulse" />
     )
   }
   
@@ -97,7 +97,7 @@ export function HeroSlider() {
   };
 
   return (
-    <div className="relative w-full h-[70vh] overflow-hidden bg-primary">
+    <div className="relative w-full h-[50vh] min-h-[400px] md:h-[70vh] md:min-h-[500px] overflow-hidden bg-primary">
       {/* Slides */}
       <AnimatePresence initial={false}>
         <motion.div
@@ -113,12 +113,11 @@ export function HeroSlider() {
               src={slides[currentSlide].image_url || "/placeholder.svg"}
               alt={slides[currentSlide].title_ar || "شريحة عرض"}
               fill
-              className="object-cover object-center md:object-center"
+              className="object-cover object-center"
               priority={currentSlide === 0 && !!slides[currentSlide].image_url}
               loading={currentSlide === 0 ? "eager" : "lazy"}
               sizes="100vw"
               quality={85}
-              fetchPriority={currentSlide === 0 ? "high" : "low"}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-foreground/40 to-foreground/20" />
           </div>

@@ -20,6 +20,12 @@ export const metadata: Metadata = {
   title: "مكة - متجر الأزياء النسائية الراقية",
   description: "اكتشفي مجموعتنا الحصرية من العبايات والكارديجان والبدل والفساتين",
   generator: "v0.app",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
+  themeColor: '#FFB6C1',
 }
 
 export default function RootLayout({
@@ -41,7 +47,7 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${cairo.variable} antialiased text-foreground`} style={{ backgroundColor: 'var(--background-hex)' }}>
         <WebVitals />
-        <Script id="meta-pixel" strategy="afterInteractive">
+        <Script id="meta-pixel" strategy="lazyOnload">
           {`
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
