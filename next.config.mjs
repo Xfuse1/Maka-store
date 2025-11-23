@@ -18,6 +18,12 @@ const nextConfig = {
         hostname: 'bbzjxcjfmeoiojjnfvfa.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      // Allow externally hosted images from i.postimg.cc (used by some test content)
+      {
+        protocol: 'https',
+        hostname: 'i.postimg.cc',
+        pathname: '/**',
+      },
     ],
   },
   compress: true,
