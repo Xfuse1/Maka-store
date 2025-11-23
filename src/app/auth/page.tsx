@@ -124,6 +124,19 @@ export default function AuthPage() {
               setServerMessage(null)
               const form = e.currentTarget as HTMLFormElement
               const fd = new FormData(form)
+              const email = String(fd.get('email') || '').trim()
+              const phone = String(fd.get('phone') || '').trim()
+              // Egyptian-specific client validation
+              const emailIsEgyptian = /@.+\.eg$/i.test(email)
+              const phoneIsEgyptian = phone === '' ? true : /^(?:\+20|0)1[0125][0-9]{8}$/.test(phone)
+              if (!emailIsEgyptian) {
+                setServerMessage('الرجاء إدخال بريد إلكتروني ينتهي بـ .eg')
+                return
+              }
+              if (!phoneIsEgyptian) {
+                setServerMessage('الرجاء إدخال رقم هاتف مصري صالح (مثال: 01012345678 أو +201012345678)')
+                return
+              }
               try {
                 const res = await fetch('/api/auth/signup-web', { method: 'POST', body: fd })
                 const json = await res.json()

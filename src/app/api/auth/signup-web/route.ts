@@ -10,8 +10,19 @@ export async function POST(request: Request) {
     const phone_number = String(formData.get('phone') || '')
     const imageFile = formData.get('image') as File | null
 
+    // Basic required validation
     if (!email || !password) {
       return NextResponse.json({ success: false, message: 'البريد الإلكتروني وكلمة المرور مطلوبان' }, { status: 400 })
+    }
+
+    // Egyptian-specific validation
+    const emailIsEgyptian = /@.+\.eg$/i.test(email)
+    const phoneIsEgyptian = /^(?:\+20|0)1[0125][0-9]{8}$/.test(phone_number.trim())
+    if (!emailIsEgyptian) {
+      return NextResponse.json({ success: false, message: 'الرجاء إدخال بريد إلكتروني ينتهي بـ .eg' }, { status: 400 })
+    }
+    if (phone_number && !phoneIsEgyptian) {
+      return NextResponse.json({ success: false, message: 'الرجاء إدخال رقم هاتف مصري صالح (مثال: 01012345678 أو +201012345678)' }, { status: 400 })
     }
 
     const supabaseAdmin = createClient(
