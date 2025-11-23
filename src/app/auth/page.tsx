@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { useRef } from "react"
 import { signUpWithAdmin } from "./actions"
 
 export default function AuthPage() {
@@ -19,18 +18,14 @@ export default function AuthPage() {
   const message = searchParams.get("message")
   const router = useRouter()
   const [serverMessage, setServerMessage] = useState<string | null>(message)
-
-  if (!mounted) {
-    // avoid SSR/CSR markup mismatch by rendering nothing on the server
-    return null
-  }
-
   // On mobile, if signup redirected with status=success, reload to ensure page refreshes
   useEffect(() => {
     try {
-      const status = searchParams.get('status')
+      if (typeof window === 'undefined') return
+      const params = new URLSearchParams(window.location.search)
+      const status = params.get('status')
       if (status === 'success') {
-        const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+        const ua = navigator.userAgent || ''
         const isMobile = /Mobi|Android|iPhone|iPad|iPod|Mobile/.test(ua)
         if (isMobile) {
           // replace location to /auth (clean URL) and force reload
@@ -40,7 +35,12 @@ export default function AuthPage() {
     } catch (e) {
       // ignore
     }
-  }, [searchParams])
+  }, [])
+
+  if (!mounted) {
+    // avoid SSR/CSR markup mismatch by rendering nothing on the server
+    return null
+  }
 
   return (
     <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
