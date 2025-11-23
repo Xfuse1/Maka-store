@@ -167,25 +167,17 @@ export function AdminSidebar({ isSidebarOpen, setSidebarOpen }: AdminSidebarProp
 
   return (
     <>
-      {/* Mobile Sidebar - Off-canvas */}
-      <div className={cn("md:hidden fixed inset-0 z-50", isSidebarOpen ? "block" : "hidden")}>
-        {/* Overlay */}
-        <div 
-          className="absolute inset-0 bg-black/60 transition-opacity duration-300"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-        {/* Sidebar */}
-        <div className={cn(
-          "fixed top-0 bottom-0 bg-background w-72 max-w-[calc(100%-3rem)] transition-transform duration-300 ease-in-out z-50",
-          isSidebarOpen ? "right-0" : "-right-full"
-        )}>
-           <SidebarContent onLinkClick={() => setSidebarOpen(false)} />
-        </div>
-      </div>
+      <div className={cn(
+          "fixed inset-0 bg-black/60 z-40 md:hidden",
+          isSidebarOpen ? "block" : "hidden"
+      )} onClick={() => setSidebarOpen(false)} />
 
-      {/* Desktop Sidebar - Static */}
-      <aside className="hidden md:flex md:flex-col md:w-64 md:border-l md:border-border md:h-screen md:sticky md:top-0">
-         <SidebarContent />
+      <aside className={cn(
+        "fixed top-0 right-0 h-full bg-background border-l border-border w-64 z-50 transform transition-transform duration-300 ease-in-out",
+        "md:relative md:translate-x-0 md:w-64 md:flex-shrink-0",
+        isSidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
+      )}>
+        <SidebarContent onLinkClick={() => setSidebarOpen(false)} />
       </aside>
     </>
   )

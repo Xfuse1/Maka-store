@@ -13,15 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen bg-muted/40" dir="rtl">
-      {/* Sidebar for desktop */}
-      <div className="hidden md:flex">
-        <AdminSidebar isSidebarOpen={true} setSidebarOpen={() => {}} />
-      </div>
-
-      {/* Sidebar for mobile */}
-      <div className={`md:hidden`}>
-        <AdminSidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-      </div>
+      <AdminSidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex flex-col flex-1">
         <AdminHeader setSidebarOpen={setSidebarOpen} />

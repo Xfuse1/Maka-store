@@ -1,14 +1,17 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Heart, Award, Users, Sparkles } from "lucide-react"
+import { Heart, Award, Users, Sparkles, MoveRight } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 import { getPageByPath } from "@/lib/supabase/pages"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { AnimatedSection } from "@/components/animated-section"
 
 type PageContent = {
   sections: Record<string, string>
@@ -18,7 +21,6 @@ export default function AboutPage() {
   const [pageData, setPageData] = useState<PageContent | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // تحميل محتوى صفحة من الـ Admin (CMS)
   useEffect(() => {
     async function loadPage() {
       try {
@@ -49,8 +51,11 @@ export default function AboutPage() {
     )
   }
 
+  // Hero Section Content
   const heroTitle = getSection("hero.title", "من نحن")
   const heroSubtitle = getSection("hero.subtitle", "رحلتنا في عالم الموضة المحتشمة")
+  
+  // Story Section Content
   const storyTitle = getSection("story.title", "قصتنا")
   const storyP1 = getSection(
     "story.paragraph1",
@@ -60,64 +65,9 @@ export default function AboutPage() {
     "story.paragraph2",
     "منذ انطلاقتنا، كرسنا جهودنا لتقديم تصاميم فريدة تعكس الذوق الرفيع والجودة العالية. نختار أقمشتنا بعناية فائقة، ونهتم بأدق التفاصيل في كل قطعة نقدمها لكِ."
   )
-  const storyP3 = getSection(
-    "story.paragraph3",
-    "اليوم، نفخر بخدمة آلاف العميلات اللواتي وثقن بنا لنكون جزءاً من إطلالاتهن المميزة. رضاكِ هو هدفنا، وأناقتكِ هي نجاحنا."
-  )
+  const storyImageUrl = getSection("story.image_url", "/placeholder.jpg")
 
-  // Helper to find first section value where key includes a fragment (case-insensitive)
-  const findFirstByKeyIncludes = (fragment: string) => {
-    if (!pageData?.sections) return null
-    const entries = Object.entries(pageData.sections)
-    const found = entries.find(([k]) => k.toLowerCase().includes(fragment.toLowerCase()))
-    return found ? String(found[1]) : null
-  }
-
-  // If specific keys are not present, try to fallback to any section values that include the fragment,
-  // or finally use the very first section value available.
-  const firstSectionValue = (() => {
-    if (!pageData?.sections) return null
-    const entries = Object.entries(pageData.sections)
-    if (entries.length === 0) return null
-    return String(entries[0][1])
-  })()
-
-  const heroTitleFinal =
-    heroTitle || findFirstByKeyIncludes("hero") || firstSectionValue || "من نحن"
-  const heroSubtitleFinal =
-    heroSubtitle || findFirstByKeyIncludes("subtitle") || "رحلتنا في عالم الموضة المحتشمة"
-
-  // Story paragraphs
-  const storyParagraphs: string[] = []
-  if (pageData?.sections) {
-    // explicit numbered paragraphs
-    for (let i = 1; i <= 5; i++) {
-      const v = pageData.sections[`story.paragraph${i}`]
-      if (v) storyParagraphs.push(String(v))
-    }
-
-    if (storyParagraphs.length === 0) {
-      // collect keys that start with 'story.'
-      const storyEntries = Object.entries(pageData.sections).filter(([k]) =>
-        k.toLowerCase().startsWith("story.")
-      )
-      storyEntries.sort((a, b) => a[0].localeCompare(b[0]))
-      storyEntries.forEach(([, v]) => storyParagraphs.push(String(v)))
-    }
-
-    if (storyParagraphs.length === 0) {
-      // fallback: take up to 3 section values that are not the hero title/subtitle
-      const other = Object.entries(pageData.sections)
-        .filter(([k]) => {
-          const lk = k.toLowerCase()
-          return !lk.includes("hero") && !lk.includes("title") && !lk.includes("subtitle")
-        })
-        .map(([, v]) => String(v))
-        .slice(0, 3)
-      storyParagraphs.push(...other)
-    }
-  }
-
+  // Values Section Content
   const valuesTitle = getSection("values.title", "قيمنا")
   const passionTitle = getSection("values.passion.title", "الشغف")
   const passionDesc = getSection(
@@ -139,6 +89,16 @@ export default function AboutPage() {
     "values.innovation.description",
     "نواكب أحدث صيحات الموضة مع الحفاظ على الأصالة"
   )
+
+  // Team Section Content
+  const teamTitle = getSection("team.title", "فريقنا وشغفنا")
+  const teamP1 = getSection("team.paragraph1", "وراء كل قطعة فنية من مكة، يقف فريق من المصممين والحرفيين المهرة الذين يجمعهم شغف واحد: إبداع أزياء تعبر عنكِ. نحن عائلة تؤمن بقوة التفاصيل وتكرس وقتها لتحويل أجود الأقمشة إلى تصاميم تحاكي أحلامك.")
+  const teamP2 = getSection("team.paragraph2", "كل خيط، كل قصة، وكل تطريزة هي جزء من حكايتنا معكِ.")
+  const teamImageUrl = getSection("team.image_url", "/placeholder-user.jpg")
+  const teamImageTitle = getSection("team.image_title", "مؤسسي مكة")
+  const teamImageSubtitle = getSection("team.image_subtitle", "شغف يتوارثه الأجيال")
+
+  // CTA Section Content
   const ctaTitle = getSection("cta.title", "ابدئي رحلتكِ معنا")
   const ctaSubtitle = getSection(
     "cta.subtitle",
@@ -148,115 +108,135 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ✅ Header ديناميك من admin/design */}
       <SiteHeader />
 
       {/* Hero Section */}
-      <section className="bg-background py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
-            {heroTitleFinal}
-          </h2>
-          <p className="text-xl text-foreground/80 max-w-3xl mx-auto leading-relaxed">
-            {heroSubtitleFinal}
-          </p>
-        </div>
-      </section>
+      <AnimatedSection>
+        <section className="relative bg-gradient-to-t from-background to-secondary/30 pt-24 pb-16 md:pt-32 md:pb-24">
+          <div className="container mx-auto px-4 text-center">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-primary mb-4 tracking-tight">
+              {heroTitle}
+            </h1>
+            <p className="text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto leading-relaxed">
+              {heroSubtitle}
+            </p>
+          </div>
+        </section>
+      </AnimatedSection>
 
       {/* Story Section */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <Card className="border-2 border-border shadow-lg bg-card">
-              <CardContent className="p-8 md:p-12">
-                <h3 className="text-3xl font-bold mb-6 text-foreground text-center">
+      <AnimatedSection>
+        <section className="py-16 md:py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="relative w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-2xl group">
+                <Image 
+                  src={storyImageUrl} 
+                  alt="قصتنا" 
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+                 <div className="absolute inset-0 bg-black/20"></div>
+              </div>
+              <div className="space-y-6">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground border-r-4 border-primary pr-4">
                   {storyTitle}
-                </h3>
-                <div className="space-y-6 text-lg text-foreground/80 leading-relaxed">
-                  {storyParagraphs && storyParagraphs.length > 0 ? (
-                    storyParagraphs.map((p, idx) => <p key={idx}>{p}</p>)
-                  ) : (
-                    <>
-                      <p>{storyP1}</p>
-                      <p>{storyP2}</p>
-                      <p>{storyP3}</p>
-                    </>
-                  )}
+                </h2>
+                <div className="space-y-4 text-base md:text-lg text-foreground/80 leading-relaxed">
+                  <p>{storyP1}</p>
+                  <p>{storyP2}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </AnimatedSection>
 
       {/* Values Section */}
-      <section className="py-20 bg-background/30">
-        <div className="container mx-auto px-4">
-          <h3 className="text-4xl font-bold text-center mb-16 text-foreground">
-            {valuesTitle}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="border-2 border-border hover:border-primary transition-all hover:shadow-xl bg-card">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Heart className="h-8 w-8 text-primary" />
-                </div>
-                <h4 className="text-xl font-bold mb-3 text-foreground">{passionTitle}</h4>
-                <p className="text-foreground/80 leading-relaxed">{passionDesc}</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-border hover:border-primary transition-all hover:shadow-xl bg-card">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Award className="h-8 w-8 text-primary" />
-                </div>
-                <h4 className="text-xl font-bold mb-3 text-foreground">{qualityTitle}</h4>
-                <p className="text-foreground/80 leading-relaxed">{qualityDesc}</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-border hover:border-primary transition-all hover:shadow-xl bg-card">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-primary" />
-                </div>
-                <h4 className="text-xl font-bold mb-3 text-foreground">{customersTitle}</h4>
-                <p className="text-foreground/80 leading-relaxed">{customersDesc}</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-border hover:border-primary transition-all hover:shadow-xl bg-card">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="h-8 w-8 text-primary" />
-                </div>
-                <h4 className="text-xl font-bold mb-3 text-foreground">{innovationTitle}</h4>
-                <p className="text-foreground/80 leading-relaxed">{innovationDesc}</p>
-              </CardContent>
-            </Card>
+      <AnimatedSection>
+        <section className="py-16 md:py-24 bg-secondary/30">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground">
+              {valuesTitle}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[
+                { icon: Sparkles, title: innovationTitle, desc: innovationDesc },
+                { icon: Award, title: qualityTitle, desc: qualityDesc },
+                { icon: Users, title: customersTitle, desc: customersDesc },
+                { icon: Heart, title: passionTitle, desc: passionDesc },
+              ].map((item, i) => (
+                <Card key={i} className="bg-background border-border/50 shadow-lg hover:shadow-primary/20 hover:-translate-y-2 transition-all duration-300">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-5 border-2 border-primary/20">
+                      <item.icon className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">{item.title}</h3>
+                    <p className="text-foreground/70 leading-relaxed text-sm">{item.desc}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </AnimatedSection>
+      
+      {/* Team Section */}
+      <AnimatedSection>
+        <section className="py-16 md:py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-5 gap-12 items-center">
+              <div className="md:col-span-3 space-y-6">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground border-r-4 border-primary pr-4">
+                  {teamTitle}
+                </h2>
+                <div className="space-y-4 text-base md:text-lg text-foreground/80 leading-relaxed">
+                  <p>{teamP1}</p>
+                   <p>{teamP2}</p>
+                </div>
+              </div>
+               <div className="md:col-span-2 relative w-full h-96 rounded-2xl overflow-hidden shadow-2xl group">
+                <Image 
+                  src={teamImageUrl} 
+                  alt="فريقنا" 
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 40vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                <div className="absolute bottom-4 right-4 text-white">
+                  <h4 className="font-bold text-lg">{teamImageTitle}</h4>
+                  <p className="text-sm">{teamImageSubtitle}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </AnimatedSection>
 
       {/* CTA Section */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4 text-center">
-          <h3 className="text-4xl font-bold text-foreground mb-6">{ctaTitle}</h3>
-          <p className="text-xl text-foreground/80 mb-8 max-w-2xl mx-auto leading-relaxed">
-            {ctaSubtitle}
-          </p>
-          <Button
-            asChild
-            size="lg"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6"
-          >
-            <Link href="/">{ctaButton}</Link>
-          </Button>
-        </div>
-      </section>
+      <AnimatedSection>
+        <section className="py-16 md:py-24 bg-secondary/20">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{ctaTitle}</h2>
+            <p className="text-lg text-foreground/80 mb-8 max-w-2xl mx-auto leading-relaxed">
+              {ctaSubtitle}
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-7 shadow-lg hover:shadow-xl transition-all duration-300 group"
+            >
+              <Link href="/">
+                {ctaButton}
+                <MoveRight className="mr-3 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+      </AnimatedSection>
 
-      {/* ✅ Footer ديناميك من admin/design */}
       <SiteFooter />
     </div>
   )

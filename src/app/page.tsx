@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -180,40 +181,44 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            <Link href="/" className="flex items-center gap-4">
-              <SiteLogo width={80} height={80} />
-              <h1 className="text-3xl font-bold text-primary">مكة</h1>
-            </Link>
+            <div className="flex items-center gap-2">
+              <MobileNavigation user={user} />
+              <Link href="/" className="flex items-center gap-2">
+                <SiteLogo width={50} height={50} />
+                <h1 className="text-xl font-bold text-primary hidden sm:block">مكة</h1>
+              </Link>
+            </div>
 
-            <div className="hidden md:flex flex-1 max-w-3xl mx-8">
+            <div className="hidden md:flex flex-1 max-w-md mx-auto">
               <div className="relative w-full">
-                <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
-                <Input type="text" placeholder="ابحثي عن المنتجات..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pr-12 h-14 text-lg border-2 border-border focus:border-primary" />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input type="text" placeholder="ابحثي عن المنتجات..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pr-10 h-11 border-2 border-border focus:border-primary" />
               </div>
             </div>
 
-              <MainNavigation />
+            <div className="hidden md:flex items-center gap-2">
+                <MainNavigation />
+            </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {user ? (
-                <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
+                <Button variant="outline" size="sm" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
                   تسجيل الخروج
                 </Button>
               ) : (
-                <Button variant="outline" asChild>
-                  <Link href="/auth">تسجيل الدخول</Link>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/auth">الدخول</Link>
                 </Button>
               )}
-              <MobileNavigation user={user} />
-
-              <Button asChild variant="default" className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground relative shadow-md hover:shadow-lg transition-all">
+              
+              <Button asChild variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground relative shadow-sm hover:shadow-lg transition-all">
                 <Link href="/cart">
-                  <ShoppingBag className="h-5 w-5 ml-2" />
-                  <span className="hidden sm:inline">السلة</span>
+                  <ShoppingBag className="h-5 w-5" />
+                  <span className="sr-only">السلة</span>
                   {totalItems > 0 && (
-                    <Badge className="absolute -top-2 -left-2 bg-accent text-accent-foreground px-2 py-0.5 text-xs">
+                    <Badge className="absolute -top-2 -right-2 bg-accent text-accent-foreground rounded-full px-1.5 py-0.5 text-xs font-bold">
                       {totalItems}
                     </Badge>
                   )}
@@ -222,10 +227,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="md:hidden mt-4">
+          <div className="md:hidden mt-3">
             <div className="relative w-full">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input type="text" placeholder="ابحثي عن المنتجات..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pr-10 border-2 border-border focus:border-primary" />
+              <Input type="text" placeholder="ابحثي عن المنتجات..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pr-10 h-11 border-2 border-border focus:border-primary" />
             </div>
           </div>
         </div>
