@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // إنشاء profile مع role = admin
     if (data.user) {
-      console.log("Creating profile for user:", data.user.id)
+      console.log("Creating profile for user")
       
       const { data: profileData, error: profileError } = await supabaseAdmin
         .from("profiles")
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: profileError.message }, { status: 500 })
       }
 
-      console.log("Profile created:", profileData)
+      console.log("Profile created")
     }
 
     return NextResponse.json({ success: true })

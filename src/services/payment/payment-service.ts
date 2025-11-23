@@ -77,7 +77,7 @@ export class PaymentService {
         console.error("[PaymentService] Failed to save transaction:", error)
         // Don't throw - allow payment to continue even if DB save fails
       } else {
-        console.log("[PaymentService] Transaction saved to database:", result.transactionId)
+        console.log("[PaymentService] Transaction saved to database")
       }
     } catch (dbError: any) {
       console.error("[PaymentService] Database error:", dbError)
@@ -107,7 +107,9 @@ export class PaymentService {
 
     try {
       // 2. Log webhook
-      await this.supabase.from("payment_webhooks").insert({
+      const supabase = this.supabase as any
+
+      await supabase.from("payment_webhooks").insert({
         source: "cashier",
         event_type: payload.event_type,
         payload: payload as any,
@@ -122,10 +124,10 @@ export class PaymentService {
       switch (payload.event_type) {
         case "payment.completed":
         case "payment.success":
-          console.log("[PaymentService] Payment completed:", transaction_id, order_id)
+          console.log("[PaymentService] Payment completed:")
           
           // Update payment transaction status using transaction_id
-          const { error: txError } = await this.supabase
+          const { error: txError } = await supabase
             .from("payment_transactions")
             .update({
               status: "completed",
@@ -143,7 +145,7 @@ export class PaymentService {
           
           // Update order status
           if (order_id) {
-            const { error: orderError } = await this.supabase
+            const { error: orderError } = await supabase
               .from("orders")
               .update({
                 payment_status: "paid",
@@ -161,10 +163,10 @@ export class PaymentService {
           break
 
         case "payment.failed":
-          console.log("[PaymentService] Payment failed:", transaction_id, order_id)
+          console.log("[PaymentService] Payment failed")
           
           // Update transaction status
-          await this.supabase
+          await supabase
             .from("payment_transactions")
             .update({
               status: "failed",
@@ -176,7 +178,7 @@ export class PaymentService {
           
           // Update order
           if (order_id) {
-            await this.supabase
+            await supabase
               .from("orders")
               .update({
                 payment_status: "failed",
@@ -187,8 +189,8 @@ export class PaymentService {
           break
 
         case "payment.refunded":
-          console.log("[PaymentService] Payment refunded:", transaction_id)
-          await this.supabase.from("payment_refunds").insert({
+          console.log("[PaymentService] Payment refunded")
+          await supabase.from("payment_refunds").insert({
             transaction_id,
             refund_amount: payload.data.refund_amount,
             status: "completed",
@@ -196,7 +198,7 @@ export class PaymentService {
           } as any)
           
           // Update transaction
-          await this.supabase
+          await supabase
             .from("payment_transactions")
             .update({
               status: "refunded",

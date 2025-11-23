@@ -29,7 +29,7 @@ export class RiskAssessment {
    * Assess payment risk
    */
   async assessPayment(params: RiskAssessmentParams): Promise<RiskAssessmentResult> {
-    console.log("[Risk Assessment] Evaluating payment:", params.orderId)
+    console.log("[Risk Assessment] Evaluating payment:" )
 
     let score = 0
     const flags: string[] = []
@@ -149,21 +149,22 @@ export class RiskAssessment {
     // Check if amount is significantly different from customer's average
     if (params.customerId) {
       try {
-        const { data: avgOrder } = await this.supabase
-          .from("orders")
-          .select("total")
-          .eq("customer_id", params.customerId)
-          .eq("payment_status", "paid")
+          const { data: avgOrder } = await this.supabase
+            .from("orders")
+            .select("total")
+            .eq("customer_id", params.customerId)
+            .eq("payment_status", "paid")
 
-        if (avgOrder && avgOrder.length > 0) {
-          const average = avgOrder.reduce((sum, o) => sum + Number(o.total), 0) / avgOrder.length
+          // avgOrder items may be typed as unknown/never by generated types; treat as any here
+          if (avgOrder && (avgOrder as any[]).length > 0) {
+            const average = (avgOrder as any[]).reduce((sum: number, o: any) => sum + Number(o.total), 0) / (avgOrder as any[]).length
 
-          if (params.amount > average * 3) {
-            score += 15
-            flags.push("amount_deviation")
-            reasons.push(`Amount 3x higher than customer average`)
+            if (params.amount > average * 3) {
+              score += 15
+              flags.push("amount_deviation")
+              reasons.push(`Amount 3x higher than customer average`)
+            }
           }
-        }
       } catch (error) {
         console.error("[Risk Assessment] Amount check error:", error)
       }
@@ -346,7 +347,7 @@ export class RiskAssessment {
         ip_address: event.ipAddress,
         user_agent: event.userAgent,
         status: "open",
-      })
+      } as any)
     } catch (error) {
       console.error("[Risk Assessment] Failed to log security event:", error)
     }
@@ -368,15 +369,17 @@ export class RiskAssessment {
 
       if (!rules) return { blocked: false, triggeredRules: [] }
 
+      // coerce rules to any[] to avoid overly-strict generated types (which may be `never`)
+      const rulesList: any[] = (rules as any) || []
       const triggeredRules: any[] = []
 
-      for (const rule of rules) {
+      for (const rule of rulesList) {
         const triggered = await this.evaluateRule(rule, params)
 
         if (triggered) {
           triggeredRules.push(rule)
 
-          if (rule.action === "block") {
+          if ((rule as any).action === "block") {
             return { blocked: true, triggeredRules }
           }
         }

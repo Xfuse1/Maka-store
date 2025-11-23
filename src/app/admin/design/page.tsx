@@ -63,7 +63,7 @@ export default function AdminDesignPage() {
     const root = document.documentElement
     const body = document.body
     
-    console.log('Applying colors:', safeColors)
+    console.log('Applying colors:')
     
     root.style.setProperty("--primary-hex", safeColors.primary)
     root.style.setProperty("--background-hex", safeColors.background)
@@ -82,7 +82,7 @@ export default function AdminDesignPage() {
 
   // Apply colors immediately when they change (live preview)
   useEffect(() => {
-    console.log('Colors changed, applying...', safeColors)
+    console.log('Colors changed, applying...', )
     applyColorsImmediately()
   }, [safeColors.primary, safeColors.background, safeColors.foreground])
 

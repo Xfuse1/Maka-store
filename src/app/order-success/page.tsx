@@ -40,7 +40,7 @@ export default async function OrderSuccessPage({
       console.log('[OrderSuccess] Payment successful, updating order:', orderNumber)
       
       // حدّث حالة الطلب
-      await supabase
+      await (supabase as any)
         .from('orders')
         .update({
           payment_status: 'paid',
@@ -50,7 +50,7 @@ export default async function OrderSuccessPage({
         .eq('id', orderNumber)
       
       // حدّث حالة معاملة الدفع
-      await supabase
+      await (supabase as any)
         .from('payment_transactions')
         .update({
           status: 'completed',

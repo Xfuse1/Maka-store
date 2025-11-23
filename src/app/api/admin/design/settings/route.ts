@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { key, value } = body
 
-    console.log("[design_settings POST] Incoming body:", body)
+    console.log("[design_settings POST] Incoming body:")
 
     if (!key || typeof value === "undefined") {
       console.error("[design_settings POST] Missing key or value")
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    console.log("[design_settings POST] Upsert payload:", updateData)
+    console.log("[design_settings POST] Upsert payload")
 
     const { data, error } = await supabase
       .from("design_settings")
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("[design_settings POST] Upsert result:", data)
+    console.log("[design_settings POST] Upsert result:")
 
     return NextResponse.json({ success: true })
   } catch (error) {

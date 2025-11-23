@@ -17,7 +17,7 @@ export async function POST(request: Request) {
           }
           return { key: k, value: String(v) }
         })
-        console.log('Signup route received form fields:', JSON.stringify(entries))
+        //console.log('Signup route received form fields:', JSON.stringify(entries))
       }
     } catch (e) {
       console.warn('Could not stringify formData for debug logging', e)
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    console.log('Signup successful for:', email, '- User:', data.user?.id)
+    console.log('Signup successful for:', email)
 
     return NextResponse.json({ ok: true, message: 'Check email to continue sign in process' })
   } catch (err) {

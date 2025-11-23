@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
       const existingUser = existingUsers?.users?.find((u: any) => u.email === email)
       if (existingUser) {
-        console.log('Deleting existing user:', email, existingUser.id)
+        console.log('Deleting existing user:', email)
         await supabaseAdmin.auth.admin.deleteUser(existingUser.id)
       }
     } catch (deleteErr) {
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    console.log('Admin signup successful for:', email, '- User:', data.user?.id)
+    console.log('Admin signup successful for:', email);
 
     // Create profile row manually (in case trigger doesn't exist or fails)
     if (data.user?.id) {

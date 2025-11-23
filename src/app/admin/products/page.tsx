@@ -223,12 +223,12 @@ export default function AdminProductsPage() {
         inventory_quantity: newProduct.sizes.reduce((sum, s) => sum + s.stock, 0),
       })
 
-      console.log("[v0] Product created:", product)
+      console.log("[v0] Product created")
 
       // Upload images
       if (newProduct.images.length > 0) {
         const imageUrls = await uploadMultipleImages(newProduct.images, product.id)
-        console.log("[v0] Images uploaded:", imageUrls)
+        console.log("[v0] Images uploaded")
 
         // Create image records
         for (let i = 0; i < imageUrls.length; i++) {

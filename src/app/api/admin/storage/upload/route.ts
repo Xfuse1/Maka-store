@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file")
     const productId = formData.get("productId")
 
-    console.log("[v0] File type:", typeof file, "ProductId:", productId)
+    //console.log("[v0] File type:", typeof file, "Product ID type:", typeof productId)
 
     if (!file || !(file instanceof File)) {
       console.error("[v0] Invalid file:", file)
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid or missing productId" }, { status: 400 })
     }
 
-    console.log("[v0] File name:", file.name, "Size:", file.size, "Type:", file.type)
+   // console.log("[v0] File name:", file.name, "Size:", file.size, "Type:", file.type)
 
     const supabase = getSupabaseAdminClient()
 
@@ -33,11 +33,11 @@ export async function POST(request: NextRequest) {
     const fileExt = file.name.split(".").pop()
     const fileName = `${productId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
 
-    console.log("[v0] Uploading to:", fileName)
+    console.log("[v0] Uploading to")
 
     const arrayBuffer = await file.arrayBuffer()
 
-    console.log("[v0] ArrayBuffer size:", arrayBuffer.byteLength)
+    console.log("[v0] ArrayBuffer size")
 
     // Upload using admin client (bypasses RLS)
     const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(fileName, arrayBuffer, {
@@ -51,14 +51,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Upload successful, path:", data.path)
+    console.log("[v0] Upload successful")
 
     // Get public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path)
 
-    console.log("[v0] Public URL:", publicUrl)
+    console.log("[v0] Public URL")
 
     return NextResponse.json({ url: publicUrl })
   } catch (error) {

@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = createAdminClient()
     const body = await request.json()
-    console.log("[v0] Creating product image with data:", body)
+    console.log("[v0] Creating product image with data:")
 
     const { data, error } = await (supabase
       .from("product_images") as any)
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log("[v0] Product image created successfully:", data)
+    console.log("[v0] Product image created successfully")
     return NextResponse.json({ data }, { status: 201 })
   } catch (err) {
     console.error("[v0] Error:", err)

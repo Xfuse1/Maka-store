@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    if (isDev) console.log("[Payment API] Request body:", body)
+    if (isDev) console.log("[Payment API] Request body")
 
     const {
       orderId,

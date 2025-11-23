@@ -20,7 +20,7 @@ export async function uploadProductImage(file: File, productId: string): Promise
   }
 
   const { url } = await response.json()
-  console.log("[v0] Image uploaded successfully:", url)
+  console.log("[v0] Image uploaded successfully:")
   return url
 }
 
@@ -63,7 +63,7 @@ export async function uploadImage(file: File, folder = "homepage"): Promise<stri
   }
 
   const { url } = await response.json()
-  console.log("[v0] Image uploaded successfully:", url)
+  console.log("[v0] Image uploaded successfully:")
   return url
 }
 

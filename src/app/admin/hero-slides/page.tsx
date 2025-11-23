@@ -191,10 +191,10 @@ export default function AdminHeroSlidesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    console.log(`Attempting to delete slide with ID: ${id}`);
+    console.log(`Attempting to delete slide`);
     try {
       const result = await deleteHeroSlideAction(id);
-      console.log('Delete action result:', result);
+      console.log('Delete action result:');
       if (result.success) {
         toast({
           title: "تم الحذف",

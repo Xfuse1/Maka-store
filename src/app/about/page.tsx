@@ -23,9 +23,7 @@ export default function AboutPage() {
     async function loadPage() {
       try {
         const page = await getPageByPath("/about")
-        console.log("[DEBUG] Page data from DB:", page)
         if (page) {
-          console.log("[DEBUG] Sections:", page.sections)
           setPageData(page)
         } else {
           console.warn("⚠️ Page /about not found in database, using default content")

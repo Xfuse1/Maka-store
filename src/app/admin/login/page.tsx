@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
         throw new Error("فشل تسجيل الدخول")
       }
 
-      console.log("User logged in:", authData.user.id)
+      console.log("User logged in")
 
       // التحقق من أن المستخدم admin
       const { data: profile, error: profileError } = await supabase
@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
         .eq("id", authData.user.id)
         .single() as { data: { role: string } | null; error: any }
 
-      console.log("Profile data:", profile)
+      console.log("Profile data:", )
       console.log("Profile error:", profileError)
 
       if (profileError) {
