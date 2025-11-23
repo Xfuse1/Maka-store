@@ -131,9 +131,29 @@ export default function AuthPage() {
                   setServerMessage(json?.message || 'حدث خطأ أثناء التسجيل')
                   return
                 }
-                // success -> redirect to login with message
-                const msg = encodeURIComponent(json.message || 'تم إنشاء الحساب بنجاح. الرجاء تسجيل الدخول.')
-                router.replace(`/auth?message=${msg}&status=success`)
+                // success -> try automatic sign-in
+                const email = String(fd.get('email') || '').trim()
+                const password = String(fd.get('password') || '').trim()
+                try {
+                  const supabase = getSupabaseBrowserClient()
+                  const { data: signData, error: signError } = await supabase.auth.signInWithPassword({ email, password })
+                  if (signError) {
+                    // sign-in failed, redirect to login with success message about account creation
+                    const msg = encodeURIComponent((json.message || 'تم إنشاء الحساب بنجاح. الرجاء تسجيل الدخول.') + ' (تسجيل الدخول التلقائي فشل)')
+                    router.replace(`/auth?message=${msg}&status=success`)
+                    return
+                  }
+
+                  // signed in successfully
+                  setServerMessage('تم تسجيل الدخول بنجاح')
+                  // small delay so user sees the message then navigate home
+                  setTimeout(() => {
+                    router.push('/')
+                  }, 900)
+                } catch (err) {
+                  const msg = encodeURIComponent(json.message || 'تم إنشاء الحساب بنجاح. الرجاء تسجيل الدخول.')
+                  router.replace(`/auth?message=${msg}&status=success`)
+                }
               } catch (err) {
                 console.error('[Signup] exception', err)
                 setServerMessage((err as any)?.message || 'حدث خطأ أثناء التسجيل')

@@ -11,7 +11,6 @@ export async function signUpWithAdmin(formData: FormData) {
   const phone_number = String(formData.get('phone') || '')
   const imageFile = formData.get('image') as File | null
   const role = 'user'
-
   if (!email || !password) {
     const msg = encodeURIComponent('البريد الإلكتروني وكلمة المرور مطلوبان')
     try { redirect(`/auth?message=${msg}&status=error`) } catch (e) { return { error: 'Email and password are required' } }
