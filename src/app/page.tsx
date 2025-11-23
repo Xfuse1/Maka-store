@@ -153,6 +153,12 @@ export default function HomePage() {
     return product.name_ar.toLowerCase().includes(query) || product.category?.[0]?.name_ar.toLowerCase().includes(query)
   })
 
+  const filteredCategories = categories.filter((category) => {
+    if (!searchQuery) return false;
+    const query = searchQuery.toLowerCase();
+    return category.name_ar.toLowerCase().includes(query);
+  });
+
   const getFirstImage = (product: Product) => {
     const sortedImages = [...(product.product_images || [])].sort((a, b) => a.display_order - b.display_order)
     return sortedImages[0]?.image_url || "/placeholder.svg"
@@ -231,9 +237,9 @@ export default function HomePage() {
         <section className="py-12 bg-background">
           <div className="container mx-auto px-4">
             <h3 className="text-3xl font-bold mb-8 text-foreground">نتائج البحث عن "{searchQuery}"</h3>
-            {filteredProducts.length === 0 ? (
+            {filteredProducts.length === 0 && filteredCategories.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-xl text-muted-foreground">لا توجد منتجات تطابق بحثك</p>
+                <p className="text-xl text-muted-foreground">لا توجد منتجات او فئات تطابق بحثك</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -246,7 +252,7 @@ export default function HomePage() {
                         </div>
                         <div className="p-6 bg-background">
                           <h4 className="text-xl font-bold mb-2 text-foreground">{product.name_ar}</h4>
-                          <p className="text-2xl font-bold text-primary">{product.base_price}ج.م</p>
+                          <p className="text-2xl font-bold text-primary">{product.base_price} د.م</p>
                         </div>
                       </CardContent>
                     </Card>

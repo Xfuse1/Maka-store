@@ -154,8 +154,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
 }
 
 export function AdminSidebar({ isSidebarOpen, setSidebarOpen }: AdminSidebarProps) {
-    useEffect(() => {
-    if (isSidebarOpen) {
+  useEffect(() => {
+    if (isSidebarOpen && window.innerWidth < 768) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
@@ -167,20 +167,24 @@ export function AdminSidebar({ isSidebarOpen, setSidebarOpen }: AdminSidebarProp
 
   return (
     <>
-      <div className={cn("md:hidden fixed inset-0 z-40", isSidebarOpen ? "block" : "hidden")}>
+      {/* Mobile Sidebar - Off-canvas */}
+      <div className={cn("md:hidden fixed inset-0 z-50", isSidebarOpen ? "block" : "hidden")}>
+        {/* Overlay */}
         <div 
-          className="absolute inset-0 bg-black/60" 
+          className="absolute inset-0 bg-black/60 transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         ></div>
+        {/* Sidebar */}
         <div className={cn(
-          "fixed top-0 bottom-0 bg-background w-72 max-w-[calc(100%-3rem)] transition-transform duration-300 ease-in-out",
+          "fixed top-0 bottom-0 bg-background w-72 max-w-[calc(100%-3rem)] transition-transform duration-300 ease-in-out z-50",
           isSidebarOpen ? "right-0" : "-right-full"
         )}>
            <SidebarContent onLinkClick={() => setSidebarOpen(false)} />
         </div>
       </div>
 
-      <aside className="hidden md:block w-64 border-l border-border flex-shrink-0 h-screen sticky top-0">
+      {/* Desktop Sidebar - Static */}
+      <aside className="hidden md:flex md:flex-col md:w-64 md:border-l md:border-border md:h-screen md:sticky md:top-0">
          <SidebarContent />
       </aside>
     </>

@@ -1,3 +1,4 @@
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -228,4 +229,9 @@ body > div {
 
 .text-foreground-custom {
   color: var(--foreground-hex) !important;
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
 }

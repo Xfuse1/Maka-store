@@ -85,7 +85,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link 
-                  href="/category/suits" 
+                  href="/category/sutes" 
                   className="transition-colors duration-300 hover:opacity-90"
                   style={mounted ? { color: colors.foreground + 'CC' } : undefined}
                   onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
@@ -185,7 +185,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div 
-          className="text-center pt-8 border-t transition-colors duration-300"
+          className="text-center pt-8 border-t transition-all duration-300"
           style={{ borderColor: colors.foreground + '20' }}
         >
           <p 
