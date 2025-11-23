@@ -246,7 +246,7 @@ export default function HomePage() {
                         </div>
                         <div className="p-6 bg-background">
                           <h4 className="text-xl font-bold mb-2 text-foreground">{product.name_ar}</h4>
-                          <p className="text-2xl font-bold text-primary">{product.base_price} د.م</p>
+                          <p className="text-2xl font-bold text-primary">{product.base_price}ج.م</p>
                         </div>
                       </CardContent>
                     </Card>

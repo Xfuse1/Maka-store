@@ -203,9 +203,9 @@ export default function OrderStatusPage() {
 
                         {/* Price */}
                         <div className="text-left">
-                          <p className="text-2xl font-bold text-primary">{item.product.price * item.quantity} د.م</p>
+                          <p className="text-2xl font-bold text-primary">{item.product.price * item.quantity} ج.م</p>
                           {item.quantity > 1 && (
-                            <p className="text-sm text-muted-foreground">{item.product.price} د.م للقطعة</p>
+                            <p className="text-sm text-muted-foreground">{item.product.price} ج.م للقطعة</p>
                           )}
                         </div>
                       </div>
@@ -227,7 +227,7 @@ export default function OrderStatusPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-lg">
                     <span className="text-muted-foreground">المجموع الفرعي</span>
-                    <span className="font-bold text-foreground">{getTotalPrice} د.م</span>
+                    <span className="font-bold text-foreground">{getTotalPrice} ج.م</span>
                   </div>
                   <div className="flex items-center justify-between text-lg">
                     <span className="text-muted-foreground">الشحن</span>
@@ -239,7 +239,7 @@ export default function OrderStatusPage() {
 
                 <div className="flex items-center justify-between text-2xl">
                   <span className="font-bold text-foreground">الإجمالي</span>
-                  <span className="font-bold text-primary">{getTotalPrice} د.م</span>
+                  <span className="font-bold text-primary">{getTotalPrice} ج.م</span>
                 </div>
 
                 <Button

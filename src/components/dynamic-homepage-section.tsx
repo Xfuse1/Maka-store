@@ -299,7 +299,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                       className="text-2xl font-bold transition-colors duration-300" 
                       style={mounted ? { color: colors.primary } : undefined}
                     >
-                      {product.base_price} د.م
+                      {product.base_price} ج.م
                     </p>
                   </div>
                 </CardContent>

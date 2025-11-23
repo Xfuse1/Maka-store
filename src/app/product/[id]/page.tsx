@@ -26,6 +26,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ProductViewTracker } from "./product-view-tracker"
 import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
+import { SiteLogo } from "@/components/site-logo"
 
 interface ProductImage {
   id: string
@@ -305,8 +306,7 @@ export default function ProductDetailPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <Image src="/logo-option-4.jpg" alt="مكة" width={80} height={80} />
-              <h1 className="text-2xl font-bold text-primary">مكة</h1>
+              <SiteLogo width={80} height={80} />
             </Link>
             <div className="flex items-center gap-3">
               <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
@@ -387,7 +387,7 @@ export default function ProductDetailPage() {
                 </Button>
               </div>
               <p className="text-lg text-muted-foreground mb-4 leading-relaxed">{product.description_ar}</p>
-              <div className="text-4xl font-bold text-primary mb-2">{selectedVariant.price} د.م</div>
+              <div className="text-4xl font-bold text-primary mb-2">{selectedVariant.price} ج.م</div>
             </div>
 
             <Separator />
@@ -493,7 +493,7 @@ export default function ProductDetailPage() {
                       </div>
                       <div className="p-4 bg-background">
                         <h4 className="text-lg font-bold mb-2 text-foreground">{relatedProduct.name_ar}</h4>
-                        <p className="text-xl font-bold text-primary">{relatedProduct.base_price} د.م</p>
+                        <p className="text-xl font-bold text-primary">{relatedProduct.base_price} ج.م</p>
                       </div>
                     </CardContent>
                   </Card>

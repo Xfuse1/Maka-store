@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { CheckoutTracker } from "./checkout-tracker"
 import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
+import { SiteLogo } from "@/components/site-logo"
 
 // تحويل مضمون للأرقام
 const toNum = (v: unknown, fallback = 0) => {
@@ -244,8 +245,7 @@ export default function CheckoutPage() {
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-4">
-                <Image src="/logo-option-4.jpg" alt="مكة" width={80} height={80} priority />
-                <h1 className="text-3xl font-bold text-foreground">مكة</h1>
+                <SiteLogo width={80} height={80} />
               </Link>
             </div>
           </div>
@@ -282,8 +282,7 @@ export default function CheckoutPage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-4">
-              <Image src="/logo-option-4.jpg" alt="مكة" width={80} height={80} priority />
-              <h1 className="text-3xl font-bold text-foreground">مكة</h1>
+              <SiteLogo width={80} height={80} />
             </Link>
             <Button asChild variant="outline">
               <Link href="/cart">العودة للسلة</Link>
@@ -480,6 +479,9 @@ export default function CheckoutPage() {
                             alt={item?.product?.name || "product"}
                             fill
                             className="object-cover"
+                            sizes="64px"
+                            loading={index < 3 ? "eager" : "lazy"}
+                            quality={75}
                           />
                         </div>
                         <div className="flex-1 min-w-0">

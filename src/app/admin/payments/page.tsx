@@ -138,7 +138,7 @@ export default function AdminPaymentsPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalAmount || "0.00"} د.م</div>
+            <div className="text-2xl font-bold">{stats?.totalAmount || "0.00"} ج.م</div>
             <p className="text-xs text-muted-foreground">المعاملات المكتملة</p>
           </CardContent>
         </Card>

@@ -40,6 +40,18 @@ export function HeroSlider() {
     return () => clearInterval(interval)
   }, [isAutoPlaying, slides.length])
 
+  // Preload first slide image for better LCP
+  useEffect(() => {
+    if (slides.length > 0 && slides[0]?.image_url) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = slides[0].image_url;
+      (link as any).fetchPriority = 'high';
+      document.head.appendChild(link);
+    }
+  }, [slides])
+
   const goToSlide = (index: number) => {
     setCurrentSlide(index)
     setIsAutoPlaying(false)
@@ -103,7 +115,10 @@ export function HeroSlider() {
               fill
               className="object-cover"
               priority={currentSlide === 0 && !!slides[currentSlide].image_url}
+              loading={currentSlide === 0 ? "eager" : "lazy"}
               sizes="100vw"
+              quality={85}
+              fetchPriority={currentSlide === 0 ? "high" : "low"}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-foreground/40 to-foreground/20" />
           </div>
