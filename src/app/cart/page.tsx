@@ -30,8 +30,7 @@ export default function CartPage() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
-                <Image src="/logo-option-4.jpg" alt="مكة" width={80} height={80} priority />
-                <h1 className="text-2xl font-bold text-primary">مكة</h1>
+                <SiteLogo width={80} height={80} />
               </Link>
               <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
                 <Link href="/">
@@ -69,7 +68,6 @@ export default function CartPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <SiteLogo width={80} height={80} />
-              <h1 className="text-2xl font-bold text-primary">مكة</h1>
             </Link>
             <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
               <Link href="/">
