@@ -85,9 +85,10 @@ export async function signUpWithAdmin(formData: FormData) {
   }
 
   revalidatePath('/auth', 'page')
-  // Redirect user to home after successful signup so mobile doesn't stay on login view
+  // Redirect user to the login page after successful signup so mobile lands on login
   try {
-    redirect('/')
+    const msg = encodeURIComponent('تم إنشاء الحساب بنجاح. الرجاء تسجيل الدخول.')
+    redirect(`/auth?message=${msg}`)
   } catch (e) {
     // If redirect isn't usable in this environment, return the data so caller can handle it
     return { data }
