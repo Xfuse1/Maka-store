@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 export async function signUpWithAdmin(formData: FormData) {
   const email = String(formData.get('email') || '').trim()
@@ -84,5 +85,11 @@ export async function signUpWithAdmin(formData: FormData) {
   }
 
   revalidatePath('/auth', 'page')
-  return { data }
+  // Redirect user to home after successful signup so mobile doesn't stay on login view
+  try {
+    redirect('/')
+  } catch (e) {
+    // If redirect isn't usable in this environment, return the data so caller can handle it
+    return { data }
+  }
 }
