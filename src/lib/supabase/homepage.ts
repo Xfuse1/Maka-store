@@ -20,22 +20,19 @@ export interface HeroSlide {
  * Uses browser client (RLS applied).
  */
 export async function getAllHeroSlides(): Promise<HeroSlide[]> {
-  // Returning a hardcoded slide as requested by the user.
-  return [
-    {
-      id: "1",
-      title_ar: "مجموعة العيد",
-      subtitle_ar: "تشكيلة جديدة ومميزة",
-      image_url: "/slaydr-1.png",
-      link_url: "/category/all",
-      display_order: 1,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      title_en: "Eid Collection",
-      subtitle_en: "New and exclusive collection",
-    },
-  ];
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('hero_slides')
+    .select('*')
+    .eq('is_active', true)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error("Error fetching hero slides:", error);
+    return [];
+  }
+
+  return data || [];
 }
 
 /**
