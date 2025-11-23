@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { useRef } from "react"
 import { signUpWithAdmin } from "./actions"
 
 export default function AuthPage() {
@@ -23,6 +24,23 @@ export default function AuthPage() {
     // avoid SSR/CSR markup mismatch by rendering nothing on the server
     return null
   }
+
+  // On mobile, if signup redirected with status=success, reload to ensure page refreshes
+  useEffect(() => {
+    try {
+      const status = searchParams.get('status')
+      if (status === 'success') {
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod|Mobile/.test(ua)
+        if (isMobile) {
+          // replace location to /auth (clean URL) and force reload
+          window.location.replace('/auth')
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [searchParams])
 
   return (
     <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
@@ -100,7 +118,30 @@ export default function AuthPage() {
           </form>
         ) : (
           // Use server action form submission so browsers send files reliably (works better on mobile)
-          <form action={signUpWithAdmin} method="post" encType="multipart/form-data" className="space-y-4 p-6 border rounded-lg shadow-sm bg-card">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault()
+              setServerMessage(null)
+              const form = e.currentTarget as HTMLFormElement
+              const fd = new FormData(form)
+              try {
+                const res = await fetch('/api/auth/signup-web', { method: 'POST', body: fd })
+                const json = await res.json()
+                if (!res.ok || !json?.success) {
+                  setServerMessage(json?.message || 'حدث خطأ أثناء التسجيل')
+                  return
+                }
+                // success -> redirect to login with message
+                const msg = encodeURIComponent(json.message || 'تم إنشاء الحساب بنجاح. الرجاء تسجيل الدخول.')
+                router.replace(`/auth?message=${msg}&status=success`)
+              } catch (err) {
+                console.error('[Signup] exception', err)
+                setServerMessage((err as any)?.message || 'حدث خطأ أثناء التسجيل')
+              }
+            }}
+            encType="multipart/form-data"
+            className="space-y-4 p-6 border rounded-lg shadow-sm bg-card"
+          >
             <h2 className="text-2xl font-bold text-center text-foreground">إنشاء حساب جديد</h2>
             <div className="space-y-2">
               <Label htmlFor="signup-email">البريد الإلكتروني</Label>

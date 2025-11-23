@@ -13,7 +13,8 @@ export async function signUpWithAdmin(formData: FormData) {
   const role = 'user'
 
   if (!email || !password) {
-    return { error: 'Email and password are required' }
+    const msg = encodeURIComponent('البريد الإلكتروني وكلمة المرور مطلوبان')
+    try { redirect(`/auth?message=${msg}&status=error`) } catch (e) { return { error: 'Email and password are required' } }
   }
 
   const supabaseAdmin = createClient(
@@ -36,7 +37,8 @@ export async function signUpWithAdmin(formData: FormData) {
   })
 
   if (error) {
-    return { error: error.message }
+    const msg = encodeURIComponent(String(error.message || 'خطأ أثناء إنشاء الحساب'))
+    try { redirect(`/auth?message=${msg}&status=error`) } catch (e) { return { error: error.message } }
   }
 
   let image_url = null
@@ -58,8 +60,11 @@ export async function signUpWithAdmin(formData: FormData) {
           upsert: true,
         })
 
-      if (uploadError) {
+        if (uploadError) {
         console.error('Image upload error:', uploadError)
+        // show upload error to user
+        const msg = encodeURIComponent('فشل رفع الصورة. يمكنك المحاولة لاحقًا.')
+        try { redirect(`/auth?message=${msg}&status=error`) } catch (e) { /* fallback continue */ }
       } else {
         // Get public URL
         const { data: urlData } = supabaseAdmin.storage
@@ -83,12 +88,11 @@ export async function signUpWithAdmin(formData: FormData) {
       role,
     })
   }
-
   revalidatePath('/auth', 'page')
   // Redirect user to the login page after successful signup so mobile lands on login
   try {
     const msg = encodeURIComponent('تم إنشاء الحساب بنجاح. الرجاء تسجيل الدخول.')
-    redirect(`/auth?message=${msg}`)
+    redirect(`/auth?message=${msg}&status=success`)
   } catch (e) {
     // If redirect isn't usable in this environment, return the data so caller can handle it
     return { data }
