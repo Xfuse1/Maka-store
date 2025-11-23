@@ -15,6 +15,8 @@ import { AnimatedSection } from "@/components/animated-section"
 
 type PageContent = {
   sections: Record<string, string>
+  sections_images?: Record<string, string>
+  url_image?: string
 }
 
 export default function AboutPage() {
@@ -40,7 +42,8 @@ export default function AboutPage() {
   }, [])
 
   const getSection = (key: string, fallback: string) => {
-    return pageData?.sections?.[key] || fallback
+    // Prefer an explicit per-section image stored in `sections_images`.
+    return pageData?.sections_images?.[key] || pageData?.sections?.[key] || fallback
   }
 
   if (loading) {
@@ -65,7 +68,8 @@ export default function AboutPage() {
     "story.paragraph2",
     "منذ انطلاقتنا، كرسنا جهودنا لتقديم تصاميم فريدة تعكس الذوق الرفيع والجودة العالية. نختار أقمشتنا بعناية فائقة، ونهتم بأدق التفاصيل في كل قطعة نقدمها لكِ."
   )
-  const storyImageUrl = getSection("story.image_url", "/placeholder.jpg")
+  // Prefer general page `url_image` if set, otherwise fall back to the section value
+  const storyImageUrl = pageData?.url_image || getSection("story.image_url", "/placeholder.jpg")
 
   // Values Section Content
   const valuesTitle = getSection("values.title", "قيمنا")
@@ -129,15 +133,17 @@ export default function AboutPage() {
         <section className="py-16 md:py-24 bg-background">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="relative w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-2xl group">
-                <Image 
-                  src={storyImageUrl} 
-                  alt="قصتنا" 
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-                 <div className="absolute inset-0 bg-black/20"></div>
+              <div className="relative w-full h-40 md:h-40 lg:h-80 rounded-2xl overflow-hidden shadow-2xl group">
+                {storyImageUrl ? (
+                  <img
+                    src={storyImageUrl}
+                    alt="قصتنا"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-muted/40" />
+                )}
+                <div className="absolute inset-0 bg-black/20"></div>
               </div>
               <div className="space-y-6">
                 <h2 className="text-3xl md:text-4xl font-bold text-foreground border-r-4 border-primary pr-4">

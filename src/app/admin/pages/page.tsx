@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Trash2, Edit, ExternalLink, Eye, EyeOff, RefreshCcw, Loader2 } from "lucide-react"
+import { Plus, Trash2, Edit, ExternalLink, Eye, EyeOff, RefreshCcw, Loader2, Upload, X } from "lucide-react"
 import Link from "next/link"
 import { createPage, updatePage, deletePage, type PageContent } from "@/lib/supabase/pages"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { uploadPageContentImage } from "./upload-actions"
+import { useToast } from "@/hooks/use-toast"
 
 // Main component for the admin pages management
 export default function AdminPagesPage() {
@@ -161,6 +163,7 @@ const ABOUT_PAGE_KEYS = [
 ];
 
 function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void }) {
+  const { toast } = useToast()
   const [titleAr, setTitleAr] = useState(page.page_title_ar)
   const [titleEn, setTitleEn] = useState(page.page_title_en)
   const [path, setPath] = useState(page.page_path)
@@ -168,13 +171,86 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
   const [metaTitleEn, setMetaTitleEn] = useState(page.meta_title_en || "")
   const [metaDescAr, setMetaDescAr] = useState(page.meta_description_ar || "")
   const [metaDescEn, setMetaDescEn] = useState(page.meta_description_en || "")
+  const [urlImage, setUrlImage] = useState(page.url_image || "")
   const [sections, setSections] = useState<Record<string, string>>(page.sections || {})
+  const [sectionsImages, setSectionsImages] = useState<Record<string, string>>(page.sections_images || {})
   const [newKey, setNewKey] = useState("")
   const [newValue, setNewValue] = useState("")
   const [isSaving, setIsSaving] = useState(false)
-  const [isSeeding, setIsSeeding] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false)
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null)
+  const [uploadingMainImage, setUploadingMainImage] = useState(false)
 
-  const availableKeys = page.page_path === '/about/' ? ABOUT_PAGE_KEYS.filter(k => !sections.hasOwnProperty(k)) : [];
+  const availableKeys = page.page_path === '/about/' ? ABOUT_PAGE_KEYS.filter(k => !sections.hasOwnProperty(k)) : []
+
+  const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploadingMainImage(true)
+
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const result = await uploadPageContentImage(formData)
+
+      if (result.success && result.url) {
+        setUrlImage(result.url)
+        toast({
+          title: "تم الرفع",
+          description: "تم رفع الصورة الرئيسية بنجاح",
+        })
+        e.target.value = ""
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error: any) {
+      console.error("Error uploading main image:", error)
+      toast({
+        title: "خطأ",
+        description: error?.message || "فشل رفع الصورة",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingMainImage(false)
+    }
+  }
+
+  const handleImageUpload = async (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploadingKey(key)
+
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const result = await uploadPageContentImage(formData)
+
+      if (result.success && result.url) {
+        // store section image separately (do not overwrite the textual content)
+        setSectionsImages(prev => ({ ...prev, [key]: result.url }))
+        toast({
+          title: "تم الرفع",
+          description: "تم رفع الصورة بنجاح",
+        })
+        e.target.value = ""
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error: any) {
+      console.error("Error uploading image:", error)
+      toast({
+        title: "خطأ",
+        description: error?.message || "فشل رفع الصورة",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingKey(null)
+    }
+  }
 
   async function handleSave() {
     setIsSaving(true)
@@ -183,7 +259,9 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
         page_title_ar: titleAr, page_title_en: titleEn, page_path: path,
         meta_title_ar: metaTitleAr, meta_title_en: metaTitleEn,
         meta_description_ar: metaDescAr, meta_description_en: metaDescEn,
+        url_image: urlImage,
         sections,
+        sections_images: sectionsImages,
       })
       onSave()
     } catch (error) {
@@ -203,9 +281,9 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
       if (!response.ok) throw new Error(result.error || 'Failed to seed page');
       alert("تمت استعادة المحتوى الافتراضي بنجاح! سيتم تحديث الصفحة الآن.");
       onSave();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error seeding page:", error);
-      alert(`حدث خطأ: ${error.message}`);
+      alert(`حدث خطأ: ${error?.message || 'خطأ غير معروف'}`);
     } finally {
       setIsSeeding(false);
     }
@@ -226,6 +304,12 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
     const newSections = { ...sections }
     delete newSections[key]
     setSections(newSections)
+    // also remove any stored image for this key
+    const newSectionsImages = { ...sectionsImages }
+    if (newSectionsImages.hasOwnProperty(key)) {
+      delete newSectionsImages[key]
+      setSectionsImages(newSectionsImages)
+    }
   }
 
   return (
@@ -237,6 +321,71 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
             <div><Label>العنوان بالعربية</Label><Input value={titleAr} onChange={(e) => setTitleAr(e.target.value)} /></div>
             <div><Label>العنوان بالإنجليزية</Label><Input value={titleEn} onChange={(e) => setTitleEn(e.target.value)} /></div>
             <div className="md:col-span-2"><Label>المسار (Path)</Label><Input value={path} onChange={(e) => setPath(e.target.value)} /></div>
+          </div>
+          
+          <div className="pt-4 border-t">
+            <Label className="text-base font-semibold">الصورة الرئيسية للصفحة</Label>
+            <p className="text-sm text-muted-foreground mb-3">اختر صورة رئيسية لهذه الصفحة</p>
+            
+            {urlImage && (
+              <div className="mb-4 p-4 border rounded-md bg-muted/50 flex items-center justify-center">
+                <Image 
+                  src={urlImage} 
+                  alt="الصورة الرئيسية" 
+                  width={600} 
+                  height={300} 
+                  className="rounded-md object-contain max-h-[300px] w-auto" 
+                  onError={(e) => {
+                    e.currentTarget.style.display='none'
+                    e.currentTarget.parentElement!.innerHTML = '<div class="text-destructive text-sm">فشل تحميل الصورة</div>'
+                  }} 
+                />
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Input 
+                value={urlImage} 
+                onChange={(e) => setUrlImage(e.target.value)} 
+                placeholder="https://example.com/image.jpg" 
+                className="font-mono text-xs"
+              />
+              <label htmlFor="upload-main-image">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={uploadingMainImage}
+                  className="cursor-pointer"
+                  onClick={() => document.getElementById('upload-main-image')?.click()}
+                >
+                  {uploadingMainImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 ml-2" />
+                  )}
+                  رفع صورة
+                </Button>
+              </label>
+              <input
+                id="upload-main-image"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleMainImageUpload}
+                disabled={uploadingMainImage}
+              />
+              {urlImage && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setUrlImage("")}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <X className="h-4 w-4 ml-2" />
+                  حذف
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -279,18 +428,103 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
               <div key={key} className="grid md:grid-cols-[1fr_2fr_auto] gap-3 items-start p-3 bg-transparent rounded-lg border">
                 <Input value={key} disabled className="font-mono text-sm bg-muted self-center" />
                 
-                {key.includes("_url") ? (
-                  <div className="space-y-2">
-                    <Textarea value={value} onChange={(e) => updateSection(key, e.target.value)} rows={2} placeholder="https://example.com/image.jpg" className="font-mono text-xs"/>
-                    {value && (
-                      <div className="mt-2 p-2 border rounded-md bg-muted/50">
-                        <Image src={value} alt={`Preview for ${key}`} width={200} height={100} className="rounded-md object-contain aspect-[2/1]" onError={(e) => e.currentTarget.style.display='none'} />
+                <div className="space-y-2">
+                  {key.includes("_url") && ((sectionsImages && sectionsImages[key]) || value) ? (
+                    <div className="space-y-2">
+                      <div className="p-4 border rounded-md bg-muted/50 flex items-center justify-center min-h-[200px]">
+                        <Image 
+                          src={(sectionsImages && sectionsImages[key]) || value} 
+                          alt={`Preview for ${key}`} 
+                          width={400} 
+                          height={200} 
+                          className="rounded-md object-contain max-h-[300px] w-auto" 
+                          onError={(e) => {
+                            e.currentTarget.style.display='none'
+                            e.currentTarget.parentElement!.innerHTML = '<div class="text-destructive text-sm">فشل تحميل الصورة</div>'
+                          }} 
+                        />
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <Textarea value={value} onChange={(e) => updateSection(key, e.target.value)} rows={4} />
-                )}
+                      <div className="flex gap-2">
+                        <label htmlFor={`upload-${key}`} className="flex-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={uploadingKey === key}
+                            className="cursor-pointer w-full"
+                            onClick={() => document.getElementById(`upload-${key}`)?.click()}
+                          >
+                            {uploadingKey === key ? (
+                              <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                            ) : (
+                              <Upload className="h-4 w-4 ml-2" />
+                            )}
+                            تغيير الصورة
+                          </Button>
+                        </label>
+                        <input
+                          id={`upload-${key}`}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(key, e)}
+                          disabled={uploadingKey === key}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            const newImgs = { ...sectionsImages }
+                            if (newImgs.hasOwnProperty(key)) {
+                              delete newImgs[key]
+                              setSectionsImages(newImgs)
+                            }
+                          }}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <X className="h-4 w-4 ml-2" />
+                          حذف
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Textarea 
+                        value={value} 
+                        onChange={(e) => updateSection(key, e.target.value)} 
+                        rows={key.includes("_url") ? 2 : 4} 
+                        placeholder={key.includes("_url") ? "رابط الصورة أو ارفع صورة..." : "المحتوى..."} 
+                        className={key.includes("_url") ? "font-mono text-xs flex-1" : "flex-1"}
+                      />
+                      <div className="flex flex-col gap-2">
+                        <label htmlFor={`upload-${key}`}>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={uploadingKey === key}
+                            className="cursor-pointer w-full"
+                            onClick={() => document.getElementById(`upload-${key}`)?.click()}
+                          >
+                            {uploadingKey === key ? (
+                              <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                            ) : (
+                              <Upload className="h-4 w-4 ml-2" />
+                            )}
+                            رفع
+                          </Button>
+                        </label>
+                        <input
+                          id={`upload-${key}`}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(key, e)}
+                          disabled={uploadingKey === key}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 self-center" onClick={() => deleteSection(key)}><Trash2 className="h-4 w-4" /></Button>
               </div>

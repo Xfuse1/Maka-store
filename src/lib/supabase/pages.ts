@@ -10,6 +10,8 @@ export interface PageContent {
   meta_description_ar: string
   meta_description_en: string
   sections: Record<string, any>
+  sections_images?: Record<string, string>
+  url_image?: string
   is_published: boolean
   created_at: string
   updated_at: string
