@@ -6,11 +6,14 @@ import { Cairo } from "next/font/google"
 import { Suspense } from "react"
 import DesignProvider from "@/components/providers/design-provider"
 import { DesignSyncProvider } from "@/components/design/design-sync-provider"
+import { WebVitals } from "@/components/web-vitals"
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
   variable: "--font-cairo", 
   display: "swap",
+  preload: true,
+  fallback: ['system-ui', 'arial'],
 })
 
 export const metadata: Metadata = {
@@ -26,7 +29,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
+      <head>
+        <link rel="dns-prefetch" href="https://bbzjxcjfmeoiojjnfvfa.supabase.co" />
+        <link rel="dns-prefetch" href="https://connect.facebook.net" />
+        <link rel="preconnect" href="https://bbzjxcjfmeoiojjnfvfa.supabase.co" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://connect.facebook.net" crossOrigin="anonymous" />
+      </head>
       <body className={`font-sans ${cairo.variable} antialiased text-foreground`} style={{ backgroundColor: 'var(--background-hex)' }}>
+        <WebVitals />
         <Script id="meta-pixel" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)

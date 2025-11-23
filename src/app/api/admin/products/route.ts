@@ -10,16 +10,22 @@ export async function GET() {
       .select(`
         *,
         category:categories(name_ar, name_en),
-        product_images(id, image_url, alt_text_ar, display_order, is_primary),
+        product_images!inner(id, image_url, alt_text_ar, display_order, is_primary),
         product_variants(id, name_ar, name_en, size, color, color_hex, price, inventory_quantity, sku)
       `)
       .order("created_at", { ascending: false })
+      .limit(100)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    return NextResponse.json({ data })
+    return NextResponse.json({ data }, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      }
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to fetch products"
     return NextResponse.json({ error: message }, { status: 500 })

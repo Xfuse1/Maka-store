@@ -7,8 +7,22 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: false,
+    formats: ['image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    minimumCacheTTL: 60,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'bbzjxcjfmeoiojjnfvfa.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
+  compress: true,
+  reactStrictMode: true,
+  poweredByHeader: false,
 }
 
 // Security headers: add a Content-Security-Policy to prevent unexpected

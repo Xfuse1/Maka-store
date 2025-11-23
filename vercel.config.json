@@ -1,0 +1,22 @@
+{
+  "buildCommand": "next build",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "outputDirectory": ".next",
+  "regions": ["iad1"],
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
+    }
+  ]
+}
