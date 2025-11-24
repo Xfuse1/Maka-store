@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { signUpWithAdmin } from "./actions"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 export default function AuthPage() {
   const [mounted, setMounted] = useState(false)
@@ -43,8 +45,10 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader />
+      <div className="flex-grow flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8">
         {isLoginView ? (
           <form onSubmit={async (e) => {
             e.preventDefault()
@@ -227,6 +231,8 @@ export default function AuthPage() {
           </p>
         )}
       </div>
+      </div>
+      <SiteFooter />
     </div>
   )
 }

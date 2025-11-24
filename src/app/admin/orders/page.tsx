@@ -39,14 +39,19 @@ export default function AdminOrdersPage() {
   const [showOrderDetails, setShowOrderDetails] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
+  const [page, setPage] = useState<number>(1)
+  const [perPage, setPerPage] = useState<number>(25)
+  const [loading, setLoading] = useState<boolean>(false)
 
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const res = await fetch("/api/admin/orders")
+        setLoading(true)
+        const res = await fetch(`/api/admin/orders?limit=${perPage}&page=${page}`)
         const result = await res.json()
         if (result.error) {
           console.error("Error fetching orders:", result.error)
+          setLoading(false)
           return
         }
         const mapped = (result.orders || []).map((o: any) => {
@@ -100,12 +105,14 @@ export default function AdminOrdersPage() {
         } catch (_) {}
 
         setOrders(mapped)
+        setLoading(false)
       } catch (err) {
+        setLoading(false)
         console.error("Error fetching orders:", err)
       }
     }
     fetchOrders()
-  }, [])
+  }, [page, perPage])
 
   const filteredOrders = orders.filter(
     (order) =>
@@ -161,6 +168,123 @@ export default function AdminOrdersPage() {
     }
   }
 
+  const formatItemAttributes = (item: any) => {
+    if (!item) return ""
+
+    const parts: string[] = []
+    const push = (s?: any) => { if (s) parts.push(String(s)) }
+
+    // direct common fields (case-insensitive keys)
+    const tryKeys = (keys: string[]) => {
+      for (const k of keys) {
+        for (const keyCandidate of [k, k.toLowerCase(), k.toUpperCase()]) {
+          if (item[keyCandidate]) return item[keyCandidate]
+        }
+      }
+      return null
+    }
+
+    const colorVal = item.color ?? item.colour ?? item.Color ?? item.Colour ?? tryKeys(["color"])
+    const sizeVal = item.size ?? item.Size ?? tryKeys(["size"])
+    if (colorVal) push(`اللون: ${colorVal}`)
+    if (sizeVal) push(`المقاس: ${sizeVal}`)
+
+    // scan keys for color/size (e.g. color_name, selected_color)
+    Object.entries(item).forEach(([k, v]) => {
+      if (!v) return
+      if (/color|colour/i.test(k) && typeof v === 'string' && !String(v).includes('اللون')) push(`اللون: ${v}`)
+      if (/size/i.test(k) && typeof v === 'string' && !String(v).includes('المقاس')) push(`المقاس: ${v}`)
+    })
+
+    // variant object patterns
+    if (item.variant) {
+      if (item.variant.title) push(item.variant.title)
+      if (item.variant.options && typeof item.variant.options === "object") {
+        Object.entries(item.variant.options).forEach(([k, v]) => push(`${k}: ${v}`))
+      }
+    }
+
+    // variant_name fields (common in order_items): e.g. "وردي - L" or "Pink - L"
+    const variantName = (item.variant_name_ar || item.variant_name_en || "").toString().trim()
+    if (variantName) {
+      const cleaned = variantName.replace(/\n/g, " ").trim()
+      const parts = cleaned.split(/[-–—|\/,•]\s*/).map((s: string) => s.trim()).filter(Boolean)
+      if (parts.length === 1) push(parts[0])
+      else if (parts.length >= 2) {
+        // heuristic: first = color, last = size
+        push(`اللون: ${parts[0]}`)
+        push(`المقاس: ${parts[parts.length - 1]}`)
+      }
+    }
+
+    // parse SKU patterns: sku may end with "-color-size" like "...-وردي-L"
+    if (item.sku && typeof item.sku === 'string') {
+      const skuParts = item.sku.split('-').map((s: string) => s.trim()).filter(Boolean)
+      if (skuParts.length >= 2) {
+        const maybeSize = skuParts[skuParts.length - 1]
+        const maybeColor = skuParts[skuParts.length - 2]
+        // basic validation to avoid interpreting UUIDs
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        if (!uuidRegex.test(maybeSize)) push(`المقاس: ${maybeSize}`)
+        if (!uuidRegex.test(maybeColor)) push(`اللون: ${maybeColor}`)
+      }
+    }
+
+    // arrays of option-like objects
+    const arrayKeys = [
+      'selected_options', 'selectedOptions', 'options', 'properties', 'choices', 'attributes'
+    ]
+    arrayKeys.forEach((arrKey) => {
+      const arr = item[arrKey]
+      if (Array.isArray(arr)) {
+        arr.forEach((opt: any) => {
+          if (!opt) return
+          if (typeof opt === 'string') push(opt)
+          else if (opt.name && (opt.value || opt.option || opt.title)) push(`${opt.name}: ${opt.value ?? opt.option ?? opt.title}`)
+          else if (opt.title && opt.value) push(`${opt.title}: ${opt.value}`)
+        })
+      }
+    })
+
+    // attributes / options object
+    if (item.attributes && typeof item.attributes === "object" && !Array.isArray(item.attributes)) {
+      Object.entries(item.attributes).forEach(([k, v]) => push(`${k}: ${v}`))
+    }
+
+    // metadata / options as JSON string or object
+    const metaCandidates = [item.metadata, item.meta, item.options]
+    for (const c of metaCandidates) {
+      if (!c) continue
+      try {
+        if (typeof c === "string") {
+          const parsed = JSON.parse(c)
+          if (parsed && typeof parsed === "object") Object.entries(parsed).forEach(([k, v]) => push(`${k}: ${v}`))
+        } else if (typeof c === "object") Object.entries(c).forEach(([k, v]) => push(`${k}: ${v}`))
+      } catch (_e) {
+        // ignore parse errors
+      }
+    }
+
+    // fallback: show any small JSON-like object that contains color/size
+    try {
+      const flat = JSON.stringify(item)
+      if (/color|size/i.test(flat)) {
+        // try to extract simple key/value pairs
+        const matches: string[] = []
+        const regex = /"?(color|colour|size)["']?\s*[:=]\s*"?([^"{},]+)"?/gi
+        let m: RegExpExecArray | null
+        while ((m = regex.exec(flat))) {
+          matches.push(`${m[1]}: ${m[2]}`)
+        }
+        matches.forEach((m) => push(m))
+      }
+    } catch (_e) {}
+
+    // dedupe and return
+    const filtered = Array.from(new Set(parts.filter(Boolean)))
+    return filtered.length ? filtered.join(" • ") : ""
+  }
+
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus(orderId, newStatus)
@@ -173,7 +297,50 @@ export default function AdminOrdersPage() {
     }
   }
 
-  const handleViewDetails = (order: Order) => {
+  const handleViewDetails = async (order: Order) => {
+
+    // If items are missing or not an array, attempt to fetch full order from server
+    if (!order?.items || !Array.isArray(order.items)) {
+      try {
+        const full = await getOrderById(order.id)
+        if (full) {
+          // normalize items similar to initial load
+          let normalizedItems: any = Array.isArray(full.items)
+            ? full.items
+            : typeof full.items === "string"
+            ? (() => {
+                try {
+                  return JSON.parse(full.items)
+                } catch {
+                  return full.items
+                }
+              })()
+            : full.items
+
+          // if still not an array, try fetching from order_items table
+          if (!Array.isArray(normalizedItems) || normalizedItems.length === 0) {
+            try {
+              // lazy import to avoid circulars; using the exported helper
+              const { getOrderItems } = await import('@/lib/supabase/orders')
+              const itemsFromTable = await getOrderItems(order.id)
+              if (Array.isArray(itemsFromTable) && itemsFromTable.length) {
+                normalizedItems = itemsFromTable
+              }
+            } catch (e) {
+              console.warn('[admin] could not fetch order_items fallback:', e)
+            }
+          }
+
+          
+          setSelectedOrder({ ...order, ...full, items: normalizedItems } as any)
+          setShowOrderDetails(true)
+          return
+        }
+      } catch (err) {
+        console.error('[admin] error fetching order by id:', err)
+      }
+    }
+
     setSelectedOrder(order)
     setShowOrderDetails(true)
   }
@@ -183,6 +350,23 @@ export default function AdminOrdersPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">إدارة الطلبات</h1>
         <p className="text-muted-foreground text-base">عرض ومتابعة جميع الطلبات</p>
+      </div>
+
+      <div className="flex items-center justify-between mt-6">
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+            السابق
+          </Button>
+          <div className="text-sm text-muted-foreground">صفحة {page}</div>
+          <Button
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={orders.length < perPage}
+          >
+            التالي
+          </Button>
+        </div>
+        <div className="text-sm text-muted-foreground">عرض {perPage} طلبات لكل صفحة</div>
       </div>
 
       <Card className="border-2 border-border mb-6">
@@ -201,7 +385,18 @@ export default function AdminOrdersPage() {
       </Card>
 
       <div className="grid gap-6">
-        {filteredOrders.map((order) => {
+        {loading ? (
+          // simple skeleton placeholders
+          Array.from({ length: Math.min(perPage, 6) }).map((_, i) => (
+            <Card key={`skeleton-${i}`} className="border-2 border-border animate-pulse opacity-60">
+              <CardContent className="p-6">
+                <div className="h-6 bg-muted/40 rounded w-1/3 mb-3" />
+                <div className="h-4 bg-muted/30 rounded w-1/4 mb-2" />
+                <div className="h-3 bg-muted/20 rounded w-full" />
+              </CardContent>
+            </Card>
+          ))
+        ) : filteredOrders.map((order) => {
           const StatusIcon = getStatusIcon(order.status)
           return (
             <Card key={order.id} className="border-2 border-border hover:border-primary/50 transition-all">
@@ -270,7 +465,7 @@ export default function AdminOrdersPage() {
               </CardContent>
             </Card>
           )
-        })}
+        }) }
       </div>
 
       {filteredOrders.length === 0 && (
@@ -319,11 +514,27 @@ export default function AdminOrdersPage() {
               </div>
 
               <div className="border-t-2 border-border pt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm text-muted-foreground">عدد المنتجات</p>
-                  <p className="font-bold text-foreground">{selectedOrder.items}</p>
+                <p className="text-sm text-muted-foreground mb-2">المنتجات</p>
+                <div className="space-y-3">
+                  {(Array.isArray(selectedOrder.items) ? selectedOrder.items : []).map((it: any, idx: number) => (
+                    <div key={idx} className="flex items-start justify-between gap-4 p-3 bg-muted/10 rounded-md">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{it.name || it.title || it.product_name || it.product_title || 'منتج'}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{formatItemAttributes(it)}</p>
+                      </div>
+                      <div className="text-right w-32">
+                        <p className="font-medium">{(it.quantity ?? it.qty ?? 1)} × {(it.price ?? it.unit_price ?? it.total ?? 0)} ج.م</p>
+                        <p className="text-sm text-muted-foreground">{((it.quantity ?? it.qty ?? 1) * (it.price ?? it.unit_price ?? it.total ?? 0))} ج.م</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {(Array.isArray(selectedOrder.items) && selectedOrder.items.length === 0) && (
+                    <div className="text-muted-foreground text-sm">لا توجد منتجات مفصلة في هذا الطلب.</div>
+                  )}
                 </div>
-                <div className="flex justify-between items-center">
+
+                <div className="flex justify-between items-center mt-4">
                   <p className="text-lg font-bold text-foreground">الإجمالي</p>
                   <p className="text-2xl font-bold text-primary">{selectedOrder.total} ج.م</p>
                 </div>

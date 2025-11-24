@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = getSupabaseAdminClient()
+  const url = new URL(request.url)
+  const qp = url.searchParams
+  const limit = Math.max(Number(qp.get("limit") ?? 25), 1)
+  const page = Math.max(Number(qp.get("page") ?? 1), 1)
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
   const { data, error } = await supabase
     .from("orders")
     .select(`
@@ -13,6 +20,7 @@ export async function GET() {
       notes, tracking_number, shipped_at, delivered_at, cancelled_at, created_at
     `)
     .order("created_at", { ascending: false })
+    .range(from, to)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

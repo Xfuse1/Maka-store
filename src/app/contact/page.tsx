@@ -185,6 +185,7 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+      <SiteFooter />
     </div>
   )
 }

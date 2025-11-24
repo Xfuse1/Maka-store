@@ -27,6 +27,8 @@ import Image from "next/image"
 import { ProductViewTracker } from "./product-view-tracker"
 import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 import { SiteLogo } from "@/components/site-logo"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 interface ProductImage {
   id: string
@@ -302,34 +304,16 @@ export default function ProductDetailPage() {
         </div>
       )}
 
-      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <SiteLogo width={80} height={80} />
-            </Link>
-            <div className="flex items-center gap-3">
-              <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
-                <Link href="/">
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                  العودة
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="default"
-                size="sm"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <Link href="/cart">
-                  <ShoppingBag className="h-4 w-4 ml-2" />
-                  السلة
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
+
+      <div className="container mx-auto px-4 py-4">
+        <Button asChild variant="ghost" size="sm" className="hover:bg-primary/10 -mr-4">
+          <Link href="/">
+            <ArrowRight className="h-4 w-4 ml-2" />
+            العودة للرئيسية
+          </Link>
+        </Button>
+      </div>
 
       <div className="container mx-auto px-4 py-12">
         <div className="grid gap-8 lg:grid-cols-2">
@@ -424,7 +408,7 @@ export default function ProductDetailPage() {
             {uniqueSizes.length > 0 && (
               <div>
                 <h3 className="text-lg font-bold mb-4 text-foreground">المقاس</h3>
-                <div className="grid grid-cols-5 gap-3 mb-3">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3">
                   {uniqueSizes.map((size) => (
                     <button
                       key={size}
@@ -594,11 +578,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      <footer className="border-t border-border bg-background py-8 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

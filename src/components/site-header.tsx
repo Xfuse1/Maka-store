@@ -58,7 +58,7 @@ export function SiteHeader() {
             )}
             
             {/* Mobile Navigation */}
-            <MobileNavigation />
+            <MobileNavigation user={user} />
           </div>
         </div>
       </div>
