@@ -8,6 +8,18 @@ export async function POST(request: Request) {
     const formData = await request.formData()
     const email = String(formData.get('email') || '')
     const password = String(formData.get('password') || '')
+
+    // Server-side email validation: basic format and enforce ending with `.eg` (e.g. example.eg or example.co.eg)
+    const emailTrim = email.trim()
+    const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\.[A-Za-z]{2,})*$/
+    if (!emailRe.test(emailTrim)) {
+      return NextResponse.json({ error: "البريد الإلكتروني غير صالح — تأكد أنه في الشكل user@domain.tld." }, { status: 400 })
+    }
+
+    // Enforce .eg TLD (allow multi-part like .co.eg)
+    if (!emailTrim.toLowerCase().endsWith('.eg')) {
+      return NextResponse.json({ error: "الرجاء إدخال بريد إلكتروني ينتهي بـ .eg" }, { status: 400 })
+    }
     // Log received form keys/values (development only) to aid debugging
     try {
       if (process.env.NODE_ENV !== 'production') {
