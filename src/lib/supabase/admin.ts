@@ -28,3 +28,8 @@ export function getSupabaseAdminClient() {
 export const getAdminClient = getSupabaseAdminClient
 
 export const createAdminClient = getSupabaseAdminClient
+
+// Backwards-compatible aliases used across the codebase
+export const createSupabaseAdmin = getSupabaseAdminClient
+export const createSupabaseAdminClient = getSupabaseAdminClient
+export const getSupabaseAdmin = getSupabaseAdminClient
