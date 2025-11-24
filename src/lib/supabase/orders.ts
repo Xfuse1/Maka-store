@@ -68,14 +68,23 @@ export async function getOrderById(id: string) {
     return null
   }
 
-  const supabase = getSupabaseBrowserClient()
-  const { data, error } = await supabase.from("orders").select("*").eq("id", id).single()
-  if (error) {
-    const msg = typeof error.message === "string" ? error.message : JSON.stringify(error)
-    console.error("[v0] Supabase getOrderById error:", error, "->", msg)
-    throw new Error(msg)
+  try {
+    const res = await fetch(`/api/admin/orders/${id}`)
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      const msg = body?.error ?? `HTTP ${res.status}`
+      console.error("[v0] getOrderById server error:", body, "->", msg)
+      return null
+    }
+
+    const body = await res.json().catch(() => null)
+    // API returns { order: { ... , items: [...] } }
+    if (body && body.order) return body.order as Order
+    return null
+  } catch (err: any) {
+    console.error("[v0] getOrderById fetch error:", err)
+    return null
   }
-  return data as Order
 }
 
 export async function getOrdersByEmail(email: string) {
@@ -90,6 +99,17 @@ export async function getOrdersByEmail(email: string) {
     throw error
   }
   return data as Order[]
+}
+
+export async function getOrderItems(orderId: string) {
+  if (!orderId) return []
+  const supabase = getSupabaseBrowserClient()
+  const { data, error } = await supabase.from("order_items").select("*").eq("order_id", orderId)
+  if (error) {
+    console.error("[v0] Supabase getOrderItems error:", error)
+    return []
+  }
+  return data || []
 }
 
 export interface OrderSummary {

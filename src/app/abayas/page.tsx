@@ -9,6 +9,8 @@ import { getProductsByCategory } from "@/lib/products-data"
 import { useCartStore } from "@/store/cart-store"
 import { Badge } from "@/components/ui/badge"
 import { useAuthStore } from "@/store/auth-store"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 export default function AbayasPage() {
   const products = getProductsByCategory("عبايات")
@@ -17,46 +19,7 @@ export default function AbayasPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-4">
-              <Image src="/mecca-logo-pink.jpg" alt="مكة" width={60} height={60} />
-              <h1 className="text-3xl font-bold text-foreground">مكة</h1>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
-                <Link href="/">
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                  العودة
-                </Link>
-              </Button>
-
-              {isAuthenticated && (
-                <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
-                  <Link href="/idara-alkhasa/dashboard">لوحة التحكم</Link>
-                </Button>
-              )}
-
-              <Button
-                asChild
-                variant="default"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground relative"
-              >
-                <Link href="/cart">
-                  <ShoppingBag className="h-5 w-5 ml-2" />
-                  السلة
-                  {totalItems > 0 && (
-                    <Badge className="absolute -top-2 -left-2 bg-accent text-accent-foreground px-2 py-0.5 text-xs">
-                      {totalItems}
-                    </Badge>
-                  )}
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <div className="container mx-auto px-4 py-12">
         <h2 className="text-4xl font-bold mb-8 text-foreground">عبايات</h2>
@@ -64,7 +27,7 @@ export default function AbayasPage() {
           اكتشفي مجموعتنا الفاخرة من العبايات المصممة بعناية لتمنحك الأناقة والراحة في آن واحد
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {products.map((product) => (
             <Link key={product.id} href={`/product/${product.id}`} className="group">
               <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
@@ -107,11 +70,7 @@ export default function AbayasPage() {
         </div>
       </div>
 
-      <footer className="border-t border-border bg-background py-8 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

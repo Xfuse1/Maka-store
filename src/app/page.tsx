@@ -182,12 +182,12 @@ export default function HomePage() {
       <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between gap-4">
-            <Link href="/" className="flex items-center gap-4">
-              <SiteLogo width={80} height={80} />
-              <h1 className="text-3xl font-bold text-primary">مكة</h1>
+            <Link href="/" className="flex items-center gap-2 sm:gap-4">
+              <SiteLogo width={60} height={60} className="w-10 h-10 sm:w-[80px] sm:h-[80px]" />
+              <h1 className="text-lg sm:text-3xl font-bold text-primary block">مكة</h1>
             </Link>
 
-            <div className="hidden md:flex flex-1 max-w-3xl mx-8">
+            <div className="hidden md:flex flex-1 max-w-3xl mx-4 lg:mx-8">
               <div className="relative w-full">
                 <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
                 <Input type="text" placeholder="ابحثي عن المنتجات..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pr-12 h-14 text-lg border-2 border-border focus:border-primary" />
@@ -196,16 +196,18 @@ export default function HomePage() {
 
               <MainNavigation />
 
-            <div className="flex items-center gap-3">
-              {user ? (
-                <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
-                  تسجيل الخروج
-                </Button>
-              ) : (
-                <Button variant="outline" asChild>
-                  <Link href="/auth">تسجيل الدخول</Link>
-                </Button>
-              )}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden md:block">
+                {user ? (
+                  <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
+                    تسجيل الخروج
+                  </Button>
+                ) : (
+                  <Button variant="outline" asChild>
+                    <Link href="/auth">تسجيل الدخول</Link>
+                  </Button>
+                )}
+              </div>
               <MobileNavigation user={user} />
 
               <Button asChild variant="default" className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground relative shadow-md hover:shadow-lg transition-all">
@@ -231,7 +233,9 @@ export default function HomePage() {
         </div>
       </header>
 
-      <HeroSlider />
+      <div className="overflow-hidden">
+        <HeroSlider />
+      </div>
 
       {searchQuery && (
         <section className="py-12 bg-background">

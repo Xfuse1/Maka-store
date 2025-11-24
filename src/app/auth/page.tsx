@@ -1,24 +1,25 @@
-
 "use client"
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { Loader2, ArrowRight } from "lucide-react"
+import { signUpWithAdmin } from "./actions"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
-// Main component
 export default function AuthPage() {
   const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [isLoginView, setIsLoginView] = useState(true)
   const searchParams = useSearchParams()
-  const [serverMessage, setServerMessage] = useState<string | null>(searchParams.get("message"))
+  const message = searchParams.get("message")
   const router = useRouter()
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-
+  const [serverMessage, setServerMessage] = useState<string | null>(message)
   // On mobile, if signup redirected with status=success, reload to ensure page refreshes
   useEffect(() => {
     try {
@@ -38,13 +39,16 @@ export default function AuthPage() {
     }
   }, [])
 
-  useEffect(() => { setMounted(true) }, [])
-
-  if (!mounted) return null
+  if (!mounted) {
+    // avoid SSR/CSR markup mismatch by rendering nothing on the server
+    return null
+  }
 
   return (
-    <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader />
+      <div className="flex-grow flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8">
         {isLoginView ? (
           <form onSubmit={async (e) => {
             e.preventDefault()
@@ -57,7 +61,7 @@ export default function AuthPage() {
               return
             }
             // Email validation
-            const emailRegex = /[^\s@]+@[^\s@]+\.[^\s@]+/
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
             if (!emailRegex.test(email)) {
               setServerMessage('الرجاء إدخال بريد إلكتروني صحيح')
               return
@@ -222,11 +226,13 @@ export default function AuthPage() {
           </form>
         )}
         {serverMessage && (
-          <p className="mt-4 p-3 bg-muted text-foreground text-center rounded-lg border border-border text-sm">
+          <p className="mt-4 p-4 bg-muted text-foreground text-center rounded-lg border border-border">
             {serverMessage}
           </p>
         )}
       </div>
+      </div>
+      <SiteFooter />
     </div>
   )
 }

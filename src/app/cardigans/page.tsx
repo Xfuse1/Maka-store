@@ -6,37 +6,15 @@ import { ShoppingBag, Star, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { getProductsByCategory } from "@/lib/products-data"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 export default function CardigansPage() {
   const products = getProductsByCategory("كارديجان")
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-4">
-              <Image src="/mecca-logo.jpg" alt="مكة" width={60} height={60} />
-              <h1 className="text-3xl font-bold text-foreground">مكة</h1>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
-                <Link href="/">
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                  العودة
-                </Link>
-              </Button>
-              <Button asChild variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Link href="/cart">
-                  <ShoppingBag className="h-5 w-5 ml-2" />
-                  السلة
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Page Content */}
       <div className="container mx-auto px-4 py-12">
@@ -45,7 +23,7 @@ export default function CardigansPage() {
           تصاميم عصرية من الكارديجان تجمع بين الأناقة والراحة لإطلالة مميزة في كل الأوقات
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {products.map((product) => (
             <Link key={product.id} href={`/product/${product.id}`} className="group">
               <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
@@ -93,12 +71,7 @@ export default function CardigansPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-background py-8 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

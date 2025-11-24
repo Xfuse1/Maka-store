@@ -17,7 +17,7 @@ const navItems = [
 ] as const
 
 interface MobileNavigationProps {
-  user: User | null
+  user?: User | null
 }
 
 export function MobileNavigation({ user }: MobileNavigationProps) {

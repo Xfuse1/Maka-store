@@ -17,6 +17,8 @@ import { Separator } from "@/components/ui/separator"
 import { CheckoutTracker } from "./checkout-tracker"
 import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 import { SiteLogo } from "@/components/site-logo"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
 // تحويل مضمون للأرقام
 const toNum = (v: unknown, fallback = 0) => {
@@ -288,15 +290,7 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-4">
-                <SiteLogo width={80} height={80} />
-              </Link>
-            </div>
-          </div>
-        </header>
+        <SiteHeader />
 
         <div className="container mx-auto px-4 py-20 text-center">
           <h2 className="text-3xl font-bold mb-4">السلة فارغة</h2>
@@ -325,18 +319,7 @@ export default function CheckoutPage() {
         currency="EGP"
         user={undefined} // No user auth available in this scope yet
       />
-      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-4">
-              <SiteLogo width={80} height={80} />
-            </Link>
-            <Button asChild variant="outline">
-              <Link href="/cart">العودة للسلة</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <div className="container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold mb-8 text-center">إتمام الطلب</h1>
@@ -637,6 +620,7 @@ export default function CheckoutPage() {
           </div>
         </form>
       </div>
+      <SiteFooter />
     </div>
   )
 }

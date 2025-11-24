@@ -189,12 +189,12 @@ export default function CategoryPage() {
       <div className="min-h-screen bg-background">
         <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
           <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between gap-4">
-              <Link href="/" className="flex items-center gap-4">
-                <div className="relative w-20 h-20">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
+              <Link href="/" className="flex items-center gap-2 sm:gap-4">
+                <div className="relative w-10 h-10 sm:w-20 sm:h-20">
                   <Image src="/logo-option-4.jpg" alt="مكة" fill className="object-contain" priority />
                 </div>
-                <h1 className="text-3xl font-bold text-foreground">مكة</h1>
+                <h1 className="text-lg sm:text-3xl font-bold text-foreground block">مكة</h1>
               </Link>
 
               <MainNavigation />
@@ -268,15 +268,15 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between gap-4">
-            <Link href="/" className="flex items-center gap-4">
-              <div className="relative w-20 h-20">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <Link href="/" className="flex items-center gap-2 sm:gap-4">
+              <div className="relative w-10 h-10 sm:w-20 sm:h-20">
                 <Image src="/logo-option-4.jpg" alt="مكة" fill className="object-contain" priority />
               </div>
-              <h1 className="text-3xl font-bold text-foreground">مكة</h1>
+              <h1 className="text-lg sm:text-3xl font-bold text-foreground block">مكة</h1>
             </Link>
 
-            <div className="hidden md:flex flex-1 max-w-3xl mx-8">
+            <div className="hidden md:flex flex-1 max-w-3xl mx-4 lg:mx-8">
               <form onSubmit={handleSearchSubmit} className="relative w-full">
                 <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
                 <Input
