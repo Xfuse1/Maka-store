@@ -1,3 +1,4 @@
+
 import { getSupabaseBrowserClient } from "./client"
 
 export type ProductWithDetails = {
@@ -107,6 +108,23 @@ export async function getProductById(id: string) {
   if (!response.ok) throw new Error("Failed to fetch product")
   const { data } = await response.json()
   return data as ProductWithDetails
+}
+
+// Get product name by ID
+export async function getProductName(id: number) {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+        .from('products')
+        .select('name')
+        .eq('id', id)
+        .single();
+
+    if (error) {
+        console.error('Error fetching product name:', error);
+        return null;
+    }
+
+    return data.name;
 }
 
 // Create product

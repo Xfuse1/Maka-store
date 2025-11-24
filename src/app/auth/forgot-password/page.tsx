@@ -2,17 +2,20 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { APP_URL } from "@/lib/env"
+import { ArrowRight } from "lucide-react"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,7 +27,6 @@ export default function ForgotPasswordPage() {
       return
     }
 
-    // Basic email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       setError("الرجاء إدخال بريد إلكتروني صحيح")
@@ -39,8 +41,6 @@ export default function ForgotPasswordPage() {
       })
 
       if (error) {
-        console.error("[Forgot Password] Error:", error)
-        // Translated basic error messages or fallback
         if (error.message.includes("Rate limit")) {
           setError("تم تجاوز عدد المحاولات المسموح به. يرجى المحاولة لاحقًا.")
         } else {
@@ -50,7 +50,6 @@ export default function ForgotPasswordPage() {
         setSuccess(true)
       }
     } catch (err) {
-      console.error("[Forgot Password] Unexpected error:", err)
       setError("حدث خطأ غير متوقع.")
     } finally {
       setLoading(false)
@@ -58,8 +57,16 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4" dir="rtl">
-      <div className="w-full max-w-md space-y-6 p-6 border rounded-lg shadow-sm bg-card">
+    <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4 relative" dir="rtl">
+      <Button 
+        variant="outline" 
+        className="absolute top-4 right-4 rounded-full shadow-sm"
+        onClick={() => router.back()}
+      >
+        <ArrowRight className="h-4 w-4 ml-2" />
+        العودة للخلف
+      </Button>
+      <div className="w-full max-w-md space-y-6 p-8 bg-card shadow-lg rounded-xl">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold text-foreground">إعادة تعيين كلمة المرور</h1>
           <p className="text-sm text-muted-foreground">
@@ -88,10 +95,10 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="text-right"
+                className="text-right rounded-lg"
               />
             </div>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 rounded-lg" disabled={loading}>
               {loading ? "جاري الإرسال..." : "إرسال رابط إعادة التعيين"}
             </Button>
           </form>

@@ -6,6 +6,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ArrowRight } from "lucide-react";
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
@@ -17,7 +18,6 @@ export default function UpdatePasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
-    // Simply check if user has a valid session from the reset link
     const checkSession = async () => {
       const supabase = getSupabaseBrowserClient();
       const { data } = await supabase.auth.getSession();
@@ -66,8 +66,16 @@ export default function UpdatePasswordPage() {
   };
 
   return (
-    <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4" dir="rtl">
-      <div className="w-full max-w-md space-y-6 p-6 border rounded-lg shadow-sm bg-card">
+    <div className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4 relative" dir="rtl">
+       <Button 
+        variant="outline" 
+        className="absolute top-4 right-4 rounded-full shadow-sm"
+        onClick={() => router.back()}
+      >
+        <ArrowRight className="h-4 w-4 ml-2" />
+        العودة للخلف
+      </Button>
+      <div className="w-full max-w-md space-y-6 p-8 bg-card shadow-lg rounded-xl">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold text-foreground">تعيين كلمة مرور جديدة</h1>
           <p className="text-sm text-muted-foreground">أدخل كلمة المرور الجديدة</p>
@@ -86,7 +94,7 @@ export default function UpdatePasswordPage() {
             </div>
             <Button 
               onClick={() => router.push("/auth/forgot-password")}
-              className="w-full"
+              className="w-full rounded-lg"
               variant="outline"
             >
               طلب رابط جديد
@@ -111,7 +119,7 @@ export default function UpdatePasswordPage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="text-right"
+                className="text-right rounded-lg"
                 placeholder="أدخل كلمة المرور الجديدة"
               />
             </div>
@@ -125,14 +133,14 @@ export default function UpdatePasswordPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="text-right"
+                className="text-right rounded-lg"
                 placeholder="أعد إدخال كلمة المرور"
               />
             </div>
 
             <Button 
               type="submit" 
-              className="w-full bg-primary hover:bg-primary/90" 
+              className="w-full bg-primary hover:bg-primary/90 rounded-lg" 
               disabled={loading}
             >
               {loading ? "جاري التحديث..." : "تحديث كلمة المرور"}

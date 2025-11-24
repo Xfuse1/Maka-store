@@ -113,6 +113,52 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
     }
   }
 
+  if (section.section_type === "about_us") {
+    return (
+      <section 
+        className="py-20 transition-colors duration-300"
+        style={mounted ? { backgroundColor: colors.background } : undefined}
+      >
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row-reverse items-center gap-12">
+            {/* Image Column */}
+            <div className="w-full md:w-1/2">
+              <Image
+                src="https://i.postimg.cc/T1WhHHXm/unnamed.jpg"
+                alt="قصتنا"
+                width={500}
+                height={500}
+                className="rounded-xl shadow-lg object-cover w-full h-full"
+              />
+            </div>
+            {/* Text Column */}
+            <div className="w-full md:w-1/2 text-right">
+              <h3 
+                className="text-4xl font-bold mb-6 relative inline-block pr-6"
+                style={mounted ? { color: colors.foreground } : undefined}
+              >
+                {section.name_ar}
+                <span 
+                  className="absolute right-0 top-0 bottom-0 w-1.5"
+                  style={mounted ? { backgroundColor: colors.primary } : undefined}
+                ></span>
+              </h3>
+              <p 
+                className="text-lg leading-relaxed"
+                style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+              >
+                بدأت رحلة مكة من حلم بسيط: توفير أزياء نسائية راقية تجمع بين الأناقة العصرية والاحتشام الأصيل. نؤمن بأن كل امرأة تستحق أن تشعر بالثقة والجمال في ملابسها، دون التنازل عن قيمها ومبادئها.
+                <br/><br/>
+                منذ انطلاقتنا، كرسنا جهودنا لتقديم تصاميم فريدة تعكس الذوق الرفيع والجودة العالية. نختار أقمشتنا بعناية فائقة، ونهتم بأدق التفاصيل في كل قطعة نقدمها لكِ.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+}
+
+
   // Reviews Section
   if (section.section_type === "reviews") {
     return <CustomerReviews />
