@@ -47,15 +47,17 @@ export function SiteHeader() {
             <CartIcon />
 
             {/* Auth Links */}
-            {user ? (
-              <SignOutButton />
-            ) : (
-              <Button variant="outline" asChild>
-                <Link href="/auth">
-                  تسجيل الدخول
-                </Link>
-              </Button>
-            )}
+            <div className="hidden md:block">
+              {user ? (
+                <SignOutButton />
+              ) : (
+                <Button variant="outline" asChild>
+                  <Link href="/auth">
+                    تسجيل الدخول
+                  </Link>
+                </Button>
+              )}
+            </div>
             
             {/* Mobile Navigation */}
             <MobileNavigation user={user} />

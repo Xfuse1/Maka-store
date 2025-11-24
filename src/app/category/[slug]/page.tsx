@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input"
 import { useParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
+import { SignOutButton } from "@/components/sign-out-button"
+import type { User } from "@supabase/supabase-js"
 
 export default function CategoryPage() {
   const params = useParams()
@@ -24,7 +26,23 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true)
   const [categoryNotFound, setCategoryNotFound] = useState(false)
   const [availableCategories, setAvailableCategories] = useState<any[]>([])
+  const [user, setUser] = useState<User | null>(null)
   const totalItems = useCartStore((state) => state.getTotalItems())
+
+  useEffect(() => {
+    // Fetch User
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setUser(session?.user ?? null)
+    }
+    getUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     async function fetchProducts() {
@@ -291,8 +309,19 @@ export default function CategoryPage() {
 
             <MainNavigation />
 
-            <div className="flex items-center gap-3">
-              <MobileNavigation />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden md:block">
+                {user ? (
+                  <SignOutButton />
+                ) : (
+                  <Button variant="outline" asChild>
+                    <Link href="/auth">
+                      تسجيل الدخول
+                    </Link>
+                  </Button>
+                )}
+              </div>
+              <MobileNavigation user={user} />
               <Button
                 asChild
                 variant="default"
