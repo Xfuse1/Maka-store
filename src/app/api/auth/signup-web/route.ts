@@ -15,11 +15,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'البريد الإلكتروني وكلمة المرور مطلوبان' }, { status: 400 })
     }
 
-    // Egyptian-specific validation
-    const emailIsEgyptian = /@.+\.eg$/i.test(email)
+    // Basic email validation (allow any TLD)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const phoneIsEgyptian = /^(?:\+20|0)1[0125][0-9]{8}$/.test(phone_number.trim())
-    if (!emailIsEgyptian) {
-      return NextResponse.json({ success: false, message: 'الرجاء إدخال بريد إلكتروني ينتهي بـ .eg' }, { status: 400 })
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ success: false, message: 'الرجاء إدخال بريد إلكتروني صحيح' }, { status: 400 })
     }
     if (phone_number && !phoneIsEgyptian) {
       return NextResponse.json({ success: false, message: 'الرجاء إدخال رقم هاتف مصري صالح (مثال: 01012345678 أو +201012345678)' }, { status: 400 })

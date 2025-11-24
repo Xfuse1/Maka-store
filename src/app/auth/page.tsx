@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +21,23 @@ export default function AuthPage() {
   const message = searchParams.get("message")
   const router = useRouter()
   const [serverMessage, setServerMessage] = useState<string | null>(message)
+  const lastShownRef = useRef<{ msg?: string; ts?: number }>({})
+
+  const showMessage = (msg: string | null) => {
+    setServerMessage((prev) => {
+      const a = typeof prev === 'string' ? prev.trim() : prev
+      const b = typeof msg === 'string' ? msg.trim() : msg
+      if (!b) return null
+      // If message identical to current, skip
+      if (a === b) return prev
+      // If we showed the same message very recently, skip (avoid duplicates)
+      if (lastShownRef.current.msg === b && Date.now() - (lastShownRef.current.ts || 0) < 2000) {
+        return prev
+      }
+      lastShownRef.current = { msg: b as string, ts: Date.now() }
+      return b
+    })
+  }
   // On mobile, if signup redirected with status=success, reload to ensure page refreshes
   useEffect(() => {
     try {
@@ -39,6 +57,13 @@ export default function AuthPage() {
     }
   }, [])
 
+  // If a message was present from search params at mount, mark it as recently shown
+  useEffect(() => {
+    if (message) {
+      lastShownRef.current = { msg: String(message).trim(), ts: Date.now() }
+    }
+  }, [message])
+
   if (!mounted) {
     // avoid SSR/CSR markup mismatch by rendering nothing on the server
     return null
@@ -57,13 +82,13 @@ export default function AuthPage() {
             const email = String(fd.get('email') || '').trim()
             const password = String(fd.get('password') || '').trim()
             if (!email || !password) {
-              setServerMessage('الرجاء إدخال البريد الإلكتروني وكلمة المرور')
+              showMessage('الرجاء إدخال البريد الإلكتروني وكلمة المرور')
               return
             }
             // Email validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
             if (!emailRegex.test(email)) {
-              setServerMessage('الرجاء إدخال بريد إلكتروني صحيح')
+              showMessage('الرجاء إدخال بريد إلكتروني صحيح')
               return
             }
             try {
@@ -73,11 +98,11 @@ export default function AuthPage() {
                 console.error('[Auth] Login error:', error)
                 // Show user-friendly error messages
                 if (error.message.includes('Invalid login credentials')) {
-                  setServerMessage('البريد الإلكتروني أو كلمة المرور غير صحيحة')
+                  showMessage('البريد الإلكتروني أو كلمة المرور غير صحيحة')
                 } else if (error.message.includes('Email not confirmed')) {
-                  setServerMessage('الرجاء تأكيد بريدك الإلكتروني أولاً')
+                  showMessage('الرجاء تأكيد بريدك الإلكتروني أولاً')
                 } else {
-                  setServerMessage(`خطأ في تسجيل الدخول: ${error.message}`)
+                  showMessage(`خطأ في تسجيل الدخول: ${error.message}`)
                 }
                 return
               }
@@ -86,7 +111,7 @@ export default function AuthPage() {
               router.push('/')
             } catch (err) {
               console.error('[Auth] Login exception:', err)
-              setServerMessage((err as any)?.message || 'حدث خطأ غير متوقع')
+              showMessage((err as any)?.message || 'حدث خطأ غير متوقع')
             }
           }} className="space-y-4 p-6 border rounded-lg shadow-sm bg-card">
             <h2 className="text-2xl font-bold text-center text-foreground">تسجيل الدخول</h2>
@@ -125,27 +150,28 @@ export default function AuthPage() {
           <form
             onSubmit={async (e) => {
               e.preventDefault()
-              setServerMessage(null)
               const form = e.currentTarget as HTMLFormElement
               const fd = new FormData(form)
               const email = String(fd.get('email') || '').trim()
               const phone = String(fd.get('phone') || '').trim()
-              // Egyptian-specific client validation
-              const emailIsEgyptian = /@.+\.eg$/i.test(email)
+              // Basic client-side email validation (allow any TLD)
+              const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
               const phoneIsEgyptian = phone === '' ? true : /^(?:\+20|0)1[0125][0-9]{8}$/.test(phone)
-              if (!emailIsEgyptian) {
-                setServerMessage('الرجاء إدخال بريد إلكتروني ينتهي بـ .eg')
+              if (!emailIsValid) {
+                showMessage('الرجاء إدخال بريد إلكتروني صحيح')
                 return
               }
               if (!phoneIsEgyptian) {
-                setServerMessage('الرجاء إدخال رقم هاتف مصري صالح (مثال: 01012345678 أو +201012345678)')
+                showMessage('الرجاء إدخال رقم هاتف مصري صالح (مثال: 01012345678 أو +201012345678)')
                 return
               }
+              // Clear message before server call
+              showMessage(null)
               try {
                 const res = await fetch('/api/auth/signup-web', { method: 'POST', body: fd })
                 const json = await res.json()
                 if (!res.ok || !json?.success) {
-                  setServerMessage(json?.message || 'حدث خطأ أثناء التسجيل')
+                  showMessage(json?.message || 'حدث خطأ أثناء التسجيل')
                   return
                 }
                 // success -> try automatic sign-in
@@ -162,7 +188,7 @@ export default function AuthPage() {
                   }
 
                   // signed in successfully
-                  setServerMessage('تم تسجيل الدخول بنجاح')
+                  showMessage('تم تسجيل الدخول بنجاح')
                   // small delay so user sees the message then navigate home
                   setTimeout(() => {
                     router.push('/')
@@ -173,7 +199,7 @@ export default function AuthPage() {
                 }
               } catch (err) {
                 console.error('[Signup] exception', err)
-                setServerMessage((err as any)?.message || 'حدث خطأ أثناء التسجيل')
+                showMessage((err as any)?.message || 'حدث خطأ أثناء التسجيل')
               }
             }}
             encType="multipart/form-data"

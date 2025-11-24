@@ -16,10 +16,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "البريد الإلكتروني غير صالح — تأكد أنه في الشكل user@domain.tld." }, { status: 400 })
     }
 
-    // Enforce .eg TLD (allow multi-part like .co.eg)
-    if (!emailTrim.toLowerCase().endsWith('.eg')) {
-      return NextResponse.json({ error: "الرجاء إدخال بريد إلكتروني ينتهي بـ .eg" }, { status: 400 })
-    }
+    // Allow any top-level domain; ensure basic email format already validated above
     // Log received form keys/values (development only) to aid debugging
     try {
       if (process.env.NODE_ENV !== 'production') {

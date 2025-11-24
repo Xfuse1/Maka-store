@@ -16,12 +16,12 @@ export async function signUpWithAdmin(formData: FormData) {
     try { redirect(`/auth?message=${msg}&status=error`) } catch (e) { return { error: 'Email and password are required' } }
   }
 
-  // Egyptian-specific validation
-  const emailIsEgyptian = /@.+\.eg$/i.test(email)
+  // Basic email validation (allow any top-level domain)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const phoneIsEgyptian = /^(?:\+20|0)1[0125][0-9]{8}$/.test(phone_number.trim())
-  if (!emailIsEgyptian) {
-    const msg = encodeURIComponent('الرجاء إدخال بريد إلكتروني ينتهي بـ .eg')
-    try { redirect(`/auth?message=${msg}&status=error`) } catch (e) { return { error: 'Email must end with .eg' } }
+  if (!emailRegex.test(email)) {
+    const msg = encodeURIComponent('الرجاء إدخال بريد إلكتروني صحيح')
+    try { redirect(`/auth?message=${msg}&status=error`) } catch (e) { return { error: 'Invalid email' } }
   }
   if (phone_number && !phoneIsEgyptian) {
     const msg = encodeURIComponent('الرجاء إدخال رقم هاتف مصري صالح (مثال: 01012345678 أو +201012345678)')
