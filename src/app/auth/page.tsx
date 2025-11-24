@@ -22,6 +22,7 @@ export default function AuthPage() {
   const router = useRouter()
   const [serverMessage, setServerMessage] = useState<string | null>(message)
   const lastShownRef = useRef<{ msg?: string; ts?: number }>({})
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
   const showMessage = (msg: string | null) => {
     setServerMessage((prev) => {
@@ -74,7 +75,12 @@ export default function AuthPage() {
       <SiteHeader />
       <div className="flex-grow flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
-        {isLoginView ? (
+        {isSubmitting ? (
+          <div className="p-6 border rounded-lg shadow-sm bg-card text-center">
+            <h2 className="text-2xl font-semibold text-foreground">جاري المعالجة…</h2>
+            <p className="text-sm text-muted-foreground mt-2">يرجى الانتظار أثناء إعداد حسابك...</p>
+          </div>
+        ) : isLoginView ? (
           <form onSubmit={async (e) => {
             e.preventDefault()
             const form = e.currentTarget as HTMLFormElement
@@ -165,12 +171,14 @@ export default function AuthPage() {
                 showMessage('الرجاء إدخال رقم هاتف مصري صالح (مثال: 01012345678 أو +201012345678)')
                 return
               }
-              // Clear message before server call
+              // Clear message before server call and show loading UI
               showMessage(null)
+              setIsSubmitting(true)
               try {
                 const res = await fetch('/api/auth/signup-web', { method: 'POST', body: fd })
                 const json = await res.json()
                 if (!res.ok || !json?.success) {
+                  setIsSubmitting(false)
                   showMessage(json?.message || 'حدث خطأ أثناء التسجيل')
                   return
                 }
@@ -199,6 +207,7 @@ export default function AuthPage() {
                 }
               } catch (err) {
                 console.error('[Signup] exception', err)
+                setIsSubmitting(false)
                 showMessage((err as any)?.message || 'حدث خطأ أثناء التسجيل')
               }
             }}

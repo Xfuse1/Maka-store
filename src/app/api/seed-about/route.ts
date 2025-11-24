@@ -30,22 +30,25 @@ const aboutPageContent = {
 };
 
 export async function POST() {
-  const supabase = await createClient();
+  try {
+    const supabase: any = await createClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
-  }
+    const userRes = await supabase.auth.getUser();
+    const authError = (userRes as any).error
+    const user = (userRes as any)?.data?.user
+    if (authError || !user) {
+      return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
+    }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
 
-  if (profileError || profile?.role !== 'admin') {
-    return NextResponse.json({ error: "User is not an admin" }, { status: 403 });
-  }
+    if (profileError || profile?.role !== 'admin') {
+      return NextResponse.json({ error: "User is not an admin" }, { status: 403 });
+    }
 
   console.log("Admin user confirmed. Seeding '/about/' page content...");
 
@@ -60,7 +63,7 @@ export async function POST() {
     return NextResponse.json({ error: findError.message }, { status: 500 });
   }
 
-  if (!page) {
+    if (!page) {
     console.log("Page '/about/' not found. Creating it...");
     const { error: createError } = await supabase.from('pages').insert([{
       path: '/about/',
@@ -70,25 +73,28 @@ export async function POST() {
       is_published: true,
     }]);
 
-    if (createError) {
-      console.error("Error creating page:", createError);
-      return NextResponse.json({ error: createError.message }, { status: 500 });
+      if (createError) {
+        console.error("Error creating page:", createError);
+        return NextResponse.json({ error: createError.message }, { status: 500 });
+      }
+      return NextResponse.json({ message: "Successfully created and seeded '/about/' page." });
+  }
+    const existingSections = (page.sections as Record<string, string>) || {};
+    const mergedSections = { ...aboutPageContent, ...existingSections };
+
+    const { error: updateError } = await supabase
+      .from('pages')
+      .update({ sections: mergedSections })
+      .eq('id', page.id);
+
+    if (updateError) {
+      console.error("Error updating page content:", updateError);
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
-    return NextResponse.json({ message: "Successfully created and seeded '/about/' page." });
+
+    return NextResponse.json({ message: "'/about/' page content has been successfully seeded/merged." });
+  } catch (err: any) {
+    console.error('[api/seed-about] unexpected error:', err);
+    return NextResponse.json({ error: (err && err.message) ? err.message : String(err) }, { status: 500 });
   }
-
-  const existingSections = page.sections as Record<string, string> || {};
-  const mergedSections = { ...aboutPageContent, ...existingSections };
-
-  const { error: updateError } = await supabase
-    .from('pages')
-    .update({ sections: mergedSections })
-    .eq('id', page.id);
-
-  if (updateError) {
-    console.error("Error updating page content:", updateError);
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ message: "'/about/' page content has been successfully seeded/merged." });
 }
