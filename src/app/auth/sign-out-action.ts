@@ -8,8 +8,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export async function signOut() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  // createClient is async and manages cookies internally in the server helper.
+  const supabase = await createClient()
 
   const { error } = await supabase.auth.signOut()
 
