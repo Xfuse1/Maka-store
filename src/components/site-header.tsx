@@ -34,9 +34,9 @@ export function SiteHeader() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-            <SiteLogo width={80} height={80} />
-            <h1 className="text-2xl font-bold text-primary hidden sm:block">مكة</h1>
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <SiteLogo width={80} height={80} className="w-10 h-10 sm:w-20 sm:h-20" />
+            <h1 className="text-lg sm:text-2xl font-bold text-primary block">مكة</h1>
           </Link>
 
           {/* Desktop Navigation */}

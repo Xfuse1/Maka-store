@@ -183,8 +183,8 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-2 sm:gap-4">
-              <SiteLogo width={60} height={60} className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px]" />
-              <h1 className="text-xl sm:text-3xl font-bold text-primary hidden sm:block">مكة</h1>
+              <SiteLogo width={60} height={60} className="w-10 h-10 sm:w-[80px] sm:h-[80px]" />
+              <h1 className="text-lg sm:text-3xl font-bold text-primary block">مكة</h1>
             </Link>
 
             <div className="hidden md:flex flex-1 max-w-3xl mx-4 lg:mx-8">
