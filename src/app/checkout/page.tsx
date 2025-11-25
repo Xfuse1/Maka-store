@@ -8,6 +8,7 @@ import Image from "next/image"
 import { ArrowRight, CreditCard, Wallet, Truck } from "lucide-react"
 
 import { useCartStore } from "@/store/cart-store"
+import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -54,12 +55,48 @@ export default function CheckoutPage() {
   const [selectedZoneCode, setSelectedZoneCode] = useState<string | null>(null)
   const [zoneQuery, setZoneQuery] = useState<string>("")
   const [showZoneDropdown, setShowZoneDropdown] = useState<boolean>(false)
+  const [paymentOffers, setPaymentOffers] = useState<any[]>([])
 
   const subtotal = useMemo(() => {
     const fromStore = toNum(getTotalPrice(), NaN)
     if (!Number.isNaN(fromStore)) return fromStore
     return items.reduce((sum, it: any) => sum + toNum(it?.product?.price, 0) * toNum(it?.quantity, 0), 0)
   }, [getTotalPrice, items])
+
+  // Fetch active payment offers
+  useEffect(() => {
+    const fetchOffers = async () => {
+      const { data } = await supabase.from('payment_offers').select('*').eq('is_active', true)
+      if (data) setPaymentOffers(data)
+    }
+    fetchOffers()
+  }, [])
+
+  // Derived state for active offer
+  const activeOffer = useMemo(() => {
+    if (!formData.paymentMethod) return null
+    const pm = formData.paymentMethod.toLowerCase()
+    return paymentOffers.find(o => {
+      const opm = o.payment_method.toLowerCase()
+      if (opm === pm) return true
+      if ((pm === 'cashier' && opm === 'kashier') || (pm === 'kashier' && opm === 'cashier')) return true
+      if ((pm === 'cod' && opm === 'cash_on_delivery') || (pm === 'cash_on_delivery' && opm === 'cod')) return true
+      return false
+    })
+  }, [paymentOffers, formData.paymentMethod])
+
+  const discountInfo = useMemo(() => {
+    if (!activeOffer) return { amount: 0, percentage: 0 }
+    const type = activeOffer.discount_type || 'percentage'
+    const value = Number(activeOffer.discount_value) || 0
+    let amount = 0
+    if (type === 'percentage') {
+      amount = subtotal * (value / 100)
+    } else {
+      amount = value
+    }
+    return { amount, percentage: value }
+  }, [activeOffer, subtotal])
 
   // Fetch shipping zones for governorate-based shipping
   useEffect(() => {
@@ -111,7 +148,7 @@ export default function CheckoutPage() {
 
   const selectedZone = shippingZones.find((z) => String(z.governorate_code ?? z.code ?? z.id) === String(selectedZoneCode))
 
-  const total = toNum(subtotal) + toNum(shippingCost)
+  const total = Math.max(0, toNum(subtotal) + toNum(shippingCost) - discountInfo.amount)
 
   const validateBeforeSubmit = () => {
     if (!items.length) return "السلة فارغة."
@@ -176,7 +213,7 @@ export default function CheckoutPage() {
         subtotal: toNum(subtotal, 0),
         shippingCost: toNum(shippingCost, 0),
         tax: 0,
-        discount: 0,
+        discount: toNum(discountInfo.amount, 0),
         total: toNum(total, 0),
         paymentMethod: formData.paymentMethod,
         shippingAddress: {
@@ -537,6 +574,11 @@ export default function CheckoutPage() {
                                 {method.name}
                               </Label>
                               <p className="text-sm text-muted-foreground mt-1">{method.description}</p>
+                              {activeOffer && (method.id === formData.paymentMethod) && (
+                                <p className="mt-2 text-sm text-green-600 font-medium">
+                                  وفر {activeOffer.discount_value}% عند الدفع باستخدام {method.name}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -600,6 +642,17 @@ export default function CheckoutPage() {
                         )}
                       </span>
                     </div>
+                    
+                    {discountInfo.amount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 font-medium">
+                        <span>
+                          خصم {activeOffer?.payment_method === 'kashier' || activeOffer?.payment_method === 'cashier' ? 'الدفع الإلكتروني' : 'عرض الدفع'}
+                          {' '}({activeOffer?.discount_value}%)
+                        </span>
+                        <span>-{toNum(discountInfo.amount, 0).toFixed(2)} جنيه</span>
+                      </div>
+                    )}
+
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
                       <span>الإجمالي</span>

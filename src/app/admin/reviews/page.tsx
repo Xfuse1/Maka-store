@@ -11,30 +11,85 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 import { ReviewActions } from "./ReviewActions";
+import AdminReviewsClient from "@/components/admin/AdminReviewsClient";
 
 export const dynamic = "force-dynamic";
 
-async function getReviews() {
-  const supabase = await createClient();
-  const { data: reviews, error } = await supabase
-    .from("reviews")
-    .select("*, product:products(name_ar)")
-    .order("created_at", { ascending: false });
+async function getReviews(filterStatus?: 'all' | 'approved' | 'rejected' | 'pending') {
+  try {
+    const supabase: any = await createClient();
+    // Debug log: show incoming filterStatus on the server
+    try {
+      console.log("getReviews called with filterStatus:", filterStatus);
+    } catch (e) {
+      // ignore logging errors
+    }
+    let query: any = supabase
+      .from("product_reviews")
+      .select("*, product:products(name_ar)")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching reviews:", error);
+    // Apply server-side filter based on is_approved boolean
+    if (filterStatus === 'approved') {
+      query = query.eq('is_approved', true)
+    } else if (filterStatus === 'rejected') {
+      query = query.eq('is_approved', false)
+    } else if (filterStatus === 'pending') {
+      // pending => is_approved is null (not yet decided)
+      query = query.is('is_approved', null)
+    }
+
+    const res: any = await query;
+
+    // Debug: log what Supabase returned
+    try {
+      console.log("getReviews supabase response:", {
+        count: Array.isArray(res?.data) ? res.data.length : undefined,
+        error: res?.error ?? null,
+      });
+    } catch (e) {
+      // ignore
+    }
+
+    // Supabase returns { data, error, status, statusText }
+    const { data: reviews, error } = res || {};
+
+    if (error) {
+      // Log helpful error details when available
+      try {
+        console.error("Error fetching reviews:", {
+          message: error.message ?? String(error),
+          details: error.details ?? undefined,
+          hint: error.hint ?? undefined,
+          code: error.code ?? undefined,
+        });
+      } catch (logErr) {
+        console.error("Error fetching reviews (unknown error):", error);
+      }
+      return [];
+    }
+
+    if (!Array.isArray(reviews)) return [];
+    return reviews;
+  } catch (err) {
+    console.error("Unexpected error in getReviews:", err instanceof Error ? { message: err.message, stack: err.stack } : err);
     return [];
   }
-
-  return reviews ?? [];
 }
 
-export default async function ReviewsPage() {
-  const reviews = await getReviews();
 
-  const statusVariant: { [key: string]: "secondary" | "success" | "destructive" | "default" } = {
+export default async function ReviewsPage({ searchParams }: { searchParams?: { status?: string | string[] } }) {
+  // Normalize searchParams.status which may be string or string[]
+  const rawStatus = searchParams?.status as string | string[] | undefined;
+  const statusStr = Array.isArray(rawStatus) ? rawStatus[0] : rawStatus;
+  const allowed = ['all', 'approved', 'rejected', 'pending'];
+  const statusParam = allowed.includes(statusStr || '') ? (statusStr as 'all' | 'approved' | 'rejected' | 'pending') : 'all';
+
+  const reviews = await getReviews(statusParam);
+
+  const statusVariant: { [key: string]: "secondary" | "destructive" | "default" | "outline" } = {
     pending: "secondary",
-    approved: "success",
+    approved: "default",
     rejected: "destructive",
   };
 
@@ -50,71 +105,8 @@ export default async function ReviewsPage() {
         <h1 className="text-2xl font-bold">إدارة التقييمات</h1>
       </div>
 
-      <div className="border rounded-lg overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-right">المنتج</TableHead>
-              <TableHead className="text-right">صاحب التقييم</TableHead>
-              <TableHead className="text-center">التقييم</TableHead>
-              <TableHead className="text-right">التعليق</TableHead>
-              <TableHead className="text-center">الحالة</TableHead>
-              <TableHead className="text-right">تاريخ الإنشاء</TableHead>
-              <TableHead className="text-center">الإجراءات</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {reviews.length > 0 ? (
-              reviews.map((review) => (
-                <TableRow key={review.id}>
-                  <TableCell className="font-medium whitespace-nowrap text-right">
-                    {review.product?.name_ar || "منتج محذوف"}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-right">{review.reviewer_name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-5 w-5 ${
-                            i < review.rating ? "text-yellow-400" : "text-gray-300"
-                          }`}
-                          fill={i < review.rating ? "currentColor" : "none"}
-                        />
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-[300px] truncate text-right">{review.comment}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge
-                      variant={statusVariant[review.status] || "default"}
-                      className="capitalize"
-                    >
-                      {statusTranslations[review.status] || review.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-right">
-                    {new Date(review.created_at).toLocaleDateString("ar-EG", {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <ReviewActions reviewId={review.id} currentStatus={review.status} />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  لا توجد تقييمات لعرضها.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Use client-side reviews component to perform filtering reliably in browser */}
+      <AdminReviewsClient reviews={reviews} />
     </div>
   );
 }

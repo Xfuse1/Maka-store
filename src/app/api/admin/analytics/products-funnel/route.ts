@@ -38,12 +38,43 @@ export async function GET(request: NextRequest) {
       ...((purchaseItems as any[])?.map(i => i.product_id) || [])
     ].filter(Boolean) as string[])
 
+    // If there are no product IDs, return an empty products array early
+    if (productIds.size === 0) {
+      return NextResponse.json({ products: [] })
+    }
+
+    // Defensive: filter IDs to valid UUID strings because `products.id` is a
+    // UUID column. Passing non-UUIDs to Postgres `.in()` will cause a
+    // 22P02 invalid input syntax for type uuid error (observed in logs).
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    const allIds = Array.from(productIds)
+    const uuidIds = allIds.filter((id) => uuidRegex.test(String(id)))
+    const nonUuidIds = allIds.filter((id) => !uuidRegex.test(String(id)))
+
+    if (nonUuidIds.length > 0) {
+      console.warn(`[products-funnel] skipping ${nonUuidIds.length} non-UUID productIds`, nonUuidIds.slice(0, 10))
+    }
+
+    // If there are no UUID product IDs to query, return empty result early.
+    if (uuidIds.length === 0) {
+      return NextResponse.json({ products: [] })
+    }
+
+    // Limit the number of UUIDs we send in the `.in()` clause to avoid huge queries
+    const MAX_IDS = 500
+    const idsToQuery = uuidIds.length > MAX_IDS ? uuidIds.slice(0, MAX_IDS) : uuidIds
+    if (uuidIds.length > MAX_IDS) console.warn(`[products-funnel] limiting UUID productIds from ${uuidIds.length} to ${MAX_IDS}`)
+
+    // Fetch product names for the UUID ID set
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("id, name_ar, name_en")
-      .in("id", Array.from(productIds))
+      .in("id", idsToQuery)
 
-    if (productsError) throw productsError
+    if (productsError) {
+      console.error('[products-funnel] products fetch error:', productsError)
+      throw productsError
+    }
 
     const productMap = new Map((products as any[])?.map(p => [p.id, p]))
 

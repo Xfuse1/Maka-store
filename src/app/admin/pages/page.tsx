@@ -106,8 +106,37 @@ export default function AdminPagesPage() {
               </div>
               <div className="flex gap-2 items-center">
                 <div className="flex items-center gap-2 px-3">
-                  <Switch checked={pg.is_published} onCheckedChange={() => togglePublished(pg)} />
-                  <Label className="cursor-pointer">{pg.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</Label>
+                  <button
+                    type="button"
+                    onClick={() => togglePublished(pg)}
+                    className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium border transition
+                      ${pg.is_published
+                        ? "bg-green-50 border-green-300 text-green-700"
+                        : "bg-slate-50 border-slate-300 text-slate-500"
+                      }`}
+                  >
+                    <span
+                      className={`relative inline-flex h-4 w-8 items-center rounded-full transition
+                        ${pg.is_published ? "bg-green-500" : "bg-slate-300"}`}
+                    >
+                      <span
+                        className={`h-3 w-3 rounded-full bg-white shadow transition-transform
+                          ${pg.is_published ? "translate-x-3" : "-translate-x-3"}`}
+                      />
+                    </span>
+
+                    {pg.is_published ? (
+                      <>
+                        <Eye className="h-3 w-3" />
+                        <span>ظاهر</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-3 w-3" />
+                        <span>مخفي</span>
+                      </>
+                    )}
+                  </button>
                 </div>
                 <Button
                   variant="outline"

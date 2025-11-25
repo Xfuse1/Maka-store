@@ -5,11 +5,11 @@ import Link from "next/link"
 import { MainNavigation } from "./main-navigation"
 import { MobileNavigation } from "./mobile-navigation"
 import { CartIcon } from "./cart-icon"
-import { SignOutButton } from "./sign-out-button"
 import { Button } from "./ui/button"
 import { SiteLogo } from "./site-logo"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
+import { User as UserIcon } from "lucide-react"
 
 export function SiteHeader() {
   const [user, setUser] = useState<User | null>(null)
@@ -49,7 +49,12 @@ export function SiteHeader() {
             {/* Auth Links */}
             <div className="hidden md:block">
               {user ? (
-                <SignOutButton />
+                <Button variant="ghost" asChild>
+                  <Link href="/account" className="flex items-center gap-2">
+                    <UserIcon className="h-5 w-5" />
+                    <span>حسابي</span>
+                  </Link>
+                </Button>
               ) : (
                 <Button variant="outline" asChild>
                   <Link href="/auth">

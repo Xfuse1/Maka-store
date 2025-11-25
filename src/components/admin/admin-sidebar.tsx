@@ -23,6 +23,11 @@ const menuItems = [
     icon: GalleryHorizontal,
   },
   {
+    title: "العروض",
+    href: "/admin/offers",
+    icon: FileText,
+  },
+  {
     title: "المنتجات",
     href: "/admin/products",
     icon: Package,
@@ -111,7 +116,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
             <p className="text-xs text-muted-foreground">لوحة التحكم</p>
           </div>
         </Link>
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={onLinkClick}>
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => onLinkClick?.()} type="button">
             <X className="h-6 w-6" />
         </Button>
       </div>
@@ -165,15 +170,27 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
 
 export function AdminSidebar({ isSidebarOpen, setSidebarOpen }: AdminSidebarProps) {
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if (isSidebarOpen && window.innerWidth < 768) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     }
-    return () => {
-      document.body.style.overflow = 'auto';
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSidebarOpen(false);
+      }
     };
-  }, [isSidebarOpen]);
+
+    window.addEventListener("keydown", handleKey);
+
+    return () => {
+      document.body.style.overflow = "auto";
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [isSidebarOpen, setSidebarOpen]);
 
   return (
     <>

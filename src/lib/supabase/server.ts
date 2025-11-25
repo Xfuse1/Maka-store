@@ -36,3 +36,8 @@ export async function createClient() {
     },
   );
 }
+
+// Backwards-compatible alias some docs/examples use
+export async function getSupabaseServerClient() {
+  return createClient()
+}

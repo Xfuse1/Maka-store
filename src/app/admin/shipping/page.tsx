@@ -129,7 +129,15 @@ export default function AdminShippingPage() {
                 <div className="w-48 flex items-center gap-2">
                   <Input type="number" defaultValue={z.shipping_price} onBlur={(e) => handleUpdate(z.id, { shipping_price: Number(e.currentTarget.value) } as any)} />
                   <Switch checked={z.is_active} onCheckedChange={(v) => handleUpdate(z.id, { is_active: v } as any)} />
-                  <Button variant="ghost" onClick={() => handleDelete(z.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(z.id)}
+                    title="حذف المحافظة"
+                    aria-label={`حذف ${z.governorate_name_ar}`}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </Button>
                 </div>
               </div>
             </Card>

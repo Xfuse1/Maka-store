@@ -651,15 +651,7 @@ export default function AdminProductsPage() {
                   </Label>
                   {newProduct.shipping_type === "paid" && (
                     <div className="flex-1">
-                      <Input
-                        type="number"
-                        value={newProduct.shipping_cost}
-                        onChange={(e) => setNewProduct({ ...newProduct, shipping_cost: Number(e.target.value) })}
-                        placeholder="أدخل سعر الشحن (ج.م)"
-                        min="0"
-                        step="0.01"
-                        className="h-9"
-                      />
+                      
                     </div>
                   )}
                 </div>
@@ -765,7 +757,7 @@ export default function AdminProductsPage() {
 
             {/* المقاسات وأسعارها */}
             <div>
-              <Label className="block mb-2">المقاسات وأسعارها والكميات</Label>
+              <Label className="block mb-2">المقاسات وأسعارها </Label>
               <div className="space-y-2">
                 {newProduct.sizes.map((s, idx) => (
                   <div key={idx} className="grid grid-cols-4 gap-2 items-center">
@@ -780,12 +772,7 @@ export default function AdminProductsPage() {
                       value={s.price}
                       onChange={(e) => updateSize(idx, "price", e.target.value)}
                     />
-                    <Input
-                      type="number"
-                      placeholder="الكمية"
-                      value={s.stock}
-                      onChange={(e) => updateSize(idx, "stock", e.target.value)}
-                    />
+                    
                     <Button type="button" variant="outline" size="icon" onClick={() => removeSize(idx)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>

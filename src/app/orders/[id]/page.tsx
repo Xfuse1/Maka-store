@@ -2,28 +2,37 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-// غيّر المسار حسب مكان الملف الفعلي:
 import { getOrderById } from "@/lib/supabase/orders"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react"
+import { ArrowRight, ShoppingBag, Eye } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { SiteLogo } from "@/components/site-logo"
 import { useRouter } from "next/navigation"
-// غيّر المسار حسب مكان الملف الفعلي:
-import { useCartStore } from "@/lib/cart-store"
 
-const statusLabels: Record<string, string> = {
-  pending: "تحت الإنشاء",
-  processing: "جاري التجهيز",
-  shipped: "خرج للشحن",
-  delivered: "تم التوصيل",
-  cancelled: "ملغي",
+function formatDate(value: string) {
+  try {
+    return new Date(value).toLocaleString("ar-EG", { dateStyle: "long", timeStyle: "short" })
+  } catch { return value }
 }
 
-export default function OrderStatusPage() {
+function formatItemAttributes(item: any) {
+  if (!item) return ""
+  const parts: string[] = []
+  if (item.color) parts.push(`اللون: ${item.color}`)
+  if (item.size) parts.push(`المقاس: ${item.size}`)
+  // fallback checks
+  if (!parts.length) {
+    if (item.variant_name_ar || item.variant_name_en) parts.push(item.variant_name_ar || item.variant_name_en)
+    if (item.attributes && typeof item.attributes === 'object') {
+      Object.entries(item.attributes).forEach(([k, v]) => parts.push(`${k}: ${v}`))
+    }
+  }
+  return parts.join(' • ')
+}
+
+export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const [order, setOrder] = useState<any>(null)
@@ -32,8 +41,6 @@ export default function OrderStatusPage() {
 
   useEffect(() => {
     const orderId = params.id as string
-    
-    // Redirect to orders list if no ID provided
     if (!orderId || orderId === 'undefined' || orderId === 'null') {
       router.replace('/orders')
       return
@@ -41,39 +48,25 @@ export default function OrderStatusPage() {
 
     getOrderById(orderId)
       .then((data) => {
-        if (!data) {
-          setError('رقم الطلب غير صالح')
-        } else {
-          setOrder(data)
-        }
+        if (!data) setError('الطلب غير موجود')
+        else setOrder(data)
       })
       .catch((err) => {
         console.error('Error loading order:', err)
-        setError(err.message || 'حدث خطأ في تحميل الطلب')
+        setError(err?.message || 'حدث خطأ في تحميل الطلب')
       })
       .finally(() => setLoading(false))
   }, [params.id, router])
 
-  const clearCart = useCartStore((state: any) => state.clearCart)
-  const removeItem = useCartStore((state: any) => state.removeItem)
-  const updateQuantity = useCartStore((state: any) => state.updateQuantity)
-  const getTotalPrice = useCartStore((state: any) => state.getTotalPrice())
-  const items = useCartStore((state: any) => state.items)
-
-  const handleCheckout = () => {
-    // Navigate to checkout page (to be implemented)
-    router.push("/checkout")
-  }
-
   if (loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
         <p className="text-muted-foreground">جاري التحميل...</p>
       </div>
     </div>
   )
-  
+
   if (error || !order) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
@@ -85,6 +78,8 @@ export default function OrderStatusPage() {
     </div>
   )
 
+  const items = Array.isArray(order.items) ? order.items : []
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
@@ -95,9 +90,9 @@ export default function OrderStatusPage() {
               <h1 className="text-2xl font-bold text-primary">مكة</h1>
             </Link>
             <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
-              <Link href="/">
+              <Link href="/orders">
                 <ArrowRight className="h-4 w-4 ml-2" />
-                متابعة التسوق
+                رجوع للطلبات
               </Link>
             </Button>
           </div>
@@ -105,161 +100,81 @@ export default function OrderStatusPage() {
       </header>
 
       <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold text-foreground">سلة التسوق</h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearCart}
-                className="text-red-600 border-red-600 hover:bg-red-50 bg-transparent"
-              >
-                <Trash2 className="h-4 w-4 ml-2" />
-                إفراغ السلة
-              </Button>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">تفاصيل الطلب</h2>
+              <p className="text-sm text-muted-foreground">رقم الطلب: <span className="font-mono">{order.id}</span></p>
             </div>
-
-            {items.map((item: any) => (
-              <Card key={`${item.product.id}-${item.color.name}-${item.size}`} className="border-2 border-border">
-                <CardContent className="p-6">
-                  <div className="flex gap-6">
-                    {/* Product Image */}
-                    <div className="relative w-32 h-40 flex-shrink-0 rounded-lg overflow-hidden bg-muted border-2 border-border">
-                      <Image
-                        src={item.product.image || item.product.product_images?.[0]?.image_url || "/placeholder.svg"}
-                        alt={item.product.name}
-                        fill
-                        className="object-cover"
-                        sizes="128px"
-                      />
-                    </div>
-
-                    {/* Product Details */}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="text-xl font-bold text-foreground mb-2">{item.product.name}</h3>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <span>اللون:</span>
-                              <div
-                                className="w-5 h-5 rounded-full border-2 border-border"
-                                style={{ backgroundColor: item.color.hex || "#000" }}
-                                title={item.color.name}
-                              />
-                              <span>{item.color.name}</span>
-                            </div>
-                            <div>
-                              <span>المقاس: </span>
-                              <span className="font-medium text-foreground">{item.size}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeItem(item.product.id, item.color.name, item.size)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                      </div>
-
-                      <Separator />
-
-                      <div className="flex items-center justify-between">
-                        {/* Quantity Controls */}
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() =>
-                              updateQuantity(
-                                item.product.id,
-                                item.color.name,
-                                item.size,
-                                Math.max(1, item.quantity - 1),
-                              )
-                            }
-                            disabled={item.quantity <= 1}
-                            className="h-10 w-10 border-2 border-border"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="text-lg font-bold text-foreground w-12 text-center">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() =>
-                              updateQuantity(item.product.id, item.color.name, item.size, item.quantity + 1)
-                            }
-                            className="h-10 w-10 border-2 border-border"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        {/* Price */}
-                        <div className="text-left">
-                          <p className="text-2xl font-bold text-primary">{item.product.price * item.quantity} ج.م</p>
-                          {item.quantity > 1 && (
-                            <p className="text-sm text-muted-foreground">{item.product.price} ج.م للقطعة</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">الحالة</p>
+              <p className="font-semibold text-primary">{order.status}</p>
+              <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
+            </div>
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="border-2 border-border sticky top-24">
-              <CardContent className="p-6 space-y-6">
-                <h3 className="text-2xl font-bold text-foreground">ملخص الطلب</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/30 p-4 rounded">
+            <div>
+              <p className="text-xs text-muted-foreground">بيانات المستلم</p>
+              <p className="font-medium">{order.customer_name || order.customer || ''}</p>
+              {order.customer_phone && <p className="text-sm">{order.customer_phone}</p>}
+              {order.customer_email && <p className="text-sm">{order.customer_email}</p>}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">العنوان</p>
+              <p className="font-medium">{order.shipping_address || order.address || ''}</p>
+              {order.shipping_city && <p className="text-sm">{order.shipping_city}</p>}
+            </div>
+          </div>
 
-                <Separator />
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-lg">
-                    <span className="text-muted-foreground">المجموع الفرعي</span>
-                    <span className="font-bold text-foreground">{getTotalPrice} ج.م</span>
+          <div>
+            <h3 className="text-lg font-bold mb-2">المنتجات</h3>
+            <div className="space-y-3">
+              {items.map((it: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-card rounded">
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-24 relative rounded overflow-hidden bg-muted">
+                      <Image
+                        src={it.image || it.product_image || it.product?.image || "/placeholder.svg"}
+                        alt={it.name || it.title || 'منتج'}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium">{it.name || it.title || it.product_name || it.product?.name || 'منتج'}</p>
+                      <p className="text-sm text-muted-foreground">{formatItemAttributes(it)}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-lg">
-                    <span className="text-muted-foreground">الشحن</span>
-                    <span className="font-bold text-green-600">مجاني</span>
+                  <div className="text-right">
+                    <p className="font-semibold">{(it.quantity ?? it.qty ?? 1)} × {(it.price ?? it.unit_price ?? it.total ?? 0)} ج.م</p>
+                    <p className="text-sm text-muted-foreground">المجموع: {((it.quantity ?? it.qty ?? 1) * (it.price ?? it.unit_price ?? it.total ?? 0))} ج.م</p>
                   </div>
                 </div>
+              ))}
 
-                <Separator />
+              {items.length === 0 && (
+                <div className="text-sm text-muted-foreground">لا توجد تفاصيل منتجات في هذا الطلب.</div>
+              )}
+            </div>
+          </div>
 
-                <div className="flex items-center justify-between text-2xl">
-                  <span className="font-bold text-foreground">الإجمالي</span>
-                  <span className="font-bold text-primary">{getTotalPrice} ج.م</span>
-                </div>
+          <div className="flex items-center justify-between p-4 bg-muted/10 rounded">
+            <div>
+              <p className="text-sm text-muted-foreground">طريقة الدفع</p>
+              <p className="font-medium">{order.payment_method || order.payment || 'غير محدد'}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">الإجمالي</p>
+              <p className="text-2xl font-bold text-primary">{order.total ?? order.total_price ?? 0} ج.م</p>
+            </div>
+          </div>
 
-                <Button
-                  onClick={handleCheckout}
-                  size="lg"
-                  className="w-full bg-primary hover:bg-primary/90 text-lg py-6 relative"
-                >
-                  <ShoppingBag className="h-5 w-5 ml-2" />
-                  إتمام الطلب
-                  {items.length > 0 && <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{items.length}</span>}
-                </Button>
-
-                <div className="bg-primary/5 rounded-lg p-4 border-2 border-primary/20">
-                  <p className="text-sm text-center text-muted-foreground">
-                    ✨ شحن مجاني لجميع الطلبات
-                    <br />🔒 الدفع آمن ومضمون
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex justify-end">
+            <Button asChild>
+              <Link href="/">العودة للمتجر</Link>
+            </Button>
           </div>
         </div>
       </div>

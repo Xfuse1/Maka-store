@@ -83,6 +83,7 @@ export default function ProductDetailPage() {
   const [reviewerEmail, setReviewerEmail] = useState("")
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [reviewsList, setReviewsList] = useState<Array<{ id: string; customer_name?: string; review_text?: string; rating: number; created_at?: string }>>([])
 
   useEffect(() => {
     async function fetchProduct() {
@@ -140,6 +141,34 @@ export default function ProductDetailPage() {
 
     fetchProduct()
   }, [params.id])
+
+  useEffect(() => {
+    async function fetchReviews() {
+      if (!product) return
+
+      try {
+        const { data, error } = await supabase
+          .from('product_reviews')
+          .select('id, customer_name, review_text, rating, created_at, is_approved')
+          .eq('product_id', product.id)
+          .eq('is_approved', true)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching product reviews:', error)
+          setReviewsList([])
+          return
+        }
+
+        setReviewsList((data || []) as any)
+      } catch (err) {
+        console.error('Unexpected error fetching reviews:', err)
+        setReviewsList([])
+      }
+    }
+
+    fetchReviews()
+  }, [product])
 
   if (loading) {
     return (
@@ -237,14 +266,14 @@ export default function ProductDetailPage() {
     setIsSubmittingReview(true)
 
     try {
-      const { error } = await supabase.from("reviews").insert([
+      const { error } = await supabase.from("product_reviews").insert([
         {
           product_id: product!.id,
           rating: userRating,
-          comment: userReview,
-          reviewer_name: reviewerName,
-          reviewer_email: reviewerEmail,
-          status: "pending", // Reviews start as pending
+            review_text: userReview,
+            customer_name: reviewerName,
+            customer_email: reviewerEmail,
+            // reviews are moderated via `is_approved` in the DB; leave unset (null) or false
         },
       ])
 
@@ -515,29 +544,33 @@ export default function ProductDetailPage() {
               )}
 
               <div className="space-y-4">
-                <Card className="border border-border">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <User className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-bold text-foreground">فاطمة أحمد</h5>
-                          <span className="text-sm text-muted-foreground">منذ أسبوع</span>
+                {reviewsList.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">لا توجد تقييمات لهذا المنتج.</div>
+                ) : (
+                  reviewsList.map((r) => (
+                    <Card key={r.id} className="border border-border">
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <User className="h-6 w-6 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="font-bold text-foreground">{r.customer_name || 'مستخدم'}</h5>
+                              <span className="text-sm text-muted-foreground">{r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG') : ''}</span>
+                            </div>
+                            <div className="flex items-center mb-3">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star key={i} className={`h-4 w-4 ${i < (r.rating || 0) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                              ))}
+                            </div>
+                            <p className="text-muted-foreground leading-relaxed">{r.review_text}</p>
+                          </div>
                         </div>
-                        <div className="flex items-center mb-3">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          ))}
-                        </div>
-                        <p className="text-muted-foreground leading-relaxed">
-                          منتج رائع جداً! القماش ممتاز والتفصيل أنيق. أنصح بالشراء بشدة.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

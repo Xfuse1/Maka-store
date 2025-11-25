@@ -7,6 +7,7 @@ import { CartIcon } from "./cart-icon"
 import { SignOutButton } from "./sign-out-button"
 import { Button } from "./ui/button"
 import { SiteLogo } from "./site-logo"
+import ProfileDropdown from "./profile-dropdown.client"
 
 export async function Header() {
   const supabase = await createClient()
@@ -28,22 +29,19 @@ export async function Header() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Auth Links */}
+            {/* Auth / Profile Dropdown (client) */}
             {user ? (
-              <div className="hidden sm:block">
-                <SignOutButton />
-              </div>
+              // pass profile as null here; header can be extended to fetch profile data if available
+              <ProfileDropdown user={user} profile={null} />
             ) : (
               <Button variant="outline" asChild className="hidden sm:inline-flex">
-                <Link href="/auth">
-                  تسجيل الدخول
-                </Link>
+                <Link href="/auth">تسجيل الدخول</Link>
               </Button>
             )}
-            
+
             {/* Cart Icon */}
             <CartIcon />
-            
+
             {/* Mobile Navigation (visible on screens smaller than md) */}
             <div className="md:hidden">
               <MobileNavigation user={user} />

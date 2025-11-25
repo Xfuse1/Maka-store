@@ -345,40 +345,6 @@ export default function AdminDesignPage() {
             </Button>
           </CardContent>
         </Card>
-
-        <Card className="border-2 border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-              <Layout className="h-5 w-5 text-primary" />
-              إعدادات التخطيط
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-base font-medium mb-2 block">عرض الحاوية</Label>
-                <Input 
-                  type="text" 
-                  value={safeLayout.containerWidth} 
-                  onChange={(e) => setLayout("containerWidth", e.target.value)}
-                  className="text-base" 
-                />
-              </div>
-              <div>
-                <Label className="text-base font-medium mb-2 block">نصف القطر</Label>
-                <Input 
-                  type="text" 
-                  value={safeLayout.radius} 
-                  onChange={(e) => setLayout("radius", e.target.value)}
-                  className="text-base" 
-                />
-              </div>
-            </div>
-            <Button className="w-full bg-primary hover:bg-primary/90" onClick={handleSaveLayout}>
-              تطبيق التخطيط
-            </Button>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="mt-8 flex justify-center">

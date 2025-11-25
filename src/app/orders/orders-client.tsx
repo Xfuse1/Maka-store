@@ -183,11 +183,7 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
                             <p className="font-bold text-primary">
                               {Number(total).toFixed(2)} {currency}
                             </p>
-                            <Link href={`/orders/${orderId}`}>
-                              <Button size="sm" className="mt-2">
-                                عرض تفاصيل الطلب
-                              </Button>
-                            </Link>
+                            
                           </div>
                         </CardContent>
                       </Card>

@@ -1,9 +1,8 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Menu, X, Search } from "lucide-react"
+import { Menu, X, Search, User as UserIcon } from "lucide-react"
 import type { User } from "@supabase/supabase-js"
 
 import { Button } from "./ui/button"
@@ -84,9 +83,19 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
           </nav>
 
           {/* Auth Section */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border flex flex-col gap-2">
             {user ? (
-              <SignOutButton />
+              <>
+                <Button variant="outline" asChild className="w-full justify-start">
+                  <Link href="/account" onClick={closeMenu}>
+                    <UserIcon className="h-4 w-4 ml-2" />
+                    حسابي
+                  </Link>
+                </Button>
+                <div className="w-full">
+                  <SignOutButton />
+                </div>
+              </>
             ) : (
               <Button asChild className="w-full">
                 <Link href="/auth" onClick={closeMenu}>

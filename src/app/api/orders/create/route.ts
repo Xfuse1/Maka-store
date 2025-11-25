@@ -122,7 +122,9 @@ export async function POST(req: NextRequest) {
     // If shippingCost provided by client use it, otherwise compute server-side
     let shippingCost = toNum(body.shippingCost, 0)
     const tax = toNum(body.tax, 0)
-    const discount = toNum(body.discount, 0)
+    // Start with client-supplied discount, but we will attempt to override
+    // with any active payment-method offer found server-side.
+    let discount = toNum(body.discount, 0)
     const calculatedTotal = toNum(body.total, subtotal + shippingCost + tax - discount)
 
     const customerEmail = nonEmpty(body.customerEmail)
@@ -150,6 +152,79 @@ export async function POST(req: NextRequest) {
         { subtotal, shippingCost, tax, discount, calculatedTotal },
         400,
       )
+    }
+
+    // ===== Apply active payment offers (server-side) =====
+    try {
+      const admin = createAdminClient()
+      // Build candidate payment method aliases to tolerate small naming mismatches
+      const pm = String(paymentMethod || "").trim()
+      const candidates = new Set<string>([pm])
+      // common alias: cashier <-> kashier
+      if (pm.toLowerCase() === "cashier") candidates.add("kashier")
+      if (pm.toLowerCase() === "kashier") candidates.add("cashier")
+      // common alias: cod <-> cash_on_delivery
+      if (pm.toLowerCase() === "cod") candidates.add("cash_on_delivery")
+      if (pm.toLowerCase() === "cash_on_delivery") candidates.add("cod")
+
+      const methods = Array.from(candidates)
+      if (methods.length) {
+        const { data: offers, error: offersErr } = await admin
+          .from("payment_offers")
+          .select("*")
+          .in("payment_method", methods)
+          .eq("is_active", true)
+
+        if (offersErr) {
+          console.warn("[Orders API] failed reading payment_offers:", offersErr)
+        } else if (Array.isArray(offers) && offers.length) {
+          const now = new Date()
+          // Filter offers by date window and min_order_amount
+          const valid = offers.filter((o: any) => {
+            try {
+              if (o.start_date && new Date(o.start_date) > now) return false
+              if (o.end_date && new Date(o.end_date) < now) return false
+              if (o.min_order_amount && Number(o.min_order_amount) > subtotal) return false
+              return true
+            } catch (e) {
+              return false
+            }
+          })
+
+          if (valid.length) {
+            // pick the most recently created/updated offer
+            valid.sort((a: any, b: any) => {
+              const ta = new Date(a.updated_at || a.created_at || 0).getTime()
+              const tb = new Date(b.updated_at || b.created_at || 0).getTime()
+              return tb - ta
+            })
+            const offer = valid[0]
+            const dtype = String(offer.discount_type || "").toLowerCase()
+            const dval = Number(offer.discount_value || 0)
+            let serverDiscount = 0
+            if (dtype.includes("perc")) {
+              serverDiscount = subtotal * (dval / 100)
+            } else {
+              serverDiscount = dval
+            }
+            // never exceed subtotal
+            serverDiscount = Number.isFinite(serverDiscount) ? Math.min(serverDiscount, subtotal) : 0
+            if (serverDiscount > 0) {
+              console.log("[Orders API] applying payment offer", offer.id, "discount", serverDiscount)
+              discount = serverDiscount
+              // attach offer id to notes if orders table doesn't have a dedicated column
+              // we'll prepend a short tag so admin can see it in order notes
+              try {
+                const tag = `offer:${offer.id}`
+                if (!body.notes) body.notes = tag
+                else body.notes = `${tag} | ${body.notes}`
+              } catch (e) {}
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[Orders API] error while resolving payment offer:", e)
     }
 
     // ===== Compute shipping cost server-side when not provided =====
