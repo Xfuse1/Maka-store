@@ -1,3 +1,4 @@
+
 "use client"
 
 import { CardContent } from "@/components/ui/card"
@@ -29,6 +30,7 @@ import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 import { SiteLogo } from "@/components/site-logo"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { Input } from "@/components/ui/input"
 
 interface ProductImage {
   id: string
@@ -58,6 +60,7 @@ interface Product {
   }
   product_images: ProductImage[]
   product_variants: ProductVariant[]
+  category_id: string
 }
 
 export default function ProductDetailPage() {
@@ -76,6 +79,8 @@ export default function ProductDetailPage() {
 
   const [userRating, setUserRating] = useState(0)
   const [userReview, setUserReview] = useState("")
+  const [reviewerName, setReviewerName] = useState("")
+  const [reviewerEmail, setReviewerEmail] = useState("")
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
 
@@ -86,12 +91,14 @@ export default function ProductDetailPage() {
 
         const { data, error } = await supabase
           .from("products")
-          .select(`
+          .select(
+            `
             *,
             category:categories(name_ar, name_en),
             product_images(id, image_url, alt_text_ar, display_order),
             product_variants(id, name_ar, color, color_hex, size, price, inventory_quantity)
-          `)
+          `
+          )
           .eq("id", params.id)
           .eq("is_active", true)
           .single()
@@ -105,15 +112,16 @@ export default function ProductDetailPage() {
         console.log("[v0] ✅ Product fetched:", data)
         setProduct(data)
 
-        // Fetch related products from same category
         if (data.category_id) {
           const { data: related } = await supabase
             .from("products")
-            .select(`
+            .select(
+              `
               *,
               category:categories(name_ar),
               product_images(image_url, display_order)
-            `)
+            `
+            )
             .eq("category_id", data.category_id)
             .eq("is_active", true)
             .neq("id", params.id)
@@ -158,19 +166,7 @@ export default function ProductDetailPage() {
   }
 
   const selectedVariant = product.product_variants[selectedVariantIndex]
-
-  // Prepare data for pixel tracking
-  const pixelData = {
-    productId: product.id,
-    productName: product.name_ar,
-    productPrice: product.base_price, // Using base price for initial view, or could use selectedVariant.price
-    productCategory: product.category?.name_ar,
-    currency: "EGP",
-    userName: "guest", // Replace with actual user data if available
-  }
   const sortedImages = [...product.product_images].sort((a, b) => a.display_order - b.display_order)
-
-  // Get unique colors and sizes
   const uniqueColors = Array.from(new Map(product.product_variants.map((v) => [v.color_hex, v])).values())
   const uniqueSizes = Array.from(new Set(product.product_variants.map((v) => v.size)))
 
@@ -181,30 +177,11 @@ export default function ProductDetailPage() {
     }
 
     setIsAdding(true)
-
     try {
-      const response = await fetch("/api/cart/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productVariantId: selectedVariant.id,
-          quantity,
-          size: selectedVariant.size,
-          color: selectedVariant.color,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to add to cart")
-      }
-
-      // Also add to local cart store for immediate UI update
       addItem(
         {
-          id: product.id,
-          name: product.name_ar,
+          id: product!.id,
+          name: product!.name_ar,
           price: selectedVariant.price,
           image: sortedImages[0]?.image_url || "/placeholder.svg",
         },
@@ -216,31 +193,10 @@ export default function ProductDetailPage() {
         quantity
       )
 
-      // Track AddToCart event
-      const userMeta = buildUserMeta() // No user object available in this scope yet
-      
-      trackMetaEvent("AddToCart", {
-        ...userMeta,
-        content_ids: [product.id],
-        content_name: product.name_ar,
-        content_type: "product",
-        value: selectedVariant.price,
-        currency: "EGP",
-        quantity: quantity ?? 1,
-        productId: product.id,
-        productName: product.name_ar,
-        productPrice: selectedVariant.price,
-        productCategory: product.category?.name_ar,
-        size: selectedVariant.size,
-        color: selectedVariant.color,
-      })
-
       setShowSuccess(true)
-      setTimeout(() => {
-        setShowSuccess(false)
-      }, 3000)
+      setTimeout(() => setShowSuccess(false), 3000)
     } catch (error) {
-      console.error("[Product] Error adding to cart:", error)
+      console.error("Error adding to cart:", error)
       alert("حدث خطأ أثناء إضافة المنتج إلى السلة")
     } finally {
       setIsAdding(false)
@@ -257,16 +213,20 @@ export default function ProductDetailPage() {
 
   const handleSizeChange = (size: string) => {
     const variantIndex = product.product_variants.findIndex(
-      (v) => v.size === size && v.color_hex === selectedVariant.color_hex,
+      (v) => v.size === size && v.color_hex === selectedVariant.color_hex
     )
     if (variantIndex !== -1) {
       setSelectedVariantIndex(variantIndex)
     }
   }
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (userRating === 0) {
       alert("الرجاء اختيار تقييم")
+      return
+    }
+    if (!reviewerName.trim()) {
+      alert("الرجاء كتابة اسمك")
       return
     }
     if (!userReview.trim()) {
@@ -276,18 +236,38 @@ export default function ProductDetailPage() {
 
     setIsSubmittingReview(true)
 
-    setTimeout(() => {
-      setIsSubmittingReview(false)
+    try {
+      const { error } = await supabase.from("reviews").insert([
+        {
+          product_id: product!.id,
+          rating: userRating,
+          comment: userReview,
+          reviewer_name: reviewerName,
+          reviewer_email: reviewerEmail,
+          status: "pending", // Reviews start as pending
+        },
+      ])
+
+      if (error) {
+        throw error
+      }
+
       setShowReviewForm(false)
       setUserRating(0)
       setUserReview("")
+      setReviewerName("")
+      setReviewerEmail("")
       alert("شكراً لتقييمك! سيتم نشره بعد المراجعة.")
-    }, 1000)
+    } catch (error) {
+      console.error("Error submitting review:", error)
+      alert("عفواً، حدث خطأ أثناء إرسال التقييم. الرجاء المحاولة مرة أخرى.")
+    } finally {
+      setIsSubmittingReview(false)
+    }
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <ProductViewTracker {...pixelData} />
       {showSuccess && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] animate-in slide-in-from-top">
           <Card className="bg-green-50 border-2 border-green-500 shadow-lg">
@@ -357,9 +337,7 @@ export default function ProductDetailPage() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h1 className="text-3xl font-bold mb-3 text-foreground">{product.name_ar}</h1>
-                  <Badge variant="secondary" className="mb-4">
-                    {product.category.name_ar}
-                  </Badge>
+                  {product.category && <Badge variant="secondary" className="mb-4">{product.category.name_ar}</Badge>}
                 </div>
                 <Button
                   variant="outline"
@@ -457,36 +435,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Related Products */}
-        {relatedProducts.length > 0 && (
-          <div className="mt-16">
-            <h3 className="text-2xl font-bold mb-8 text-foreground">منتجات ذات صلة</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedProducts.map((relatedProduct) => (
-                <Link key={relatedProduct.id} href={`/product/${relatedProduct.id}`} className="group">
-                  <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
-                    <CardContent className="p-0">
-                      <div className="relative aspect-[3/4] bg-muted">
-                        <Image
-                          src={relatedProduct.product_images[0]?.image_url || "/placeholder.svg"}
-                          alt={relatedProduct.name_ar}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                        />
-                      </div>
-                      <div className="p-4 bg-background">
-                        <h4 className="text-lg font-bold mb-2 text-foreground">{relatedProduct.name_ar}</h4>
-                        <p className="text-xl font-bold text-primary">{relatedProduct.base_price} ج.م</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Reviews Section */}
         <div className="mt-16">
           <Card className="border-2 border-border">
@@ -507,6 +455,24 @@ export default function ProductDetailPage() {
                   <CardContent className="p-6">
                     <h4 className="font-bold text-lg mb-4 text-foreground">تقييمك للمنتج</h4>
                     <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2 text-foreground">اسمك</label>
+                          <Input
+                              value={reviewerName}
+                              onChange={(e) => setReviewerName(e.target.value)}
+                              placeholder="مثال: فاطمة أحمد"
+                              className="border-2 border-border focus:border-primary"
+                          />
+                        </div>
+                         <div>
+                          <label className="block text-sm font-medium mb-2 text-foreground">بريدك الإلكتروني (اختياري)</label>
+                          <Input
+                              value={reviewerEmail}
+                              onChange={(e) => setReviewerEmail(e.target.value)}
+                              placeholder="...بريدك الإلكتروني"
+                              className="border-2 border-border focus:border-primary"
+                          />
+                        </div>
                       <div>
                         <label className="block text-sm font-medium mb-2 text-foreground">التقييم</label>
                         <div className="flex items-center gap-2">

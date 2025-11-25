@@ -2,39 +2,33 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { updateReviewStatus } from "./actions"; // We will create this server action
+import { updateReviewStatus } from "./actions";
 import { useTransition } from "react";
 
-export function ReviewActions({ reviewId }: { reviewId: number }) {
+export function ReviewActions({ reviewId, currentStatus }: { reviewId: number; currentStatus: string }) {
   const [isPending, startTransition] = useTransition();
 
-  const handleApprove = () => {
+  const handleUpdateStatus = (status: "approved" | "rejected") => {
     startTransition(() => {
-      updateReviewStatus(reviewId, "approved");
-    });
-  };
-
-  const handleReject = () => {
-    startTransition(() => {
-      updateReviewStatus(reviewId, "rejected");
+      updateReviewStatus(reviewId, status);
     });
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex justify-center gap-2">
       <Button
         size="sm"
         variant="outline"
-        onClick={handleApprove}
-        disabled={isPending}
+        onClick={() => handleUpdateStatus("approved")}
+        disabled={isPending || currentStatus === "approved"}
       >
         {isPending ? "جاري..." : "نشر"}
       </Button>
       <Button
         size="sm"
         variant="destructive"
-        onClick={handleReject}
-        disabled={isPending}
+        onClick={() => handleUpdateStatus("rejected")}
+        disabled={isPending || currentStatus === "rejected"}
       >
         {isPending ? "جاري..." : "رفض"}
       </Button>

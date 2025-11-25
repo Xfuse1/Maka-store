@@ -1,7 +1,7 @@
 
 "use client"
 
-import { Menu, Bell, User } from "lucide-react"
+import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface AdminHeaderProps {
@@ -25,16 +25,6 @@ export function AdminHeader({ setSidebarOpen }: AdminHeaderProps) {
         <h1 className="font-semibold text-lg whitespace-nowrap">لوحة تحكم متجر مكة</h1>
       </div>
 
-      <div className="flex items-center gap-4 ml-auto">
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">عرض الإشعارات</span>
-        </Button>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <User className="h-5 w-5" />
-          <span className="sr-only">فتح قائمة المستخدم</span>
-        </Button>
-      </div>
     </header>
   )
 }
