@@ -87,12 +87,12 @@ export async function getOrderById(id: string) {
   }
 }
 
-export async function getOrdersByEmail(email: string) {
+export async function getOrdersByEmail(identifier: string) {
   const supabase = getSupabaseBrowserClient()
   const { data, error } = await supabase
     .from("orders")
     .select("*")
-    .eq("customer_email", email)
+    .or(`customer_email.eq.${identifier},customer_phone.eq.${identifier}`)
     .order("created_at", { ascending: false })
 
   if (error) {

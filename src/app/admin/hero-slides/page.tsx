@@ -20,6 +20,7 @@ import {
   deleteHeroSlideAction,
 } from "./actions"
 import { uploadHeroSlideImage } from "./upload-actions"
+import { getPublishedPages, PageContent } from "@/lib/supabase/pages"
 
 type SlideForm = Omit<HeroSlide, "id" | "created_at" | "updated_at">
 
@@ -44,9 +45,24 @@ export default function AdminHeroSlidesPage() {
     is_active: true,
   })
 
+  // Pages for link dropdown
+  const [pages, setPages] = useState<Pick<PageContent, "id" | "page_path" | "page_title_ar">[]>([])
+  const [pageQuery, setPageQuery] = useState("")
+  const [showPageDropdown, setShowPageDropdown] = useState(false)
+
   useEffect(() => {
     loadSlides()
+    loadPages()
   }, [])
+
+  const loadPages = async () => {
+    try {
+      const p = await getPublishedPages()
+      setPages(p || [])
+    } catch (e) {
+      console.warn("Failed to load pages for link dropdown", e)
+    }
+  }
 
   const loadSlides = async () => {
     try {
@@ -455,14 +471,88 @@ export default function AdminHeroSlidesPage() {
               </div>
             </div>
 
-            <div>
+            <div className="relative">
               <Label htmlFor="link_url">رابط الانتقال</Label>
               <Input
                 id="link_url"
-                value={formData.link_url||''}
-                onChange={(e) => setFormData({ ...formData, link_url: e.target.value })}
-                placeholder="/products"
+                value={formData.link_url || ''}
+                onChange={(e) => {
+                  setFormData({ ...formData, link_url: e.target.value })
+                  setPageQuery(e.target.value)
+                  setShowPageDropdown(true)
+                }}
+                onFocus={() => setShowPageDropdown(true)}
+                placeholder="ابحث في صفحات الموقع أو أدخل رابطاً مخصصاً (مثال: /products)"
+                autoComplete="off"
               />
+
+              {showPageDropdown && (
+                <div className="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-auto rounded-md border bg-white shadow">
+                  <div className="p-2 border-b">
+                    <input
+                      type="text"
+                      autoFocus={false}
+                      className="w-full rounded-md border px-2 py-1"
+                      placeholder="بحث في صفحات الموقع..."
+                      value={pageQuery}
+                      onChange={(e) => setPageQuery(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    {pages.filter(p => {
+                      const q = (pageQuery || "").trim().toLowerCase()
+                      if (!q) return true
+                      return (p.page_path || "").toLowerCase().includes(q) || (p.page_title_ar || "").toLowerCase().includes(q)
+                    }).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 hover:bg-muted/50 flex items-center justify-between"
+                        onClick={() => {
+                          setFormData({ ...formData, link_url: p.page_path })
+                          setPageQuery(p.page_path)
+                          setShowPageDropdown(false)
+                        }}
+                      >
+                        <div>
+                          <div className="font-medium">{p.page_title_ar || p.page_path}</div>
+                          <div className="text-xs text-muted-foreground">{p.page_path}</div>
+                        </div>
+                        <div className="text-sm text-muted-foreground">اذهب</div>
+                      </button>
+                    ))}
+
+                    {/* Allow creating/using the typed value as custom link */}
+                    <div className="border-t p-2">
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => {
+                            // Use the typed value as custom link
+                            const v = (pageQuery || "").trim()
+                            if (!v) return
+                            setFormData({ ...formData, link_url: v })
+                            setShowPageDropdown(false)
+                          }}
+                        >
+                          استخدم هذا الرابط
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setShowPageDropdown(false)
+                          }}
+                        >
+                          إغلاق
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

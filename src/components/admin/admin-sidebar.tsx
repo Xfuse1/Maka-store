@@ -158,6 +158,13 @@ function SidebarContent({ onLinkClick, onClose }: { onLinkClick?: () => void; on
       </nav>
 
       <div className="p-4 border-t border-border mt-auto space-y-2">
+        {/* Quick link to admin root */}
+        <Button asChild variant="primary" className="w-full mb-2">
+          <Link href="/admin" onClick={() => onClose?.()} className="flex items-center justify-center gap-2 px-4 py-2.5">
+            <Home className="h-4 w-4" />
+            <span className="text-sm">لوحة التحكم</span>
+          </Link>
+        </Button>
         <Button
           onClick={handleLogout}
           variant="outline"

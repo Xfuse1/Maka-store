@@ -47,7 +47,7 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
     e.preventDefault()
     
     if (!email.trim()) {
-      setError("الرجاء إدخال البريد الإلكتروني")
+      setError("من فضلك أدخل البريد الإلكتروني أو رقم الهاتف.")
       return
     }
 
@@ -63,7 +63,7 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
       localStorage.setItem("orderCustomerEmail", email.trim())
     } catch (err: any) {
       console.error("Error fetching orders:", err)
-      setError("حدث خطأ أثناء البحث عن الطلبات. الرجاء المحاولة مرة أخرى.")
+      setError("لم يتم العثور على طلبات بهذا البريد أو رقم الهاتف.")
     } finally {
       setIsLoading(false)
     }
@@ -108,7 +108,7 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
                       <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">أو ابحث بالبريد</span>
+                      <span className="bg-background px-2 text-muted-foreground">أو ابحث بالبريد / الهاتف</span>
                     </div>
                   </div>
                 </div>
@@ -116,12 +116,12 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
                 <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 items-end">
                   <div className="w-full space-y-2">
                     <label htmlFor="email" className="text-sm font-medium">
-                      البريد الإلكتروني المستخدم في الطلب
+                      البريد الإلكتروني أو رقم الهاتف المستخدم في الطلب
                     </label>
                     <Input
                       id="email"
-                      type="email"
-                      placeholder="example@email.com"
+                      type="text"
+                      placeholder="example@email.com أو 01012345678"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="h-12"
@@ -213,7 +213,7 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
                   <p className="text-muted-foreground mb-6">
                     {user 
                       ? "لا توجد طلبات مسجلة على هذا الحساب بعد." 
-                      : "لم نتمكن من العثور على أي طلبات مرتبطة بهذا البريد الإلكتروني"}
+                      : "لم نتمكن من العثور على أي طلبات مرتبطة بهذا البريد الإلكتروني أو رقم الهاتف."}
                   </p>
                   <Button asChild>
                     <Link href="/">ابدئي التسوق الآن</Link>
