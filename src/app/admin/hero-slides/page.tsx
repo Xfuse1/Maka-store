@@ -289,7 +289,11 @@ export default function AdminHeroSlidesPage() {
                       variant="outline"
                       size="sm"
                       className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent flex-1 sm:flex-none"
-                      onClick={() => handleDelete(slide.id)}
+                      onClick={() => {
+                        const title = slide.title_ar || slide.title_en || "هذه الشريحة"
+                        if (!confirm(`هل أنت متأكد من حذف "${title}"؟`)) return
+                        handleDelete(slide.id)
+                      }}
                     >
                       <Trash2 className="h-4 w-4" />
                       حذف
