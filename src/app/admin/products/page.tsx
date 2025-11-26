@@ -132,7 +132,31 @@ export default function AdminProductsPage() {
   const onImagesChange = (files: FileList | null) => {
     if (!files) return
     const arr = Array.from(files)
-    setNewProduct((p) => ({ ...p, images: [...p.images, ...arr] }))
+    const maxAllowed = 4
+    setNewProduct((p) => {
+      const remaining = Math.max(0, maxAllowed - p.images.length)
+      if (remaining === 0) {
+        // notify user via toast if available
+        try {
+          // toast is available in outer scope
+          toast({ title: "مسموح 4 صور فقط", description: "لا يمكنك إضافة أكثر من 4 صور للمنتج.", variant: "destructive" })
+        } catch (e) {
+          /* ignore if toast unavailable */
+        }
+        return p
+      }
+
+      const toAdd = arr.slice(0, remaining)
+      if (toAdd.length < arr.length) {
+        try {
+          toast({ title: "تم اقتصار الصور", description: `تم قبول ${toAdd.length} صورة إضافية فقط (الحد الأقصى 4).` })
+        } catch (e) {
+          /* ignore */
+        }
+      }
+
+      return { ...p, images: [...p.images, ...toAdd] }
+    })
   }
 
   const removeImage = (idx: number) => setNewProduct((p) => ({ ...p, images: p.images.filter((_, i) => i !== idx) }))
@@ -719,9 +743,15 @@ export default function AdminProductsPage() {
             {/* الصور */}
             <div>
               <Label className="block mb-2">صور المنتج</Label>
-              <Input type="file" accept="image/*" multiple onChange={(e) => onImagesChange(e.target.files)} />
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => onImagesChange(e.target.files)}
+                disabled={newProduct.images.length >= 4}
+              />
               <p className="text-xs text-muted-foreground mt-1">
-                يمكنك رفع عدد غير محدود من الصور. الصورة الأولى ستكون الصورة الرئيسية.
+                يمكنك رفع حتى 4 صور فقط. الصورة الأولى ستكون الصورة الرئيسية.
               </p>
               {newProduct.images.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-3">
