@@ -85,9 +85,10 @@ export type GetAllProductsResult = {
   perPage?: number
 }
 
-export async function getAllProducts(page = 1, perPage = 50): Promise<GetAllProductsResult> {
+export async function getAllProducts(page = 1, perPage = 50, forceReload = false): Promise<GetAllProductsResult> {
   try {
-    const response = await fetch(`/api/admin/products?page=${page}&per_page=${perPage}`)
+    const cacheBuster = forceReload ? `&_=${Date.now()}` : ""
+    const response = await fetch(`/api/admin/products?page=${page}&per_page=${perPage}${cacheBuster}`)
 
     if (!response.ok) {
       const body = await response.text().catch(() => null)

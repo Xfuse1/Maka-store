@@ -199,7 +199,22 @@ export default function AdminProductsPage() {
         title: "تم الحذف",
         description: `تم حذف المنتج "${productName}" بنجاح`,
       })
-      await loadData()
+      // Reload current page with cache-buster. If page becomes empty, go back one page.
+      try {
+        const productsResultReload = await getAllProducts(page, perPage, true)
+        if ((productsResultReload.data?.length ?? 0) === 0 && page > 1) {
+          const prevPage = page - 1
+          const prevResult = await getAllProducts(prevPage, perPage, true)
+          setPage(prevPage)
+          setProducts(prevResult.data)
+          setTotalProducts(prevResult.total ?? null)
+        } else {
+          setProducts(productsResultReload.data)
+          setTotalProducts(productsResultReload.total ?? null)
+        }
+      } catch (e) {
+        console.error("[v0] Error reloading products after delete:", e)
+      }
     } catch (error) {
       console.error("[v0] Error deleting product:", error)
       toast({
@@ -296,7 +311,15 @@ export default function AdminProductsPage() {
 
       setShowAddDialog(false)
       resetNewProduct()
-      await loadData()
+      // Ensure newly created product appears immediately: go to page 1 and force reload
+      setPage(1)
+      try {
+        const productsResultReload = await getAllProducts(1, perPage, true)
+        setProducts(productsResultReload.data)
+        setTotalProducts(productsResultReload.total ?? null)
+      } catch (e) {
+        console.error("[v0] Error reloading products after create:", e)
+      }
     } catch (error) {
       console.error("[v0] Error saving product:", error)
       toast({
@@ -335,7 +358,14 @@ export default function AdminProductsPage() {
       })
 
       setShowEditDialog(false)
-      await loadData()
+      // Refresh current page with cache-buster so edits appear immediately
+      try {
+        const productsResultReload = await getAllProducts(page, perPage, true)
+        setProducts(productsResultReload.data)
+        setTotalProducts(productsResultReload.total ?? null)
+      } catch (e) {
+        console.error("[v0] Error reloading products after edit:", e)
+      }
     } catch (error) {
       console.error("[v0] Error updating product:", error)
       toast({
@@ -394,11 +424,16 @@ export default function AdminProductsPage() {
         toast({ title: "تم الرفع", description: "تم رفع الصور بنجاح" })
       }
 
-      await loadData()
-      // Refresh editing product
-      const updatedResult = await getAllProducts(page, perPage)
-      const updated = updatedResult.data.find((p) => p.id === editingProduct.id)
-      if (updated) setEditingProduct(updated)
+      // Refresh current page (cache-busted) and update editing product
+      try {
+        const productsResultReload = await getAllProducts(page, perPage, true)
+        setProducts(productsResultReload.data)
+        setTotalProducts(productsResultReload.total ?? null)
+        const updated = productsResultReload.data.find((p) => p.id === editingProduct.id)
+        if (updated) setEditingProduct(updated)
+      } catch (e) {
+        console.error("[v0] Error reloading products after image upload:", e)
+      }
     } catch (error) {
       console.error("[v0] Error uploading images:", error)
       toast({ title: "خطأ", description: "فشل رفع الصور", variant: "destructive" })
@@ -416,11 +451,16 @@ export default function AdminProductsPage() {
         title: "تم الحذف",
         description: "تم حذف الصورة بنجاح",
       })
-
-      await loadData()
-      const updatedResult = await getAllProducts(page, perPage)
-      const updated = updatedResult.data.find((p) => p.id === editingProduct.id)
-      if (updated) setEditingProduct(updated)
+      // Refresh current page (cache-busted) and update editing product
+      try {
+        const productsResultReload = await getAllProducts(page, perPage, true)
+        setProducts(productsResultReload.data)
+        setTotalProducts(productsResultReload.total ?? null)
+        const updated = productsResultReload.data.find((p) => p.id === editingProduct.id)
+        if (updated) setEditingProduct(updated)
+      } catch (e) {
+        console.error("[v0] Error reloading products after deleting image:", e)
+      }
     } catch (error) {
       console.error("[v0] Error deleting image:", error)
       toast({
@@ -437,9 +477,16 @@ export default function AdminProductsPage() {
     try {
       await updateProductVariant(variantId, updates)
 
-      const updatedResult = await getAllProducts(page, perPage)
-      const updated = updatedResult.data.find((p) => p.id === editingProduct.id)
-      if (updated) setEditingProduct(updated)
+      // Refresh current page (cache-busted) and update editing product
+      try {
+        const productsResultReload = await getAllProducts(page, perPage, true)
+        setProducts(productsResultReload.data)
+        setTotalProducts(productsResultReload.total ?? null)
+        const updated = productsResultReload.data.find((p) => p.id === editingProduct.id)
+        if (updated) setEditingProduct(updated)
+      } catch (e) {
+        console.error("[v0] Error reloading products after variant update:", e)
+      }
     } catch (error) {
       console.error("[v0] Error updating variant:", error)
       toast({
@@ -460,9 +507,16 @@ export default function AdminProductsPage() {
         description: "تم حذف المتغير بنجاح",
       })
 
-      const updatedResult = await getAllProducts(page, perPage)
-      const updated = updatedResult.data.find((p) => p.id === editingProduct.id)
-      if (updated) setEditingProduct(updated)
+      // Refresh current page (cache-busted) and update editing product
+      try {
+        const productsResultReload = await getAllProducts(page, perPage, true)
+        setProducts(productsResultReload.data)
+        setTotalProducts(productsResultReload.total ?? null)
+        const updated = productsResultReload.data.find((p) => p.id === editingProduct.id)
+        if (updated) setEditingProduct(updated)
+      } catch (e) {
+        console.error("[v0] Error reloading products after variant delete:", e)
+      }
     } catch (error) {
       console.error("[v0] Error deleting variant:", error)
       toast({
