@@ -75,7 +75,9 @@ export default function RootLayout({
             src="https://www.facebook.com/tr?id=1370339511313553&ev=PageView&noscript=1"
           />
         </noscript>
-        <FacebookPixelEvents />
+        <Suspense fallback={null}>
+          <FacebookPixelEvents />
+        </Suspense>
         <DesignProvider />
         <DesignSyncProvider>
           <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
