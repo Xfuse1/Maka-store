@@ -57,7 +57,7 @@ export default function AdminHomepagePage() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [sectionsResult, productsData] = await Promise.all([
+      const [sectionsResult, productsResult] = await Promise.all([
         getHomepageSectionsAction(),
         getAllProducts(),
       ])
@@ -72,8 +72,8 @@ export default function AdminHomepagePage() {
         })
         setSections([])
       }
-      setAllProducts(productsData)
-      if (!productsData || productsData.length === 0) {
+      setAllProducts(productsResult?.data || [])
+      if (!productsResult || !productsResult.data || productsResult.data.length === 0) {
         // Non-blocking warning if products failed to load or there are none
         toast({ title: 'تنبيه', description: 'فشل تحميل قائمة المنتجات أو لا توجد منتجات.', variant: 'destructive' })
       }

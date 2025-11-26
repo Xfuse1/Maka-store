@@ -2,25 +2,38 @@ import { NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 // GET - Fetch all products
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
-    const { data, error } = await supabase
+
+    const url = new URL(request.url)
+    const page = Math.max(1, Number(url.searchParams.get("page") || "1"))
+    const perPage = Math.max(1, Number(url.searchParams.get("per_page") || "50"))
+    const start = (page - 1) * perPage
+    const end = start + perPage - 1
+
+    // Use exact count to return total number of products for pagination
+    const { data, error, count } = await supabase
       .from("products")
-      .select(`
+      .select(
+        `
         *,
         category:categories(name_ar, name_en),
-        product_images!inner(id, image_url, alt_text_ar, display_order, is_primary),
+        product_images(id, image_url, alt_text_ar, display_order, is_primary),
         product_variants(id, name_ar, name_en, size, color, color_hex, price, inventory_quantity, sku)
-      `)
+      `,
+        { count: "exact" }
+      )
       .order("created_at", { ascending: false })
-      .limit(100)
+      .range(start, end)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    return NextResponse.json({ data }, {
+    const total = typeof count === "number" ? count : (data || []).length
+
+    return NextResponse.json({ data, total, page, perPage }, {
       status: 200,
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',

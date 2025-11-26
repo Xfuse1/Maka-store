@@ -78,11 +78,17 @@ export type CreateImageData = {
 }
 
 // Get all products with details
-export async function getAllProducts() {
-  try {
-    const response = await fetch("/api/admin/products")
+export type GetAllProductsResult = {
+  data: ProductWithDetails[]
+  total?: number
+  page?: number
+  perPage?: number
+}
 
-    // If the response is not OK, try to extract server error message and return empty list
+export async function getAllProducts(page = 1, perPage = 50): Promise<GetAllProductsResult> {
+  try {
+    const response = await fetch(`/api/admin/products?page=${page}&per_page=${perPage}`)
+
     if (!response.ok) {
       const body = await response.text().catch(() => null)
       try {
@@ -91,14 +97,14 @@ export async function getAllProducts() {
       } catch (e) {
         console.error("[v0] getAllProducts: non-json error body", body)
       }
-      return []
+      return { data: [], total: 0, page, perPage }
     }
 
     const json = await response.json().catch(() => ({ data: [] }))
-    return (json.data || []) as ProductWithDetails[]
+    return { data: (json.data || []) as ProductWithDetails[], total: json.total ?? undefined, page: json.page ?? page, perPage: json.perPage ?? perPage }
   } catch (err) {
     console.error("[v0] getAllProducts: fetch failed", err)
-    return []
+    return { data: [], total: 0, page, perPage }
   }
 }
 

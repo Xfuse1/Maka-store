@@ -52,6 +52,9 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductWithDetails[]>([])
   const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; name_en: string }>>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(50)
+  const [totalProducts, setTotalProducts] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -80,13 +83,14 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [page, perPage])
 
   const loadData = async () => {
     try {
       setLoading(true)
-      const [productsData, categoriesData] = await Promise.all([getAllProducts(), getAllCategories()])
-      setProducts(productsData)
+      const [productsResult, categoriesData] = await Promise.all([getAllProducts(page, perPage), getAllCategories()])
+      setProducts(productsResult.data)
+      setTotalProducts(productsResult.total ?? null)
       setCategories(categoriesData)
     } catch (error) {
       console.error("[v0] Error loading data:", error)
@@ -392,8 +396,8 @@ export default function AdminProductsPage() {
 
       await loadData()
       // Refresh editing product
-      const updatedProducts = await getAllProducts()
-      const updated = updatedProducts.find((p) => p.id === editingProduct.id)
+      const updatedResult = await getAllProducts(page, perPage)
+      const updated = updatedResult.data.find((p) => p.id === editingProduct.id)
       if (updated) setEditingProduct(updated)
     } catch (error) {
       console.error("[v0] Error uploading images:", error)
@@ -414,8 +418,8 @@ export default function AdminProductsPage() {
       })
 
       await loadData()
-      const updatedProducts = await getAllProducts()
-      const updated = updatedProducts.find((p) => p.id === editingProduct.id)
+      const updatedResult = await getAllProducts(page, perPage)
+      const updated = updatedResult.data.find((p) => p.id === editingProduct.id)
       if (updated) setEditingProduct(updated)
     } catch (error) {
       console.error("[v0] Error deleting image:", error)
@@ -433,8 +437,8 @@ export default function AdminProductsPage() {
     try {
       await updateProductVariant(variantId, updates)
 
-      const updatedProducts = await getAllProducts()
-      const updated = updatedProducts.find((p) => p.id === editingProduct.id)
+      const updatedResult = await getAllProducts(page, perPage)
+      const updated = updatedResult.data.find((p) => p.id === editingProduct.id)
       if (updated) setEditingProduct(updated)
     } catch (error) {
       console.error("[v0] Error updating variant:", error)
@@ -456,8 +460,8 @@ export default function AdminProductsPage() {
         description: "تم حذف المتغير بنجاح",
       })
 
-      const updatedProducts = await getAllProducts()
-      const updated = updatedProducts.find((p) => p.id === editingProduct.id)
+      const updatedResult = await getAllProducts(page, perPage)
+      const updated = updatedResult.data.find((p) => p.id === editingProduct.id)
       if (updated) setEditingProduct(updated)
     } catch (error) {
       console.error("[v0] Error deleting variant:", error)
@@ -504,6 +508,30 @@ export default function AdminProductsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-sm text-muted-foreground">
+          {totalProducts !== null && (
+            <span>
+              {`عرض ${(page - 1) * perPage + 1} - ${Math.min((page - 1) * perPage + products.length, totalProducts)} من ${totalProducts}`}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+            السابق
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={totalProducts !== null && page * perPage >= totalProducts}
+          >
+            التالي
+          </Button>
+        </div>
+      </div>
 
       <div className="grid gap-6">
         {filteredProducts.map((product) => (
