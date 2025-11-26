@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from "next/server"
+import { createAdminClient } from "@/lib/supabase/admin"
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const id = params.id
+    const body = await request.json()
+
+    // sanitize body server-side: remove undefined and NaN
+    const payload: Record<string, any> = {}
+    Object.keys(body || {}).forEach((k) => {
+      const v = (body as any)[k]
+      if (v === undefined) return
+      if (typeof v === "number" && Number.isNaN(v)) return
+      payload[k] = v
+    })
+
+    if (Object.keys(payload).length === 0) {
+      return NextResponse.json({ error: "Empty payload" }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
+    const { data, error } = await (supabase as any).from("product_variants").update(payload).eq("id", id).select("*").maybeSingle()
+
+    if (error) {
+      console.error("[v0] Admin variant update error:", error)
+      return NextResponse.json({ error: error.message ?? String(error) }, { status: 400 })
+    }
+
+    return NextResponse.json({ data }, { status: 200 })
+  } catch (err) {
+    console.error("[v0] Admin variant update exception:", err)
+    const message = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}

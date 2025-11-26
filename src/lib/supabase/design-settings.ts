@@ -2,9 +2,9 @@
 
 // قيم افتراضية لو حصل أي خطأ أو لسه مفيش بيانات في الجدول
 const defaultColors = {
-  primary: "#760614",
+  primary: "#FFB6C1",
   secondary: "#a13030",
-  background: "#ffffff",
+  background: "#FFFFFF",
   foreground: "#1a1a1a",
 }
 

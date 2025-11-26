@@ -1,4 +1,3 @@
-
 "use client"
 
 import { CardContent } from "@/components/ui/card"
@@ -38,7 +37,6 @@ interface ProductImage {
   alt_text_ar: string
   display_order: number
 }
-
 interface ProductVariant {
   id: string
   name_ar: string
@@ -219,7 +217,8 @@ export default function ProductDetailPage() {
           hex: selectedVariant.color_hex,
         },
         selectedVariant.size,
-        quantity
+        quantity,
+        selectedVariant.id
       )
 
       setShowSuccess(true)
@@ -416,19 +415,37 @@ export default function ProductDetailPage() {
               <div>
                 <h3 className="text-lg font-bold mb-4 text-foreground">المقاس</h3>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3">
-                  {uniqueSizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => handleSizeChange(size)}
-                      className={`py-3 px-4 rounded-lg border-2 font-medium transition-all ${
-                        selectedVariant.size === size
-                          ? "border-primary bg-primary text-primary-foreground shadow-md"
-                          : "border-border hover:border-primary hover:bg-primary/5"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {uniqueSizes.map((size) => {
+                    const variant = product.product_variants.find(
+                      (v) => v.size === size && v.color_hex === selectedVariant.color_hex
+                    )
+                    const isAvailable = variant && variant.inventory_quantity > 0
+                    const stock = variant ? variant.inventory_quantity : 0
+
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => isAvailable && handleSizeChange(size)}
+                        disabled={!isAvailable}
+                        className={`py-3 px-4 rounded-lg border-2 font-medium transition-all ${
+                          selectedVariant.size === size
+                            ? "border-primary bg-primary text-primary-foreground shadow-md"
+                            : isAvailable
+                              ? "border-border hover:border-primary hover:bg-primary/5"
+                              : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center">
+                          <span>{size}</span>
+                          {isAvailable ? (
+                            <span className="text-[10px] opacity-80 mt-1">(المتاح: {stock})</span>
+                          ) : (
+                            <span className="text-[10px] text-red-400 mt-1">غير متاح</span>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}

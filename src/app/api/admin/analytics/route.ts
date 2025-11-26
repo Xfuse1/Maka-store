@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       .select("total, created_at")
       .gte("created_at", from.toISOString())
       .lte("created_at", to.toISOString())
+      .not("status", "in", '("cancelled","returned","refunded")')
 
     // Fetch Previous Period Orders
     const { data: prevOrders, error: prevError } = await supabase
@@ -30,6 +31,7 @@ export async function GET(request: NextRequest) {
       .select("total")
       .gte("created_at", prevFrom.toISOString())
       .lte("created_at", prevTo.toISOString())
+      .not("status", "in", '("cancelled","returned","refunded")')
 
     // Fetch Total Products & Customers (Total counts, not time-bound for now, or maybe time-bound for growth?)
     // Instructions say: "products: { total: number }"

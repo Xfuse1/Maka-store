@@ -10,6 +10,7 @@ import Image from "next/image"
 import { SiteLogo } from "@/components/site-logo"
 import { getOrdersByEmail, type OrderSummary } from "@/lib/supabase/orders"
 import { humanizeOrderStatus, getStatusBadgeClass } from "@/lib/status"
+import { CancelOrderButton } from "./cancel-order-button"
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("ar-EG", {
@@ -179,11 +180,24 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
                                <p>عدد المنتجات: {itemsCount}</p>
                             )}
                           </div>
-                          <div className="text-right">
+                          <div className="text-right space-y-2">
                             <p className="font-bold text-primary">
                               {Number(total).toFixed(2)} {currency}
                             </p>
-                            
+                            {user && (
+                              <CancelOrderButton 
+                                orderId={orderId} 
+                                status={status} 
+                                onOrderCancelled={() => {
+                                  // Re-fetch orders or reload
+                                  if (user) {
+                                    window.location.reload()
+                                  } else {
+                                    handleSearch(new Event('submit') as any)
+                                  }
+                                }}
+                              />
+                            )}
                           </div>
                         </CardContent>
                       </Card>

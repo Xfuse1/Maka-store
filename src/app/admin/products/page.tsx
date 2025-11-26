@@ -502,12 +502,34 @@ export default function AdminProductsPage() {
                   <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">
                     {product.description_ar}
                   </p>
-                  <div className="flex flex-wrap items-center gap-4 mb-4">
+                  <div className="flex flex-wrap items-center gap-4 mb-2">
                     <div className="text-sm text-muted-foreground">
                       <span className="font-medium">الصور:</span> {product.product_images.length}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       <span className="font-medium">المتغيرات:</span> {product.product_variants.length}
+                    </div>
+                  </div>
+                  
+                  {/* ملخص المقاسات */}
+                  <div className="mb-4 bg-muted/30 p-2 rounded-md">
+                    <div className="text-xs font-semibold mb-1 text-muted-foreground">المقاسات المتاحة:</div>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {product.product_variants.length > 0 ? (
+                        Object.entries(
+                          product.product_variants.reduce((acc, v) => {
+                            const s = v.size || "عام";
+                            acc[s] = (acc[s] || 0) + v.inventory_quantity;
+                            return acc;
+                          }, {} as Record<string, number>)
+                        ).map(([size, qty], idx) => (
+                          <Badge key={idx} variant="default" className="font-normal">
+                            {size} ({qty})
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">لا توجد مقاسات</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -780,6 +802,15 @@ export default function AdminProductsPage() {
                         onChange={(e) => updateSize(idx, "price", e.target.value)}
                       />
                     </div>
+                    <div className="w-full">
+                      <Label className="sm:hidden text-xs mb-1 block">الكمية</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={s.stock}
+                        onChange={(e) => updateSize(idx, "stock", e.target.value)}
+                      />
+                    </div>
                     
                     <Button type="button" variant="outline" size="icon" onClick={() => removeSize(idx)} className="self-end sm:self-auto mt-2 sm:mt-0">
                       <Trash2 className="h-4 w-4" />
@@ -825,7 +856,7 @@ export default function AdminProductsPage() {
 
       {/* Dialog: تعديل المنتج */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl w-[95%] md:w-full max-h-[90vh] overflow-y-auto p-4 md:p-6">
+        <DialogContent className="max-w-3xl w-full max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle className="text-xl md:text-2xl font-bold">تعديل المنتج</DialogTitle>
             <DialogDescription className="text-xs md:text-sm">تعديل تفاصيل المنتج "{editingProduct?.name_ar}"</DialogDescription>
@@ -926,15 +957,7 @@ export default function AdminProductsPage() {
                         </Label>
                         {editingProduct.shipping_type === "paid" && (
                           <div className="flex-1">
-                            <Input
-                              type="number"
-                              value={editingProduct.shipping_cost || 0}
-                              onChange={(e) => setEditingProduct({ ...editingProduct, shipping_cost: Number(e.target.value) })}
-                              placeholder="أدخل سعر الشحن (ج.م)"
-                              min="0"
-                              step="0.01"
-                              className="h-9"
-                            />
+                             
                           </div>
                         )}
                       </div>
@@ -1073,63 +1096,54 @@ export default function AdminProductsPage() {
                   {editingProduct.product_variants.length > 0 ? (
                     <div className="space-y-3">
                       {editingProduct.product_variants.map((variant) => (
-                        <Card key={variant.id} className="border-2">
-                          <CardContent className="p-4">
-                            <div className="flex flex-col md:grid md:grid-cols-5 gap-4 items-center">
-                              <div className="flex items-center gap-2 w-full md:w-auto">
-                                {variant.color_hex && (
-                                  <div
-                                    className="w-8 h-8 rounded border-2 flex-shrink-0"
-                                    style={{ backgroundColor: variant.color_hex }}
-                                  />
-                                )}
-                                <div>
-                                  <div className="font-medium text-sm">{variant.name_ar}</div>
-                                  <div className="text-xs text-muted-foreground">{variant.sku || "N/A"}</div>
-                                </div>
-                              </div>
-                              <div className="w-full md:w-auto">
-                                <Label className="text-xs md:hidden mb-1 block">السعر (ج.م)</Label>
-                                <Input
-                                  type="number"
-                                  value={variant.price}
-                                  onChange={(e) => handleUpdateVariant(variant.id, { price: Number(e.target.value) })}
-                                  className="h-9"
-                                />
-                              </div>
-                              <div className="w-full md:w-auto">
-                                <Label className="text-xs md:hidden mb-1 block">المخزون</Label>
-                                <Input
-                                  type="number"
-                                  value={variant.inventory_quantity}
-                                  onChange={(e) =>
-                                    handleUpdateVariant(variant.id, { inventory_quantity: Number(e.target.value) })
-                                  }
-                                  className="h-9"
-                                />
-                              </div>
-                              <div className="w-full md:w-auto">
-                                <Label className="text-xs md:hidden mb-1 block">المقاس</Label>
-                                <Input
-                                  value={variant.size || ""}
-                                  onChange={(e) => handleUpdateVariant(variant.id, { size: e.target.value })}
-                                  className="h-9"
-                                />
-                              </div>
-                              <div className="flex gap-2 w-full md:w-auto justify-end">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
-                                  onClick={() => handleDeleteVariant(variant.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                        <div key={variant.id} className="border rounded-lg p-3 mb-3">
+                          <div className="flex items-start gap-3 mb-2">
+                            <div 
+                              className="w-10 h-10 rounded border-2 flex-shrink-0"
+                              style={{ backgroundColor: variant.color_hex || '#000' }}
+                            ></div>
+
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold">{variant.color || "لون"} - {variant.size}</span>
+                              <span className="text-xs text-muted-foreground leading-snug">{variant.sku || "No SKU"}</span>
                             </div>
-                          </CardContent>
-                        </Card>
+                          </div>
+
+                          <div className="grid grid-cols-3 md:grid-cols-4 gap-3 items-center">
+                            {/* Price */}
+                            <Input 
+                              type="number" 
+                              value={variant.price} 
+                              onChange={(e) => handleUpdateVariant(variant.id, { price: Number(e.target.value) })} 
+                              placeholder="السعر"
+                            />
+
+                            {/* Quantity */}
+                            <Input 
+                              type="number" 
+                              value={variant.inventory_quantity} 
+                              onChange={(e) => handleUpdateVariant(variant.id, { inventory_quantity: Number(e.target.value) })}
+                              placeholder="الكمية"
+                            />
+
+                            {/* Size */}
+                            <Input 
+                              type="text" 
+                              value={variant.size || ""} 
+                              onChange={(e) => handleUpdateVariant(variant.id, { size: e.target.value })}
+                              placeholder="المقاس"
+                            />
+
+                            {/* Delete */}
+                            <Button 
+                              variant="ghost" 
+                              className="text-red-500 justify-self-end" 
+                              onClick={() => handleDeleteVariant(variant.id)}
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : (

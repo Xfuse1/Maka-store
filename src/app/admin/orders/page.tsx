@@ -447,7 +447,7 @@ export default function AdminOrdersPage() {
     try {
       await updateOrderStatus(orderId, newStatus)
       setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
-      alert(`تم تحديث حالة الطلب " `)
+      alert('تم تحديث حالة الطلب')
     } catch (err: any) {
       console.error("[v0] Error updating order status (client):", err)
       const message = err?.message || (typeof err === "string" ? err : JSON.stringify(err))
@@ -501,6 +501,31 @@ export default function AdminOrdersPage() {
 
     setSelectedOrder(order)
     setShowOrderDetails(true)
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('هل أنت متأكد أنك تريد حذف هذا الطلب؟ هذه العملية لا يمكن التراجع عنها.')) return
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' })
+      const body = await res.json().catch(() => null)
+      if (!res.ok) {
+        const msg = body?.error ?? `HTTP ${res.status}`
+        alert(`فشل حذف الطلب: ${msg}`)
+        return
+      }
+
+      // Optimistically update UI by removing the order from state
+      setOrders((prev) => prev.filter((o) => o.id !== orderId))
+      // Close details dialog if open for the same order
+      if (selectedOrder?.id === orderId) {
+        setShowOrderDetails(false)
+        setSelectedOrder(null)
+      }
+      alert('تم حذف الطلب بنجاح')
+    } catch (err) {
+      console.error('[admin] Error deleting order:', err)
+      alert('حدث خطأ أثناء حذف الطلب. تحقق من السجل أو حاول مرة أخرى.')
+    }
   }
 
   return (
@@ -681,6 +706,14 @@ export default function AdminOrdersPage() {
                   >
                     <Eye className="h-4 w-4" />
                     عرض التفاصيل
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-2 w-full sm:w-auto"
+                    onClick={() => handleDeleteOrder(order.id)}
+                  >
+                    حذف
                   </Button>
                   {order.status !== "delivered" && (
                     <Select value={order.status} onValueChange={(value) => handleUpdateStatus(order.id, value)}>

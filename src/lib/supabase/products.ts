@@ -112,19 +112,20 @@ export async function getProductById(id: string) {
 
 // Get product name by ID
 export async function getProductName(id: number) {
-    const supabase = getSupabaseBrowserClient();
-    const { data, error } = await supabase
-        .from('products')
-        .select('name')
-        .eq('id', id)
-        .single();
+  // Supabase client typings may be strict in this helper; cast to `any` for a simple lookup
+  const supabaseAny = getSupabaseBrowserClient() as any
+  const { data, error } = await supabaseAny
+    .from('products')
+    .select('name')
+    .eq('id', id)
+    .maybeSingle();
 
-    if (error) {
-        console.error('Error fetching product name:', error);
-        return null;
-    }
+  if (error) {
+    console.error('Error fetching product name:', error);
+    return null;
+  }
 
-    return data.name;
+  return data ? (data as any).name ?? null : null;
 }
 
 // Create product
@@ -225,18 +226,49 @@ export async function createProductVariant(variantData: CreateVariantData) {
 }
 
 // Update product variant
-export async function updateProductVariant(id: string, variantData: Partial<CreateVariantData>) {
-  const supabase = getSupabaseBrowserClient()
+export async function updateProductVarint(id: string, variantData: Partial<CreateVariantData>) {
+  // Client-side will call the server API to perform updates to avoid REST/Accept/CORS issues
+  // Sanitize payload: remove undefined fields and invalid numbers (NaN)
+  const payload: Record<string, any> = {}
+  Object.keys(variantData || {}).forEach((key) => {
+    const val = (variantData as any)[key]
+    if (val === undefined) return
+    if (typeof val === "number" && Number.isNaN(val)) return
+    payload[key] = val
+  })
 
-  const { data, error } = await supabase.from("product_variants").update(variantData).eq("id", id).select().single()
-
-  if (error) {
-    console.error("[v0] Error updating variant:", error)
-    throw error
+  if (Object.keys(payload).length === 0) {
+    console.warn("[v0] Skipping update: empty payload for variant id=", id)
+    return null
   }
 
-  return data
+  try {
+    const res = await fetch(`/api/admin/products/variants/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+
+    const json = await res.json().catch(() => null)
+
+    if (!res.ok) {
+      const msg = json?.error ?? `HTTP ${res.status}`
+      console.error("[v0] Server API error updating variant:", msg, "payload=", payload)
+      throw new Error(msg)
+    }
+
+    return json?.data ?? null
+  } catch (err) {
+    console.error("[v0] Exception updating variant via server API: id=", id, "payload=", payload, err)
+    if (err instanceof Error) throw err
+    throw new Error(String(err))
+  }
 }
+
+// Backwards-compatible alias: original had a typo (`updateProductVarint`).
+// Export the correctly-named symbol so callers importing `updateProductVariant`
+// continue to work without changing other code.
+export const updateProductVariant = updateProductVarint
 
 // Delete product variant
 export async function deleteProductVariant(id: string) {

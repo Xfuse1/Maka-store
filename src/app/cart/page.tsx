@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useCartStore } from "@/store/cart-store"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,6 +12,7 @@ import { useRouter } from "next/navigation"
 import { SiteLogo } from "@/components/site-logo"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { getAllShippingZones, type ShippingZone } from "@/lib/supabase/shipping"
 
 export default function CartPage() {
   const router = useRouter()
@@ -19,11 +21,72 @@ export default function CartPage() {
   const updateQuantity = useCartStore((state) => state.updateQuantity)
   const getTotalPrice = useCartStore((state) => state.getTotalPrice())
   const clearCart = useCartStore((state) => state.clearCart)
-
+  // Determine if any item requires paid shipping (used for simple UI text)
+  const hasPaidShipping = items.some((it) => {
+    const p = it.product as any
+    if (p?.free_shipping === true) return true
+    return false
+  })
+  const [shippingZones, setShippingZones] = useState<ShippingZone[]>([])
+  const [selectedZone, setSelectedZone] = useState<string | null>(null)
+  const [shippingCost, setShippingCost] = useState<number>(0)
   const handleCheckout = () => {
     // Navigate to checkout page (to be implemented)
     router.push("/checkout")
   }
+
+  // Effects: load shipping zones and compute shipping cost.
+  // Placed here (before any early returns) to keep Hooks order stable.
+  useEffect(() => {
+    // Load shipping zones for governorate-based shipping costs
+    let mounted = true
+    ;(async () => {
+      try {
+        const zones = await getAllShippingZones()
+        if (!mounted) return
+        setShippingZones(zones)
+        if (zones && zones.length) {
+          // default to first zone if not set
+          setSelectedZone((prev) => prev ?? zones[0].governorate_code)
+        }
+      } catch (e) {
+        console.error("[cart] failed to load shipping zones:", e)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // Recompute shipping cost when items or selected zone change
+  useEffect(() => {
+    // Determine if any item requires paid shipping.
+    const hasPaidShipping = items.some((it) => {
+      const p = it.product as any
+      // prefer explicit shipping_type/shipping_cost fields, fall back to free_shipping flag
+      if (p?.shipping_type === "paid") return true
+      if (Number(p?.shipping_cost || 0) > 0) return true
+      if (p?.free_shipping === false) return true
+      return false
+    })
+
+    // If no item requires paid shipping -> free
+    if (!hasPaidShipping) {
+      setShippingCost(0)
+      return
+    }
+
+    // Otherwise use governorate zone price (if selected)
+    if (selectedZone) {
+      const zone = shippingZones.find((z) => z.governorate_code === selectedZone)
+      const cost = zone ? Number(zone.shipping_price || 0) : 0
+      setShippingCost(cost)
+      return
+    }
+
+    // fallback: if no zone selected, shipping cost unknown -> 0
+    setShippingCost(0)
+  }, [items, selectedZone, shippingZones])
 
   if (items.length === 0) {
     return (
@@ -48,6 +111,7 @@ export default function CartPage() {
       </div>
     )
   }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -178,10 +242,7 @@ export default function CartPage() {
                     <span className="text-muted-foreground">المجموع الفرعي</span>
                     <span className="font-bold text-foreground">{getTotalPrice} ج.م</span>
                   </div>
-                  <div className="flex items-center justify-between text-lg">
-                    <span className="text-muted-foreground">الشحن</span>
-                    <span className="font-bold text-green-600">مجاني</span>
-                  </div>
+                   
                 </div>
 
                 <Separator />

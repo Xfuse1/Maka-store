@@ -150,6 +150,28 @@ export default function CheckoutPage() {
 
   const total = Math.max(0, toNum(subtotal) + toNum(shippingCost) - discountInfo.amount)
 
+  // helper to resolve various possible image shapes (string or object)
+  const resolveImageSrc = (img: any) => {
+    if (!img) return null
+    if (typeof img === "string") return img
+    if (typeof img === "object") {
+      if (typeof img.image_url === "string") return img.image_url
+      if (typeof img.url === "string") return img.url
+      if (typeof img.src === "string") return img.src
+    }
+    return null
+  }
+
+  const getItemImage = (item: any) => {
+    // Try product.image (string), product.product_images[0] (object), color.images[0], then fallback
+    return (
+      resolveImageSrc(item?.product?.image) ||
+      resolveImageSrc(item?.product?.product_images?.[0]) ||
+      resolveImageSrc(item?.color?.images?.[0]) ||
+      "/placeholder.svg?height=400&width=400"
+    )
+  }
+
   const validateBeforeSubmit = () => {
     if (!items.length) return "السلة فارغة."
     if (!formData.customerName.trim()) return "من فضلك أدخِل الاسم الكامل."
@@ -194,14 +216,14 @@ export default function CheckoutPage() {
         const sizeName = String(item?.size ?? "")
         return {
           productId: item?.product?.id ?? null,
-          variantId: null,
+          variantId: item.variantId ?? item.variantId ?? null,
           productName,
           variantName: `${colorName}${sizeName ? ` - ${sizeName}` : ""}`,
           sku: `${item?.product?.id ?? "SKU"}-${colorName}-${sizeName}`,
           quantity: qty,
           unitPrice: price,
           totalPrice: price * qty,
-          imageUrl: item?.color?.images?.[0] || "/placeholder.svg?height=400&width=400",
+          imageUrl: getItemImage(item),
         }
       })
 
@@ -546,47 +568,54 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>طريقة الدفع</CardTitle>
-                  <CardDescription>اختر طريقة الدفع المفضلة</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup
-                    value={formData.paymentMethod}
-                    onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
-                  >
-                    {paymentMethods.map((method) => {
-                      const Icon = method.icon
-                      return (
-                        <div
-                          key={method.id}
-                          className="flex items-start space-x-3 space-x-reverse border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
-                          onClick={() => setFormData({ ...formData, paymentMethod: method.id })}
-                        >
-                          <RadioGroupItem value={method.id} id={method.id} />
-                          <div className="flex-1 flex items-start gap-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <Icon className="w-5 h-5 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                              <Label htmlFor={method.id} className="font-semibold cursor-pointer">
-                                {method.name}
-                              </Label>
-                              <p className="text-sm text-muted-foreground mt-1">{method.description}</p>
-                              {activeOffer && (method.id === formData.paymentMethod) && (
-                                <p className="mt-2 text-sm text-green-600 font-medium">
-                                  وفر {activeOffer.discount_value}% عند الدفع باستخدام {method.name}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </RadioGroup>
-                </CardContent>
-              </Card>
+             <Card>
+  <CardHeader>
+    <CardTitle>طريقة الدفع</CardTitle>
+    <CardDescription>اختر طريقة الدفع المفضلة</CardDescription>
+  </CardHeader>
+
+  <CardContent>
+    <RadioGroup
+      value={formData.paymentMethod}
+      onValueChange={(value) =>
+        setFormData(prev => ({ ...prev, paymentMethod: value }))
+      }
+    >
+      {paymentMethods.map((method) => {
+        const Icon = method.icon
+
+        return (
+          <Label
+            key={method.id}
+            htmlFor={method.id}
+            className="block border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+          >
+            <div className="flex items-start gap-3">
+              <RadioGroupItem value={method.id} id={method.id} />
+
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon className="w-5 h-5 text-primary" />
+              </div>
+
+              <div className="flex-1">
+                <div className="font-semibold">{method.name}</div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {method.description}
+                </p>
+
+                {activeOffer && method.id === formData.paymentMethod && (
+                  <p className="mt-2 text-sm text-green-600 font-medium">
+                    وفر {activeOffer.discount_value}% عند الدفع باستخدام {method.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </Label>
+        )
+      })}
+    </RadioGroup>
+  </CardContent>
+</Card>
             </div>
 
             {/* Order Summary */}
@@ -601,7 +630,7 @@ export default function CheckoutPage() {
                       <div key={index} className="flex gap-3">
                         <div className="relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
                           <Image
-                            src={item?.color?.images?.[0] || "/placeholder.svg?height=400&width=400"}
+                                src={getItemImage(item)}
                             alt={item?.product?.name || "product"}
                             fill
                             className="object-cover"

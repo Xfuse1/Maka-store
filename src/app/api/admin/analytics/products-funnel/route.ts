@@ -23,11 +23,13 @@ export async function GET(request: NextRequest) {
     if (eventsError) throw eventsError
 
     // 2. Fetch Actual Purchases from order_items
+    // Use inner join on orders to filter out cancelled/returned
     const { data: purchaseItems, error: purchasesError } = await supabase
       .from("order_items")
-      .select("product_id, quantity")
+      .select("product_id, quantity, orders!inner(status)")
       .gte("created_at", from.toISOString())
       .lte("created_at", to.toISOString())
+      .not("orders.status", "in", '("cancelled","returned","refunded")')
 
     if (purchasesError) throw purchasesError
 

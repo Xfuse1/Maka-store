@@ -20,6 +20,7 @@ export interface CartItem {
   color: Color
   size: string
   quantity: number
+  variantId?: string // Add variantId to store
 }
 
 const toNum = (v: unknown, fallback = 0): number => {
@@ -29,7 +30,7 @@ const toNum = (v: unknown, fallback = 0): number => {
 
 interface CartStore {
   items: CartItem[]
-  addItem: (product: Product, color: Color, size: string, quantity: number) => void
+  addItem: (product: Product, color: Color, size: string, quantity: number, variantId?: string) => void
   removeItem: (productId: string, colorName: string, size: string) => void
   updateQuantity: (productId: string, colorName: string, size: string, quantity: number) => void
   clearCart: () => void
@@ -42,7 +43,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
 
-      addItem: (product: Product, color: Color, size: string, quantity: number) => {
+      addItem: (product: Product, color: Color, size: string, quantity: number, variantId?: string) => {
         const safeQuantity = Math.max(1, Math.floor(toNum(quantity, 1)))
         const safePrice = toNum(product.price, 0)
 
@@ -60,6 +61,7 @@ export const useCartStore = create<CartStore>()(
               quantity: Math.max(1, Math.floor(currentQty + safeQuantity)),
               // لو السعر كان غلط سابقًا—صحّحه
               product: { ...items[idx].product, price: safePrice } as Product,
+              variantId: variantId || items[idx].variantId // Update variantId if provided
             }
             return { items }
           }
@@ -73,6 +75,7 @@ export const useCartStore = create<CartStore>()(
                 color,
                 size,
                 quantity: safeQuantity,
+                variantId
               },
             ],
           }

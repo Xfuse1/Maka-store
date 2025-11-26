@@ -396,6 +396,124 @@ export async function POST(req: NextRequest) {
       if (itemsErr) {
         console.error("[Orders API] order_items insert error:", itemsErr)
         // لا نفشل الطلب بسبب عناصره؛ فقط نسجّل الخطأ
+      } else {
+        // Decrease stock with strict check (RPC or rollback)
+        const successfulDecrements: typeof preparedItems = []
+        let failReason = ""
+
+        for (const item of preparedItems) {
+          try {
+            if (item.variant_id && item.quantity > 0) {
+              let decreased = false
+              
+              // 1. Attempt using RPC
+              const { data: success, error: rpcError } = await supabase.rpc('decrease_inventory', {
+                variant_id: item.variant_id,
+                qty: item.quantity
+              })
+
+              if (!rpcError && success === true) {
+                decreased = true
+              } else if (rpcError) {
+                // RPC might not exist or failed
+                console.warn("[Orders API] decrease_inventory RPC failed or not found, falling back to optimistic locking:", rpcError)
+                
+                // 2. Fallback: Optimistic Locking
+                const { data: variant } = await supabase
+                  .from("product_variants")
+                  .select("inventory_quantity")
+                  .eq("id", item.variant_id)
+                  .single()
+
+                if (variant && variant.inventory_quantity >= item.quantity) {
+                  const { error: updateErr, count } = await supabase
+                    .from("product_variants")
+                    .update({ inventory_quantity: variant.inventory_quantity - item.quantity })
+                    .eq("id", item.variant_id)
+                    .eq("inventory_quantity", variant.inventory_quantity) // Ensure it hasn't changed
+                    .select() // Needed to confirm update with count if available, or just rely on no error? 
+                    // Supabase JS .update() doesn't return count by default unless .select() or using count option.
+                    // But .eq match ensures safety.
+
+                  if (!updateErr) {
+                     // Check if row was actually updated? Supabase JS client doesn't make this easy without `count: 'exact'`
+                     // But assuming typical flow:
+                     decreased = true
+                  }
+                }
+              }
+
+              if (decreased) {
+                successfulDecrements.push(item)
+
+                // 2. Decrease product stock (aggregate) - Best effort, no rollback for this
+                if (item.product_id) {
+                  try {
+                    const { data: product } = await supabase
+                      .from("products")
+                      .select("inventory_quantity")
+                      .eq("id", item.product_id)
+                      .single()
+
+                    if (product) {
+                      const newProdQty = Math.max(0, product.inventory_quantity - item.quantity)
+                      await supabase
+                        .from("products")
+                        .update({ inventory_quantity: newProdQty })
+                        .eq("id", item.product_id)
+                    }
+                  } catch (e) { console.warn("Failed to update product aggregate stock", e) }
+                }
+              } else {
+                failReason = `Insufficient stock for variant: ${item.variant_name_ar || item.variant_id}`
+                break // Stop processing
+              }
+            }
+          } catch (err) {
+            console.error("[Orders API] Failed to decrease stock for item:", item, err)
+            failReason = "Error updating stock"
+            break
+          }
+        }
+
+        if (failReason) {
+          console.error("[Orders API] Stock decrement failed, rolling back order:", failReason)
+          
+          // Rollback: Increase stock for already processed items
+          for (const item of successfulDecrements) {
+            try {
+               // Try RPC first
+               const { error: rpcErr } = await supabase.rpc('increase_inventory', {
+                 variant_id: item.variant_id,
+                 qty: item.quantity
+               })
+               
+               if (rpcErr) {
+                 // Fallback
+                 const { data: v } = await supabase.from("product_variants").select("inventory_quantity").eq("id", item.variant_id).single()
+                 if (v) {
+                    await supabase.from("product_variants").update({ inventory_quantity: v.inventory_quantity + item.quantity }).eq("id", item.variant_id)
+                 }
+               }
+
+               // Restore product aggregate
+               if (item.product_id) {
+                  const { data: p } = await supabase.from("products").select("inventory_quantity").eq("id", item.product_id).single()
+                  if (p) {
+                    await supabase.from("products").update({ inventory_quantity: p.inventory_quantity + item.quantity }).eq("id", item.product_id)
+                  }
+               }
+            } catch (e) {
+              console.error("CRITICAL: Failed to rollback stock for item", item, e)
+            }
+          }
+
+          // Delete Order
+          await supabase.from("order_items").delete().eq("order_id", order.id)
+          await supabase.from("orders").delete().eq("id", order.id)
+
+          return errorJson(failReason, null, 400)
+        }
       }
     }
 

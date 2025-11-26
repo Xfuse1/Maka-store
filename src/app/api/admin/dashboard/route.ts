@@ -71,19 +71,25 @@ export async function GET() {
 
     // compute month-over-month revenue change using order created_at
     const ordersList = Array.isArray(allOrders) ? allOrders : []
+    
+    // Filter out cancelled/returned/refunded orders for revenue calculations
+    const validOrders = ordersList.filter((o: any) => 
+      !["cancelled", "returned", "refunded"].includes(String(o.status || "").toLowerCase())
+    )
+
     const now = new Date()
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
-    const revenueThisMonth = ordersList.reduce((sum: number, o: any) => {
+    const revenueThisMonth = validOrders.reduce((sum: number, o: any) => {
       const created = o?.created_at ? new Date(o.created_at) : null
       if (!created) return sum
       if (created >= startOfThisMonth && created < startOfNextMonth) return sum + (o.total || 0)
       return sum
     }, 0)
 
-    const revenueLastMonth = ordersList.reduce((sum: number, o: any) => {
+    const revenueLastMonth = validOrders.reduce((sum: number, o: any) => {
       const created = o?.created_at ? new Date(o.created_at) : null
       if (!created) return sum
       if (created >= startOfLastMonth && created < startOfThisMonth) return sum + (o.total || 0)
@@ -99,7 +105,7 @@ export async function GET() {
     const stats = {
       totalProducts: Array.isArray(products) ? products.length : 0,
       totalOrders: ordersList.length,
-      totalRevenue: ordersList.reduce((sum: number, o: any) => sum + (o.total || 0), 0),
+      totalRevenue: validOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0),
       totalCustomers: customersList.length,
       pendingOrders: pendingCount,
       lowStockProducts: lowStockCount,
