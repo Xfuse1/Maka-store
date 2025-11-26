@@ -16,7 +16,7 @@ export async function signOut() {
   if (error) {
     return redirect('/?message=Could not sign out')
   }
-
+  // Revalidate frontpage and redirect to cache-busted path to force hard reload
   revalidatePath('/', 'layout')
-  redirect('/')
+  redirect(`/?_cb=${Date.now()}`)
 }

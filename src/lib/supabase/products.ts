@@ -216,11 +216,20 @@ export async function createProductVariant(variantData: CreateVariantData) {
     console.log("[v0] Variant response:", responseData)
 
     if (!response.ok) {
+      // Map duplicate-key/database errors to a friendly SKU message
       let message = `HTTP ${response.status}: Failed to create variant`
       if (responseData) {
-        if (typeof responseData.error === "string") message = responseData.error
-        else if (typeof responseData.message === "string") message = responseData.message
-        else message = JSON.stringify(responseData.error ?? responseData)
+        const raw = (responseData.error || responseData.message || responseData)?.toString?.() || ""
+        const lower = raw.toLowerCase()
+        if (response.status === 409 || lower.includes("duplicate key") || lower.includes("sku")) {
+          message = "هذا الـ SKU مستخدم بالفعل"
+        } else if (typeof responseData.error === "string") {
+          message = responseData.error
+        } else if (typeof responseData.message === "string") {
+          message = responseData.message
+        } else {
+          message = JSON.stringify(responseData.error ?? responseData)
+        }
       }
       throw new Error(message)
     }

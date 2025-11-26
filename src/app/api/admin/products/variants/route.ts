@@ -8,8 +8,30 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log("[v0] Creating variant with data")
 
-    const { data, error } = await (supabase
-      .from("product_variants") as any)
+    // If SKU provided, ensure it's not already used
+    if (body?.sku) {
+      try {
+        const { data: existing, error: selErr } = await (supabase.from("product_variants") as any)
+          .select("id")
+          .eq("sku", body.sku)
+          .limit(1)
+          .maybeSingle()
+
+        if (selErr) {
+          // log and continue to attempt insert (insert will catch unique constraint)
+          console.warn("[v0] SKU check warning:", selErr)
+        }
+
+        if (existing) {
+          console.warn("[v0] Duplicate SKU detected before insert:", body.sku)
+          return NextResponse.json({ error: "هذا الـ SKU مستخدم بالفعل" }, { status: 409 })
+        }
+      } catch (e) {
+        console.warn("[v0] SKU existence check failed:", e)
+      }
+    }
+
+    const { data, error } = await (supabase.from("product_variants") as any)
       .insert([
         {
           product_id: body.product_id,
@@ -27,7 +49,12 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("[v0] Supabase error:", error)
+      console.error("[v0] Supabase error on insert:", error)
+      // Map duplicate key DB error to 409
+      const msg = String(error?.message || "")
+      if (msg.toLowerCase().includes("duplicate key") || msg.toLowerCase().includes("unique constraint")) {
+        return NextResponse.json({ error: "هذا الـ SKU مستخدم بالفعل" }, { status: 409 })
+      }
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 

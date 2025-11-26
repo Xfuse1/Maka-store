@@ -29,7 +29,14 @@ export default function ProfileDropdown({ user, profile }: Props) {
   const signOut = async () => {
     const supabase = getSupabaseBrowserClient()
     await supabase.auth.signOut()
-    router.push("/auth")
+    // Force a hard reload / cache-bust after logout
+    // Use replace to avoid keeping the post-logout URL in history
+    const target = `/auth?_cb=${Date.now()}`
+    if (typeof window !== "undefined") {
+      window.location.replace(target)
+    } else {
+      router.push("/auth")
+    }
   }
 
   const initials = (() => {

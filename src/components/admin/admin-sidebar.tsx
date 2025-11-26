@@ -98,9 +98,14 @@ function SidebarContent({ onLinkClick, onClose }: { onLinkClick?: () => void; on
         title: "تم تسجيل الخروج",
         description: "تم تسجيل خروجك بنجاح",
       })
-      
-      router.push("/admin/login")
-      router.refresh()
+      // Force hard reload / cache-bust after logout
+      const target = `/admin/login?_cb=${Date.now()}`
+      if (typeof window !== "undefined") {
+        window.location.replace(target)
+      } else {
+        router.push("/admin/login")
+        router.refresh()
+      }
     } catch (error) {
       console.error("Logout error:", error)
       toast({

@@ -175,8 +175,25 @@ export default function CheckoutPage() {
   const validateBeforeSubmit = () => {
     if (!items.length) return "السلة فارغة."
     if (!formData.customerName.trim()) return "من فضلك أدخِل الاسم الكامل."
-    if (!formData.customerEmail.trim()) return "من فضلك أدخِل البريد الإلكتروني."
+    // Email is optional now
+    // Phone is required and must be an Egyptian number
     if (!formData.customerPhone.trim()) return "من فضلك أدخِل رقم الهاتف."
+    const isEgyptianPhone = (phone: string) => {
+      if (!phone) return false
+      const digitsOnly = phone.replace(/[^0-9+]/g, "")
+      // remove leading + if present for checking
+      const cleaned = digitsOnly.startsWith("+") ? digitsOnly.slice(1) : digitsOnly
+      // Accept formats:
+      // - Local: 01XXXXXXXXX  (11 digits, starts with 01)
+      // - International: 20XXXXXXXXXX (12 digits, starts with 20) or 0020XXXXXXXXXX (13 digits)
+      if (/^01\d{9}$/.test(cleaned)) return true
+      if (/^20\d{10}$/.test(cleaned)) return true
+      if (/^0020\d{10}$/.test(cleaned)) return true
+      return false
+    }
+
+    if (!isEgyptianPhone(String(formData.customerPhone).trim()))
+      return "من فضلك أدخِل رقم هاتف مصري صالح (مثال: 01012345678 أو +201012345678)."
     if (!formData.addressLine1.trim()) return "من فضلك أدخِل العنوان (السطر الأول)."
     if (!formData.city.trim()) return "من فضلك أدخِل المدينة."
     if (!formData.state.trim()) return "من فضلك أدخِل المحافظة."

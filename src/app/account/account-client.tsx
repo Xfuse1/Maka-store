@@ -107,8 +107,14 @@ export function AccountClient({ user, profile, orders }: AccountClientProps) {
   const handleLogout = async () => {
     const supabase = getSupabaseBrowserClient()
     await supabase.auth.signOut()
-    router.push("/auth")
-    router.refresh()
+    // Force hard reload / cache-bust after logout
+    const target = `/auth?_cb=${Date.now()}`
+    if (typeof window !== "undefined") {
+      window.location.replace(target)
+    } else {
+      router.push("/auth")
+      router.refresh()
+    }
   }
 
   return (

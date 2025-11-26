@@ -133,6 +133,20 @@ export default function AdminProductsPage() {
       shipping_cost: 0,
     })
 
+  // Helper to generate a safe, unique SKU for variants to avoid DB duplicate errors
+  const makeVariantSKU = (productSku: string, sizeName: string, colorName: string) => {
+    const clean = (s: any) => {
+      if (!s) return "na"
+      return String(s)
+        .replace(/\s+/g, "-")
+        .replace(/[^a-zA-Z0-9-_]/g, "")
+        .toUpperCase()
+        .slice(0, 40)
+    }
+    const uniq = `${Date.now().toString(36).slice(-6)}${Math.floor(Math.random() * 9000 + 1000).toString(36)}`
+    return `${productSku || "PRD"}-${clean(sizeName)}-${clean(colorName)}-${uniq}`
+  }
+
   const onImagesChange = (files: FileList | null) => {
     if (!files) return
     const arr = Array.from(files)
@@ -290,17 +304,29 @@ export default function AdminProductsPage() {
       for (const color of newProduct.colors) {
         for (const size of newProduct.sizes) {
           const variantPrice = size.price > 0 ? size.price : newProduct.base_price
-          await createProductVariant({
-            product_id: product.id,
-            name_ar: `${size.name} - ${color.name}`,
-            name_en: `${size.name} - ${color.name}`,
-            size: size.name,
-            color: color.name,
-            color_hex: color.hex,
-            price: variantPrice,
-            inventory_quantity: size.stock,
-            sku: `${product.sku}-${size.name}-${color.name}`,
-          })
+          const sku = makeVariantSKU(product.sku, size.name, color.name)
+          try {
+            await createProductVariant({
+              product_id: product.id,
+              name_ar: `${size.name} - ${color.name}`,
+              name_en: `${size.name} - ${color.name}`,
+              size: size.name,
+              color: color.name,
+              color_hex: color.hex,
+              price: variantPrice,
+              inventory_quantity: size.stock,
+              sku,
+            })
+          } catch (err: any) {
+            // Log and continue creating other variants; duplicate SKUs should not block product creation
+            console.warn("[v0] Skipping variant due to error:", err?.message ?? err)
+            try {
+              toast({ title: "ملاحظة", description: `لم يتم إنشاء متغير (${size.name} - ${color.name}): ${err?.message ?? "خطأ"}` })
+            } catch (e) {
+              /* ignore toast errors */
+            }
+            continue
+          }
         }
       }
 
@@ -849,10 +875,10 @@ export default function AdminProductsPage() {
                 accept="image/*"
                 multiple
                 onChange={(e) => onImagesChange(e.target.files)}
-                disabled={newProduct.images.length >= 4}
+                disabled={newProduct.images.length >= 10}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                يمكنك رفع حتى 4 صور فقط. الصورة الأولى ستكون الصورة الرئيسية.
+                يمكنك رفع حتى 10 صور فقط. الصورة الأولى ستكون الصورة الرئيسية.
               </p>
               {newProduct.images.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-3">
