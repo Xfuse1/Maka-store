@@ -76,7 +76,7 @@ export default function AdminOffersPage() {
   }
 
   return (
-    <div className="p-8" dir="rtl">
+    <div className="p-4 md:p-8" dir="rtl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">إدارة العروض</h1>
         <div className="flex items-center gap-2">

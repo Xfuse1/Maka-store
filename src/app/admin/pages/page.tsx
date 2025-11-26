@@ -86,17 +86,17 @@ export default function AdminPagesPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">إدارة الصفحات</h1>
-        <p className="text-muted-foreground">إجمالي الصفحات: {pages.length}</p>
+    <div className="p-4 md:p-8">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">إدارة الصفحات</h1>
+        <p className="text-muted-foreground text-sm md:text-base">إجمالي الصفحات: {pages.length}</p>
       </div>
 
       <div className="grid gap-4">
         {pages.map((pg) => (
           <Card key={pg.id} className="border-2 border-border">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex-1">
+            <CardContent className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex-1 w-full">
                 <div className="flex items-center gap-3">
                   <div className="text-lg font-bold">{pg.page_title_ar}</div>
                   {pg.is_published ? (
@@ -122,8 +122,8 @@ export default function AdminPagesPage() {
                   {Object.keys(pg.sections || {}).length} قسم محتوى
                 </div>
               </div>
-              <div className="flex gap-2 items-center">
-                <div className="flex items-center gap-2 px-3">
+              <div className="flex flex-wrap gap-2 items-center w-full md:w-auto justify-between md:justify-end">
+                <div className="flex items-center gap-2 px-0 md:px-3">
                   <button
                     type="button"
                     onClick={() => togglePublished(pg)}
@@ -188,9 +188,9 @@ export default function AdminPagesPage() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[95%] md:w-full max-h-[90vh] overflow-y-auto p-4 md:p-6">
           <DialogHeader>
-            <DialogTitle>تعديل: {editing?.page_title_ar}</DialogTitle>
+            <DialogTitle className="text-xl md:text-2xl font-bold">تعديل: {editing?.page_title_ar}</DialogTitle>
           </DialogHeader>
           {editing && <PageEditor page={editing} onSave={() => { setOpen(false); loadPages(); }} />}
         </DialogContent>
@@ -609,7 +609,8 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
             <p className="text-sm text-muted-foreground pt-1">استخدم مفاتيح معرفة مسبقاً (مثل hero.title) أو أنشئ مفاتيح جديدة خاصة بك.</p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-[1fr_2fr_auto] gap-2 p-4 border rounded-lg bg-muted/50">
+          <div className="flex flex-col md:grid md:grid-cols-[1fr_2fr_auto] gap-2 p-4 border rounded-lg bg-muted/50">
+            <div className="w-full">
             {page.page_path === '/about/' ? (
               <Select value={newKey} onValueChange={setNewKey}>
                 <SelectTrigger><SelectValue placeholder="اختر مفتاح لإضافته..." /></SelectTrigger>
@@ -620,16 +621,17 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
             ) : (
               <Input placeholder="مثال: hero.title" value={newKey} onChange={(e) => setNewKey(e.target.value)} />
             )}
+            </div>
             <Textarea placeholder="المحتوى..." value={newValue} onChange={(e) => setNewValue(e.target.value)} rows={2} />
-            <Button onClick={addSection}><Plus className="h-4 w-4 ml-2" />إضافة</Button>
+            <Button onClick={addSection} className="w-full md:w-auto"><Plus className="h-4 w-4 ml-2" />إضافة</Button>
           </div>
 
           <div className="space-y-3 mt-4">
             {Object.entries(sections).filter(([key]) => key !== 'contact_info').sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => (
-              <div key={key} className="grid md:grid-cols-[1fr_2fr_auto] gap-3 items-start p-3 bg-transparent rounded-lg border">
-                <Input value={key} disabled className="font-mono text-sm bg-muted self-center" />
+              <div key={key} className="flex flex-col md:grid md:grid-cols-[1fr_2fr_auto] gap-3 items-start p-3 bg-transparent rounded-lg border">
+                <Input value={key} disabled className="font-mono text-sm bg-muted self-center w-full md:w-auto" />
                 
-                <div className="space-y-2">
+                <div className="space-y-2 w-full">
                   {key.includes("_url") && ((sectionsImages && sectionsImages[key]) || value) ? (
                     <div className="space-y-2">
                       <div className="p-4 border rounded-md bg-muted/50 flex items-center justify-center min-h-[200px]">
@@ -727,7 +729,9 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
                   )}
                 </div>
 
-                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 self-center" onClick={() => deleteSection(key)}><Trash2 className="h-4 w-4" /></Button>
+                <div className="w-full md:w-auto flex justify-end md:justify-center">
+                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 self-center" onClick={() => deleteSection(key)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
               </div>
             ))}
 
@@ -738,18 +742,18 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
         </CardContent>
       </Card>
       
-      <div className="flex justify-between items-center gap-2 pt-4 border-t">
-        <div>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t">
+        <div className="w-full sm:w-auto">
           {page.page_path === '/about/' && (
-              <Button variant="secondary" onClick={handleSeedAboutPage} disabled={isSeeding}>
+              <Button variant="secondary" onClick={handleSeedAboutPage} disabled={isSeeding} className="w-full sm:w-auto">
                   {isSeeding ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <RefreshCcw className="h-4 w-4 ml-2" />} 
                   استعادة محتوى "من نحن"
               </Button>
           )}
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => onSave()}>إلغاء</Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => onSave()} className="flex-1 sm:flex-none">إلغاء</Button>
+          <Button onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
             {isSaving && <Loader2 className="h-4 w-4 animate-spin ml-2" />} 
             حفظ التغييرات
           </Button>

@@ -153,6 +153,17 @@ export function SiteFooter() {
                       سياسة الإرجاع
                     </Link>
                   </li>
+                  <li>
+                    <Link 
+                      href="/policies" 
+                      className="transition-colors duration-300 hover:opacity-90"
+                      style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+                      onMouseEnter={(e) => { if (mounted) e.currentTarget.style.color = colors.primary }}
+                      onMouseLeave={(e) => { if (mounted) e.currentTarget.style.color = colors.foreground + 'CC' }}
+                    >
+                      سياسات الموقع
+                    </Link>
+                  </li>
                 </>
               )}
             </ul>

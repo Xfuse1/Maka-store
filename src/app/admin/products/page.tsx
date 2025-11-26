@@ -435,20 +435,20 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 md:p-8">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">إدارة المنتجات</h1>
-          <p className="text-muted-foreground text-base">عرض وإدارة جميع المنتجات في المتجر</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">إدارة المنتجات</h1>
+          <p className="text-muted-foreground text-sm md:text-base">عرض وإدارة جميع المنتجات في المتجر</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90 gap-2" onClick={() => setShowAddDialog(true)}>
+        <Button className="bg-primary hover:bg-primary/90 gap-2 w-full sm:w-auto" onClick={() => setShowAddDialog(true)}>
           <Plus className="h-4 w-4" />
           إضافة منتج جديد
         </Button>
       </div>
 
       <Card className="border-2 border-border mb-6">
-        <CardContent className="p-6">
+        <CardContent className="p-4 md:p-6">
           <div className="relative">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -465,16 +465,16 @@ export default function AdminProductsPage() {
       <div className="grid gap-6">
         {filteredProducts.map((product) => (
           <Card key={product.id} className="border-2 border-border hover:border-primary/50 transition-all">
-            <CardContent className="p-6">
-              <div className="flex gap-6">
-                <div className="relative w-32 h-40 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                <div className="relative w-full sm:w-32 h-48 sm:h-40 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
                   {product.product_images[0]?.image_url ? (
                     <Image
                       src={product.product_images[0].image_url || "/placeholder.svg"}
                       alt={product.name_ar}
                       fill
                       className="object-cover"
-                      sizes="128px"
+                      sizes="(max-width: 768px) 100vw, 128px"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -482,25 +482,27 @@ export default function AdminProductsPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
                     <div>
                       <h3 className="text-xl font-bold text-foreground mb-2">{product.name_ar}</h3>
-                      <Badge className="bg-primary/10 text-primary border-primary/20 mb-2">
-                        {product.category?.name_ar || "غير محدد"}
-                      </Badge>
-                      {product.is_featured && (
-                        <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 mr-2">مميز</Badge>
-                      )}
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <Badge className="bg-primary/10 text-primary border-primary/20">
+                          {product.category?.name_ar || "غير محدد"}
+                        </Badge>
+                        {product.is_featured && (
+                          <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20">مميز</Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-left">
+                    <div className="text-right sm:text-left">
                       <p className="text-2xl font-bold text-primary">{product.base_price} ج.م</p>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">
                     {product.description_ar}
                   </p>
-                  <div className="flex items-center gap-4 mb-4">
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
                     <div className="text-sm text-muted-foreground">
                       <span className="font-medium">الصور:</span> {product.product_images.length}
                     </div>
@@ -508,8 +510,8 @@ export default function AdminProductsPage() {
                       <span className="font-medium">المتغيرات:</span> {product.product_variants.length}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button asChild variant="outline" size="sm" className="gap-2 bg-transparent">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button asChild variant="outline" size="sm" className="gap-2 bg-transparent flex-1 sm:flex-none">
                       <Link href={`/product/${product.id}`} target="_blank">
                         <Eye className="h-4 w-4" />
                         معاينة
@@ -518,7 +520,7 @@ export default function AdminProductsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 bg-transparent"
+                      className="gap-2 bg-transparent flex-1 sm:flex-none"
                       onClick={() => handleEditProduct(product)}
                     >
                       <Edit className="h-4 w-4" />
@@ -527,7 +529,7 @@ export default function AdminProductsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
+                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent flex-1 sm:flex-none"
                       onClick={() => handleDeleteProduct(product.id, product.name_ar)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -557,15 +559,15 @@ export default function AdminProductsPage() {
           if (!o) resetNewProduct()
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl w-[95%] md:w-full max-h-[90vh] overflow-y-auto p-4 md:p-6">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">إضافة منتج جديد</DialogTitle>
-            <DialogDescription>أدخل تفاصيل المنتج الجديد</DialogDescription>
+            <DialogTitle className="text-xl md:text-2xl font-bold">إضافة منتج جديد</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">أدخل تفاصيل المنتج الجديد</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSaveNewProduct} className="space-y-6">
             {/* أساسيات */}
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name_ar">اسم المنتج (عربي) *</Label>
                 <Input
@@ -700,7 +702,7 @@ export default function AdminProductsPage() {
                 يمكنك رفع عدد غير محدود من الصور. الصورة الأولى ستكون الصورة الرئيسية.
               </p>
               {newProduct.images.length > 0 && (
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3 mt-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-3">
                   {newProduct.images.map((file, i) => (
                     <div key={i} className="relative w-full aspect-square rounded overflow-hidden border">
                       <img
@@ -758,22 +760,28 @@ export default function AdminProductsPage() {
             {/* المقاسات وأسعارها */}
             <div>
               <Label className="block mb-2">المقاسات وأسعارها </Label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {newProduct.sizes.map((s, idx) => (
-                  <div key={idx} className="grid grid-cols-4 gap-2 items-center">
-                    <Input
-                      placeholder="المقاس"
-                      value={s.name}
-                      onChange={(e) => updateSize(idx, "name", e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="السعر"
-                      value={s.price}
-                      onChange={(e) => updateSize(idx, "price", e.target.value)}
-                    />
+                  <div key={idx} className="flex flex-col sm:grid sm:grid-cols-4 gap-2 items-start sm:items-center border p-3 rounded-md sm:border-none sm:p-0">
+                    <div className="w-full">
+                      <Label className="sm:hidden text-xs mb-1 block">المقاس</Label>
+                      <Input
+                        placeholder="المقاس"
+                        value={s.name}
+                        onChange={(e) => updateSize(idx, "name", e.target.value)}
+                      />
+                    </div>
+                    <div className="w-full">
+                      <Label className="sm:hidden text-xs mb-1 block">السعر</Label>
+                      <Input
+                        type="number"
+                        placeholder="السعر"
+                        value={s.price}
+                        onChange={(e) => updateSize(idx, "price", e.target.value)}
+                      />
+                    </div>
                     
-                    <Button type="button" variant="outline" size="icon" onClick={() => removeSize(idx)}>
+                    <Button type="button" variant="outline" size="icon" onClick={() => removeSize(idx)} className="self-end sm:self-auto mt-2 sm:mt-0">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -787,8 +795,20 @@ export default function AdminProductsPage() {
               </p>
             </div>
 
-            <div className="flex gap-4 pt-2">
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={saving}>
+            <div className="flex flex-col-reverse sm:flex-row gap-4 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false)
+                  resetNewProduct()
+                }}
+                disabled={saving}
+                className="w-full sm:w-auto"
+              >
+                إلغاء
+              </Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={saving}>
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin ml-2" />
@@ -798,17 +818,6 @@ export default function AdminProductsPage() {
                   "حفظ المنتج"
                 )}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false)
-                  resetNewProduct()
-                }}
-                disabled={saving}
-              >
-                إلغاء
-              </Button>
             </div>
           </form>
         </DialogContent>
@@ -816,23 +825,23 @@ export default function AdminProductsPage() {
 
       {/* Dialog: تعديل المنتج */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[95%] md:w-full max-h-[90vh] overflow-y-auto p-4 md:p-6">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">تعديل المنتج</DialogTitle>
-            <DialogDescription>تعديل تفاصيل المنتج "{editingProduct?.name_ar}"</DialogDescription>
+            <DialogTitle className="text-xl md:text-2xl font-bold">تعديل المنتج</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">تعديل تفاصيل المنتج "{editingProduct?.name_ar}"</DialogDescription>
           </DialogHeader>
 
           {editingProduct && (
             <Tabs defaultValue="basic" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">المعلومات الأساسية</TabsTrigger>
-                <TabsTrigger value="images">الصور ({editingProduct.product_images.length})</TabsTrigger>
-                <TabsTrigger value="variants">المتغيرات ({editingProduct.product_variants.length})</TabsTrigger>
+                <TabsTrigger value="basic" className="text-xs sm:text-sm px-1">المعلومات</TabsTrigger>
+                <TabsTrigger value="images" className="text-xs sm:text-sm px-1">الصور</TabsTrigger>
+                <TabsTrigger value="variants" className="text-xs sm:text-sm px-1">المتغيرات</TabsTrigger>
               </TabsList>
 
               <TabsContent value="basic" className="space-y-4 mt-4">
                 <form onSubmit={handleSaveEditProduct} className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="edit-name_ar">اسم المنتج (عربي) *</Label>
                       <Input
@@ -852,7 +861,7 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="edit-category">الفئة *</Label>
                       <Select
@@ -932,7 +941,7 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap gap-4">
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <Checkbox
                         id="edit-featured"
@@ -979,8 +988,11 @@ export default function AdminProductsPage() {
                     />
                   </div>
 
-                  <div className="flex gap-4 pt-4 border-t">
-                    <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={saving}>
+                  <div className="flex flex-col-reverse sm:flex-row gap-4 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)} disabled={saving} className="w-full sm:w-auto">
+                      إلغاء
+                    </Button>
+                    <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={saving}>
                       {saving ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin ml-2" />
@@ -990,9 +1002,6 @@ export default function AdminProductsPage() {
                         "حفظ التعديلات"
                       )}
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)} disabled={saving}>
-                      إلغاء
-                    </Button>
                   </div>
                 </form>
               </TabsContent>
@@ -1000,16 +1009,16 @@ export default function AdminProductsPage() {
               <TabsContent value="images" className="space-y-4 mt-4">
                 <div>
                   <Label className="block mb-3">إضافة صور جديدة</Label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
                     <Input
                       type="file"
                       accept="image/*"
                       multiple
                       onChange={(e) => handleAddProductImages(e.target.files)}
                       disabled={saving}
-                      className="flex-1"
+                      className="flex-1 w-full"
                     />
-                    <Button type="button" disabled={saving} variant="outline">
+                    <Button type="button" disabled={saving} variant="outline" className="w-full sm:w-auto">
                       <Upload className="h-4 w-4 ml-2" />
                       رفع
                     </Button>
@@ -1022,7 +1031,7 @@ export default function AdminProductsPage() {
                 <div>
                   <Label className="block mb-3">الصور الحالية ({editingProduct.product_images.length})</Label>
                   {editingProduct.product_images.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                       {editingProduct.product_images.map((img) => (
                         <div key={img.id} className="relative group">
                           <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-border">
@@ -1066,11 +1075,11 @@ export default function AdminProductsPage() {
                       {editingProduct.product_variants.map((variant) => (
                         <Card key={variant.id} className="border-2">
                           <CardContent className="p-4">
-                            <div className="grid md:grid-cols-5 gap-3 items-center">
-                              <div className="flex items-center gap-2">
+                            <div className="flex flex-col md:grid md:grid-cols-5 gap-4 items-center">
+                              <div className="flex items-center gap-2 w-full md:w-auto">
                                 {variant.color_hex && (
                                   <div
-                                    className="w-8 h-8 rounded border-2"
+                                    className="w-8 h-8 rounded border-2 flex-shrink-0"
                                     style={{ backgroundColor: variant.color_hex }}
                                   />
                                 )}
@@ -1079,8 +1088,8 @@ export default function AdminProductsPage() {
                                   <div className="text-xs text-muted-foreground">{variant.sku || "N/A"}</div>
                                 </div>
                               </div>
-                              <div>
-                                <Label className="text-xs">السعر (ج.م)</Label>
+                              <div className="w-full md:w-auto">
+                                <Label className="text-xs md:hidden mb-1 block">السعر (ج.م)</Label>
                                 <Input
                                   type="number"
                                   value={variant.price}
@@ -1088,8 +1097,8 @@ export default function AdminProductsPage() {
                                   className="h-9"
                                 />
                               </div>
-                              <div>
-                                <Label className="text-xs">المخزون</Label>
+                              <div className="w-full md:w-auto">
+                                <Label className="text-xs md:hidden mb-1 block">المخزون</Label>
                                 <Input
                                   type="number"
                                   value={variant.inventory_quantity}
@@ -1099,15 +1108,15 @@ export default function AdminProductsPage() {
                                   className="h-9"
                                 />
                               </div>
-                              <div>
-                                <Label className="text-xs">المقاس</Label>
+                              <div className="w-full md:w-auto">
+                                <Label className="text-xs md:hidden mb-1 block">المقاس</Label>
                                 <Input
                                   value={variant.size || ""}
                                   onChange={(e) => handleUpdateVariant(variant.id, { size: e.target.value })}
                                   className="h-9"
                                 />
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 w-full md:w-auto justify-end">
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -1136,20 +1145,20 @@ export default function AdminProductsPage() {
       </Dialog>
 
       {/* Featured Products Section */}
-      <h2 className="text-2xl font-bold mb-4">العروض الرئيسية</h2>
+      <h2 className="text-xl md:text-2xl font-bold mb-4">العروض الرئيسية</h2>
       <div className="grid gap-6 mb-8">
         {featuredProducts.map((product) => (
           <Card key={product.id} className="border-2 border-border hover:border-primary/50 transition-all">
-            <CardContent className="p-6">
-              <div className="flex gap-6">
-                <div className="relative w-32 h-40 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                <div className="relative w-full sm:w-32 h-48 sm:h-40 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
                   {product.product_images[0]?.image_url ? (
                     <Image
                       src={product.product_images[0].image_url || "/placeholder.svg"}
                       alt={product.name_ar}
                       fill
                       className="object-cover"
-                      sizes="128px"
+                      sizes="(max-width: 768px) 100vw, 128px"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -1157,25 +1166,27 @@ export default function AdminProductsPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
                     <div>
                       <h3 className="text-xl font-bold text-foreground mb-2">{product.name_ar}</h3>
-                      <Badge className="bg-primary/10 text-primary border-primary/20 mb-2">
-                        {product.category?.name_ar || "غير محدد"}
-                      </Badge>
-                      {product.is_featured && (
-                        <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 mr-2">مميز</Badge>
-                      )}
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <Badge className="bg-primary/10 text-primary border-primary/20">
+                          {product.category?.name_ar || "غير محدد"}
+                        </Badge>
+                        {product.is_featured && (
+                          <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20">مميز</Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-left">
+                    <div className="text-right sm:text-left">
                       <p className="text-2xl font-bold text-primary">{product.base_price} ج.م</p>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">
                     {product.description_ar}
                   </p>
-                  <div className="flex items-center gap-4 mb-4">
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
                     <div className="text-sm text-muted-foreground">
                       <span className="font-medium">الصور:</span> {product.product_images.length}
                     </div>
@@ -1183,8 +1194,8 @@ export default function AdminProductsPage() {
                       <span className="font-medium">المتغيرات:</span> {product.product_variants.length}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button asChild variant="outline" size="sm" className="gap-2 bg-transparent">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button asChild variant="outline" size="sm" className="gap-2 bg-transparent flex-1 sm:flex-none">
                       <Link href={`/product/${product.id}`} target="_blank">
                         <Eye className="h-4 w-4" />
                         معاينة
@@ -1193,7 +1204,7 @@ export default function AdminProductsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 bg-transparent"
+                      className="gap-2 bg-transparent flex-1 sm:flex-none"
                       onClick={() => handleEditProduct(product)}
                     >
                       <Edit className="h-4 w-4" />
@@ -1202,7 +1213,7 @@ export default function AdminProductsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
+                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent flex-1 sm:flex-none"
                       onClick={() => handleDeleteProduct(product.id, product.name_ar)}
                     >
                       <Trash2 className="h-4 w-4" />

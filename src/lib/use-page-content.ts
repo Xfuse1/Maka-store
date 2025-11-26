@@ -11,6 +11,8 @@ export function useInitializePages() {
   const initializeDefaultPages = usePagesStore((s) => s.initializeDefaultPages)
   useEffect(() => {
     initializeDefaultPages()
+    // Auto-seed policies page on admin load if missing
+    fetch('/api/seed-policies', { method: 'POST' }).catch((err) => console.error('Policies seed error:', err))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }

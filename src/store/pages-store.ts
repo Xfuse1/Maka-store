@@ -144,6 +144,14 @@ const defaultPages: Omit<PageItem, "id">[] = [
       },
     ],
   },
+  {
+    path: "/policies",
+    title: "سياسات الموقع",
+    sections: [
+      { key: "privacy_policy", value: "هنا يتم كتابة سياسة الخصوصية الخاصة بالموقع..." },
+      { key: "return_policy", value: "هنا يتم كتابة سياسة الاسترجاع والاستبدال الخاصة بالموقع..." },
+    ],
+  },
 ]
 
 export const usePagesStore = create<PagesStore>()(

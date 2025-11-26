@@ -223,14 +223,14 @@ export default function AdminHeroSlidesPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 md:p-8">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">إدارة شرائح العرض</h1>
-          <p className="text-muted-foreground text-base">تحكم في شرائح العرض في الصفحة الرئيسية</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">إدارة شرائح العرض</h1>
+          <p className="text-muted-foreground text-sm md:text-base">تحكم في شرائح العرض في الصفحة الرئيسية</p>
         </div>
-        <div className="flex gap-3">
-          <Button asChild variant="outline" className="gap-2 bg-transparent">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button asChild variant="outline" className="gap-2 bg-transparent w-full sm:w-auto">
             <a href="/" target="_blank" rel="noreferrer">
               <Eye className="h-4 w-4" />
               معاينة الموقع
@@ -252,15 +252,15 @@ export default function AdminHeroSlidesPage() {
       <div className="grid gap-6">
         {slides.map((slide) => (
           <Card key={slide.id} className="border-2 border-border hover:border-primary/50 transition-all">
-            <CardContent className="p-6">
-              <div className="flex gap-6">
-                <div className="w-32 h-32 bg-muted rounded-md overflow-hidden">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="w-full md:w-32 h-48 md:h-32 bg-muted rounded-md overflow-hidden shrink-0">
                   <img src={slide.image_url || "/placeholder.svg"} alt={slide.title_ar} className="w-full h-full object-cover" />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
                     <div>
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
                         <h3 className="text-xl font-bold text-foreground">{slide.title_ar || "بدون عنوان"}</h3>
                         {!slide.is_active && (
                           <Badge variant="outline" className="text-muted-foreground">
@@ -279,7 +279,7 @@ export default function AdminHeroSlidesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 bg-transparent"
+                      className="gap-2 bg-transparent flex-1 sm:flex-none"
                       onClick={() => handleEdit(slide)}
                     >
                       <Edit className="h-4 w-4" />
@@ -288,7 +288,7 @@ export default function AdminHeroSlidesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
+                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent flex-1 sm:flex-none"
                       onClick={() => handleDelete(slide.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -326,18 +326,18 @@ export default function AdminHeroSlidesPage() {
           if (!open) resetForm()
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl w-[95%] md:w-full max-h-[90vh] overflow-y-auto p-4 md:p-6">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
+            <DialogTitle className="text-xl md:text-2xl font-bold">
               {editingSlide ? "تعديل الشريحة" : "إضافة شريحة جديدة"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs md:text-sm">
               {editingSlide ? `تعديل "${editingSlide.title_ar}"` : "أضف شريحة جديدة للصفحة الرئيسية"}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSave} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="title_ar">العنوان (عربي)</Label>
                 <Input
@@ -356,7 +356,7 @@ export default function AdminHeroSlidesPage() {
               </div>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="subtitle_ar">العنوان الفرعي (عربي)</Label>
                 <Input
@@ -379,13 +379,13 @@ export default function AdminHeroSlidesPage() {
               <Label>صورة الشريحة</Label>
               <div className="mt-2 space-y-4">
                 {/* Image upload button */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <Button
                     type="button"
                     variant="outline"
                     disabled={uploading}
                     onClick={() => document.getElementById("image-upload")?.click()}
-                    className="gap-2"
+                    className="gap-2 w-full sm:w-auto"
                   >
                     {uploading ? (
                       <>
@@ -461,7 +461,7 @@ export default function AdminHeroSlidesPage() {
               />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="display_order">ترتيب العرض</Label>
                 <Input
@@ -483,17 +483,7 @@ export default function AdminHeroSlidesPage() {
               </div>
             </div>
 
-            <div className="flex gap-4 pt-2">
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={saving}>
-                {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                    جاري الحفظ...
-                  </>
-                ) : (
-                  "حفظ"
-                )}
-              </Button>
+            <div className="flex flex-col-reverse sm:flex-row gap-4 pt-2">
               <Button
                 type="button"
                 variant="outline"
@@ -502,8 +492,19 @@ export default function AdminHeroSlidesPage() {
                   resetForm()
                 }}
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 إلغاء
+              </Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  "حفظ"
+                )}
               </Button>
             </div>
           </form>

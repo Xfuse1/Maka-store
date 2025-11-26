@@ -99,11 +99,11 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="p-8 space-y-8" dir="rtl">
+    <div className="p-4 md:p-8 space-y-8" dir="rtl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">التحليلات والإحصائيات</h1>
-          <p className="text-muted-foreground text-base">تقارير الأداء والمبيعات</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">التحليلات والإحصائيات</h1>
+          <p className="text-muted-foreground text-sm md:text-base">تقارير الأداء والمبيعات</p>
         </div>
         <Select value={dateRange} onValueChange={setDateRange}>
           <SelectTrigger className="w-[180px]">
@@ -257,7 +257,7 @@ export default function AdminAnalyticsPage() {
           <CardTitle>أداء المنتجات (Product Funnel)</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <table className="w-full text-sm text-right">
+          <table className="w-full min-w-[800px] text-sm text-right">
             <thead>
               <tr className="border-b border-border">
                 <th className="py-3 px-4 font-medium">المنتج</th>

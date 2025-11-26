@@ -208,14 +208,14 @@ export default function AdminHomepagePage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 md:p-8">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">إدارة الصفحة الرئيسية</h1>
-          <p className="text-muted-foreground text-base">تحكم في محتوى وأقسام الصفحة الرئيسية</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">إدارة الصفحة الرئيسية</h1>
+          <p className="text-muted-foreground text-sm md:text-base">تحكم في محتوى وأقسام الصفحة الرئيسية</p>
         </div>
-        <div className="flex gap-3">
-          <Button asChild variant="outline" className="gap-2 bg-transparent">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button asChild variant="outline" className="gap-2 bg-transparent w-full sm:w-auto">
             <a href="/" target="_blank" rel="noreferrer">
               <Eye className="h-4 w-4" />
               معاينة الموقع
@@ -237,12 +237,12 @@ export default function AdminHomepagePage() {
       <div className="grid gap-6">
         {sections.map((section) => (
           <Card key={section.id} className="border-2 border-border hover:border-primary/50 transition-all">
-            <CardContent className="p-6">
-              <div className="flex gap-6 items-start">
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-3">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="flex-1 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
                     <div>
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
                         <h3 className="text-xl font-bold text-foreground">{section.name_ar || "بدون عنوان"}</h3>
                         <Badge className="bg-primary/10 text-primary border-primary/20">
                           {getSectionTypeLabel(section.section_type)}
@@ -257,7 +257,7 @@ export default function AdminHomepagePage() {
                     </div>
                     <div className="text-sm text-muted-foreground">ترتيب: {section.display_order}</div>
                   </div>
-                  <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-muted-foreground">
                     {section.layout_type && <span>التخطيط: {section.layout_type}</span>}
                     {section.max_items && <span>عدد العناصر: {section.max_items}</span>}
                   </div>
@@ -265,7 +265,7 @@ export default function AdminHomepagePage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 bg-transparent"
+                      className="gap-2 bg-transparent flex-1 sm:flex-none"
                       onClick={() => handleEdit(section)}
                     >
                       <Edit className="h-4 w-4" />
@@ -274,7 +274,7 @@ export default function AdminHomepagePage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
+                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent flex-1 sm:flex-none"
                       onClick={() => handleDelete(section.id, section.name_ar || "")}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -282,26 +282,26 @@ export default function AdminHomepagePage() {
                     </Button>
                   </div>
                 </div>
-                <div className="w-40 flex-shrink-0">
+                <div className="w-full md:w-40 flex-shrink-0">
                   {(() => {
                     const content: any = section.custom_content || {}
                     const imageUrl = content?.image_url || content?.image || content?.src || (Array.isArray(content?.slides) && content.slides[0]?.image_url) || null
                     const subtitle = content?.subtitle_ar || content?.subtitle || section.name_en || null
                     if (imageUrl) {
                       return (
-                        <div className="relative w-40 h-24 rounded-md overflow-hidden bg-muted">
+                        <div className="relative w-full md:w-40 h-40 md:h-24 rounded-md overflow-hidden bg-muted">
                           <img src={imageUrl} alt={section.name_ar || "preview"} className="w-full h-full object-cover" />
                         </div>
                       )
                     }
                     if (subtitle) {
                       return (
-                        <div className="w-40 h-24 rounded-md bg-muted p-3 flex items-center justify-center text-sm text-muted-foreground">
+                        <div className="w-full md:w-40 h-24 rounded-md bg-muted p-3 flex items-center justify-center text-sm text-muted-foreground">
                           <div className="font-medium text-foreground mb-1">{subtitle}</div>
                         </div>
                       )
                     }
-                    return <div className="w-40 h-24 rounded-md bg-muted flex items-center justify-center text-xs text-muted-foreground">معاينة</div>
+                    return <div className="w-full md:w-40 h-24 rounded-md bg-muted flex items-center justify-center text-xs text-muted-foreground">معاينة</div>
                   })()}
                 </div>
               </div>
@@ -330,12 +330,12 @@ export default function AdminHomepagePage() {
             className="bg-background rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" 
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-background border-b px-6 py-4 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-background border-b px-4 md:px-6 py-4 flex items-center justify-between z-10">
               <div>
-                <h2 className="text-2xl font-bold">
+                <h2 className="text-xl md:text-2xl font-bold">
                   {editingSection ? "تعديل القسم" : "إضافة قسم جديد"}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
                   {editingSection ? `تعديل "${editingSection.name_ar}"` : "أضف قسم جديد للصفحة الرئيسية"}
                 </p>
               </div>
@@ -344,10 +344,10 @@ export default function AdminHomepagePage() {
               </Button>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 md:p-6">
 
           <form onSubmit={handleSave} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="section_type">نوع القسم *</Label>
                 <select
@@ -391,7 +391,7 @@ export default function AdminHomepagePage() {
               </Label>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name_ar">الاسم (عربي) *</Label>
                 <Input
@@ -411,7 +411,7 @@ export default function AdminHomepagePage() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
              
               <div>
                 <Label htmlFor="max_items">عدد العناصر</Label>
@@ -427,7 +427,7 @@ export default function AdminHomepagePage() {
              
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
               <div className="flex items-center space-x-2 space-x-reverse">
                 <input
                   id="show_title"
@@ -456,21 +456,22 @@ export default function AdminHomepagePage() {
               onSelectionChange={handleProductSelectionChange}
             />
 
-            <div className="flex gap-4 pt-2">
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={saving}>
-                {saving ? (
-                  <><Loader2 className="h-4 w-4 animate-spin ml-2" /> جاري الحفظ...</>
-                ) : (
-                  "حفظ"
-                )}
-              </Button>
+            <div className="flex flex-col-reverse sm:flex-row gap-4 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => handleDialogOpenChange(false)}
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 إلغاء
+              </Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={saving}>
+                {saving ? (
+                  <><Loader2 className="h-4 w-4 animate-spin ml-2" /> جاري الحفظ...</>
+                ) : (
+                  "حفظ"
+                )}
               </Button>
             </div>
           </form>

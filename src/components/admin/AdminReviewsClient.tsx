@@ -39,24 +39,24 @@ export default function AdminReviewsClient({ reviews }: { reviews: Review[] }) {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
-        <button onClick={() => setFilter('all')} className={`px-3 py-1 rounded ${filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <button onClick={() => setFilter('all')} className={`px-3 py-1 rounded text-sm ${filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
           الكل
         </button>
-        <button onClick={() => setFilter('approved')} className={`px-3 py-1 rounded ${filter === 'approved' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
+        <button onClick={() => setFilter('approved')} className={`px-3 py-1 rounded text-sm ${filter === 'approved' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
           المقبول
         </button>
-        <button onClick={() => setFilter('rejected')} className={`px-3 py-1 rounded ${filter === 'rejected' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
+        <button onClick={() => setFilter('rejected')} className={`px-3 py-1 rounded text-sm ${filter === 'rejected' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
           المرفوض
         </button>
-        <button onClick={() => setFilter('pending')} className={`px-3 py-1 rounded ${filter === 'pending' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
+        <button onClick={() => setFilter('pending')} className={`px-3 py-1 rounded text-sm ${filter === 'pending' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
           قيد المراجعة
         </button>
-        <div className="text-sm text-muted-foreground mr-4">النتائج: <span className="font-medium">{filtered.length}</span></div>
+        <div className="text-sm text-muted-foreground mr-4 w-full sm:w-auto mt-2 sm:mt-0">النتائج: <span className="font-medium">{filtered.length}</span></div>
       </div>
 
       <div className="border rounded-lg overflow-x-auto">
-        <Table>
+        <Table className="min-w-[800px]">
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">المنتج</TableHead>

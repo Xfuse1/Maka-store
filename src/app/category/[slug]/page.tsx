@@ -10,6 +10,8 @@ import Image from "next/image"
 import { useCartStore } from "@/store/cart-store"
 import { MainNavigation } from "@/components/main-navigation"
 import { MobileNavigation } from "@/components/mobile-navigation"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 import { Input } from "@/components/ui/input"
 import { useParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -205,39 +207,7 @@ export default function CategoryPage() {
   if (categoryNotFound) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between gap-2 sm:gap-4">
-              <Link href="/" className="flex items-center gap-2 sm:gap-4">
-                <div className="relative w-10 h-10 sm:w-20 sm:h-20">
-                  <Image src="/logo-option-4.jpg" alt="مكة" fill className="object-contain" priority />
-                </div>
-                <h1 className="text-lg sm:text-3xl font-bold text-foreground block">مكة</h1>
-              </Link>
-
-              <MainNavigation />
-
-              <div className="flex items-center gap-3">
-                <MobileNavigation />
-                <Button
-                  asChild
-                  variant="default"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground relative"
-                >
-                  <Link href="/cart">
-                    <ShoppingBag className="h-5 w-5 ml-2" />
-                    <span className="hidden sm:inline">السلة</span>
-                    {totalItems > 0 && (
-                      <Badge className="absolute -top-2 -left-2 bg-accent text-accent-foreground px-2 py-0.5 text-xs">
-                        {totalItems}
-                      </Badge>
-                    )}
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <SiteHeader />
 
         <main className="py-12">
           <div className="container mx-auto px-4">
@@ -271,89 +241,14 @@ export default function CategoryPage() {
           </div>
         </main>
 
-        <footer className="border-t border-border bg-background py-12 mt-20">
-          <div className="container mx-auto px-4">
-            <div className="text-center pt-8">
-              <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
-            </div>
-          </div>
-        </footer>
+        <SiteFooter />
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between gap-2 sm:gap-4">
-            <Link href="/" className="flex items-center gap-2 sm:gap-4">
-              <div className="relative w-10 h-10 sm:w-20 sm:h-20">
-                <Image src="/logo-option-4.jpg" alt="مكة" fill className="object-contain" priority />
-              </div>
-              <h1 className="text-lg sm:text-3xl font-bold text-foreground block">مكة</h1>
-            </Link>
-
-            <div className="hidden md:flex flex-1 max-w-3xl mx-4 lg:mx-8">
-              <form onSubmit={handleSearchSubmit} className="relative w-full">
-                <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="ابحثي عن المنتجات..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-12 h-14 text-lg border-2 border-border focus:border-primary"
-                />
-              </form>
-            </div>
-
-            <MainNavigation />
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden md:block">
-                {user ? (
-                  <SignOutButton />
-                ) : (
-                  <Button variant="outline" asChild>
-                    <Link href="/auth">
-                      تسجيل الدخول
-                    </Link>
-                  </Button>
-                )}
-              </div>
-              <MobileNavigation user={user} />
-              <Button
-                asChild
-                variant="default"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground relative"
-              >
-                <Link href="/cart">
-                  <ShoppingBag className="h-5 w-5 ml-2" />
-                  <span className="hidden sm:inline">السلة</span>
-                  {totalItems > 0 && (
-                    <Badge className="absolute -top-2 -left-2 bg-accent text-accent-foreground px-2 py-0.5 text-xs">
-                      {totalItems}
-                    </Badge>
-                  )}
-                </Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="md:hidden mt-4">
-            <form onSubmit={handleSearchSubmit} className="relative w-full">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="ابحثي عن المنتجات..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10 border-2 border-border focus:border-primary"
-              />
-            </form>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="py-12">
         <div className="container mx-auto px-4">
@@ -435,74 +330,7 @@ export default function CategoryPage() {
         </div>
       </main>
 
-      <footer className="border-t border-border bg-background py-12 mt-20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h5 className="font-bold text-lg mb-4 text-foreground">عن مكة</h5>
-              <p className="text-muted-foreground leading-relaxed">
-                متجر مكة للأزياء النسائية الراقية - نقدم لكِ أفضل التصاميم العصرية التي تجمع بين الأصالة والحداثة
-              </p>
-            </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4 text-foreground">روابط سريعة</h5>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/category/abayas" className="text-muted-foreground hover:text-primary transition-colors">
-                    العبايات
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/category/cardigans"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    الكارديجانات
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/category/jackets" className="text-muted-foreground hover:text-primary transition-colors">
-                    الجواكت
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4 text-foreground">معلومات</h5>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                    من نحن
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/return-policy" className="text-muted-foreground hover:text-primary transition-colors">
-                    سياسة الإرجاع
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4 text-foreground">تواصل معنا</h5>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                للاستفسارات والطلبات الخاصة
-                <br />
-                واتساب: 01234567890
-                <br />
-                البريد: info@mecca-fashion.com
-              </p>
-              <Link href="/contact">
-                <Button variant="outline" className="w-full bg-transparent">
-                  تواصل معنا
-                </Button>
-              </Link>
-            </div>
-          </div>
-          <div className="text-center pt-8 border-t border-border">
-            <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

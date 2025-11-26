@@ -127,26 +127,32 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">إدارة الفئات</h1>
-      <form onSubmit={handleAddCategory} className="flex gap-4 mb-8 items-end">
-        <Input
-          placeholder="اسم الفئة (عربي)"
-          value={newCategory.name_ar}
-          onChange={e => setNewCategory({ ...newCategory, name_ar: e.target.value })}
-          required
-        />
-        <Input
-          placeholder="اسم الفئة (إنجليزي)"
-          value={newCategory.name_en}
-          onChange={e => setNewCategory({ ...newCategory, name_en: e.target.value })}
-        />
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={e => setNewCategory({ ...newCategory, image: e.target.files?.[0] || null })}
-        />
-        <Button type="submit" disabled={saving}>
+    <div className="p-4 md:p-8">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">إدارة الفئات</h1>
+      <form onSubmit={handleAddCategory} className="flex flex-col md:flex-row gap-4 mb-8 md:items-end">
+        <div className="w-full">
+          <Input
+            placeholder="اسم الفئة (عربي)"
+            value={newCategory.name_ar}
+            onChange={e => setNewCategory({ ...newCategory, name_ar: e.target.value })}
+            required
+          />
+        </div>
+        <div className="w-full">
+          <Input
+            placeholder="اسم الفئة (إنجليزي)"
+            value={newCategory.name_en}
+            onChange={e => setNewCategory({ ...newCategory, name_en: e.target.value })}
+          />
+        </div>
+        <div className="w-full">
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={e => setNewCategory({ ...newCategory, image: e.target.files?.[0] || null })}
+          />
+        </div>
+        <Button type="submit" disabled={saving} className="w-full md:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           إضافة فئة
         </Button>
@@ -157,13 +163,13 @@ export default function AdminCategoriesPage() {
         <div className="grid gap-4">
           {categories.map(cat => (
             <Card key={cat.id} className="border-2 border-border">
-              <CardContent className="flex items-center justify-between p-4 gap-4">
-                <div className="flex items-center gap-4">
+              <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
                   {cat.image_url && (
-                    <img src={cat.image_url} alt={cat.name_ar} className="w-16 h-16 rounded object-cover border" />
+                    <img src={cat.image_url} alt={cat.name_ar} className="w-16 h-16 rounded object-cover border self-start sm:self-center" />
                   )}
                   {editingId === cat.id ? (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full">
                       <Input
                         value={editData.name_ar}
                         onChange={e => setEditData({ ...editData, name_ar: e.target.value })}
@@ -196,7 +202,7 @@ export default function AdminCategoriesPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 self-end sm:self-center">
                   {editingId !== cat.id && (
                     <Button
                       variant="outline"

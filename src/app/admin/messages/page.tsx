@@ -27,11 +27,11 @@ export default function AdminMessagesPage() {
   useEffect(() => { fetchMessages() }, [])
 
   return (
-    <div className="p-8" dir="rtl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">الرسائل الواردة</h1>
-        <div className="flex items-center gap-2">
-          <Button onClick={fetchMessages} variant="outline">تحديث</Button>
+    <div className="p-4 md:p-8" dir="rtl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+        <h1 className="text-xl md:text-2xl font-bold">الرسائل الواردة</h1>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button onClick={fetchMessages} variant="outline" className="w-full sm:w-auto">تحديث</Button>
         </div>
       </div>
 
@@ -39,9 +39,9 @@ export default function AdminMessagesPage() {
         <CardHeader>
           <CardTitle>جميع الرسائل</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 md:p-6">
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm">
+            <table className="w-full min-w-[800px] text-right text-sm">
               <thead>
                 <tr className="border-b border-border">
                   <th className="p-3">الاسم</th>

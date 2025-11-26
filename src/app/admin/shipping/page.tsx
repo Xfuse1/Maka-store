@@ -81,17 +81,17 @@ export default function AdminShippingPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">إدارة تكاليف الشحن</h1>
+        <h1 className="text-xl md:text-2xl font-bold">إدارة تكاليف الشحن</h1>
       </div>
 
-      <Card className="mb-4">
+      <Card className="mb-4 border-2 border-border">
         <CardHeader>
           <CardTitle>إضافة محافظة جديدة</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <Label>كود المحافظة (مثال: CAIRO)</Label>
               <Input value={newCode} onChange={(e) => setNewCode(e.target.value)} />
@@ -109,8 +109,8 @@ export default function AdminShippingPage() {
               <Input type="number" value={newPrice} onChange={(e) => setNewPrice(Number(e.target.value))} />
             </div>
           </div>
-          <div className="mt-4">
-            <Button onClick={handleCreate}><Plus className="w-4 h-4 ml-2" /> إضافة</Button>
+          <div className="mt-4 flex justify-end sm:justify-start">
+            <Button onClick={handleCreate} className="w-full sm:w-auto"><Plus className="w-4 h-4 ml-2" /> إضافة</Button>
           </div>
         </CardContent>
       </Card>
@@ -120,24 +120,26 @@ export default function AdminShippingPage() {
           <div>جاري التحميل...</div>
         ) : (
           zones.map((z) => (
-            <Card key={z.id} className="p-3">
-              <div className="flex items-center justify-between gap-4">
+            <Card key={z.id} className="p-3 border-2 border-border">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="font-bold">{z.governorate_name_ar} — {z.governorate_name_en}</div>
                   <div className="text-sm text-muted-foreground">{z.governorate_code}</div>
                 </div>
-                <div className="w-48 flex items-center gap-2">
-                  <Input type="number" defaultValue={z.shipping_price} onBlur={(e) => handleUpdate(z.id, { shipping_price: Number(e.currentTarget.value) } as any)} />
-                  <Switch checked={z.is_active} onCheckedChange={(v) => handleUpdate(z.id, { is_active: v } as any)} />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(z.id)}
-                    title="حذف المحافظة"
-                    aria-label={`حذف ${z.governorate_name_ar}`}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </Button>
+                <div className="w-full sm:w-48 flex items-center gap-2 justify-between sm:justify-end">
+                  <Input type="number" className="w-24" defaultValue={z.shipping_price} onBlur={(e) => handleUpdate(z.id, { shipping_price: Number(e.currentTarget.value) } as any)} />
+                  <div className="flex items-center gap-2">
+                    <Switch checked={z.is_active} onCheckedChange={(v) => handleUpdate(z.id, { is_active: v } as any)} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(z.id)}
+                      title="حذف المحافظة"
+                      aria-label={`حذف ${z.governorate_name_ar}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>

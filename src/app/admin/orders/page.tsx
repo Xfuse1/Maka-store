@@ -504,14 +504,14 @@ export default function AdminOrdersPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">إدارة الطلبات</h1>
-        <p className="text-muted-foreground text-base">عرض ومتابعة جميع الطلبات</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">إدارة الطلبات</h1>
+        <p className="text-muted-foreground text-sm md:text-base">عرض ومتابعة جميع الطلبات</p>
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
           <Button size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
             السابق
           </Button>
@@ -528,7 +528,7 @@ export default function AdminOrdersPage() {
       </div>
 
       <Card className="border-2 border-border mb-6">
-        <CardContent className="p-6">
+        <CardContent className="p-4 md:p-6">
           <div className="relative">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -576,9 +576,9 @@ export default function AdminOrdersPage() {
           </div>
 
           {calendarVisible && (
-            <div className="w-full max-w-xl bg-card border rounded-md p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+            <div className="w-full max-w-xl bg-card border rounded-md p-3 overflow-x-auto">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                   <Button size="sm" variant="outline" onClick={() => {
                     const d = new Date(calendarMonth)
                     d.setMonth(d.getMonth() - 1)
@@ -590,11 +590,13 @@ export default function AdminOrdersPage() {
                     d.setMonth(d.getMonth() + 1)
                     setCalendarMonth(d)
                   }}>التالي</Button>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                  <div className="text-xs sm:text-sm text-muted-foreground">انقر على يوم للتصفية</div>
                   <Button size="sm" variant="outline" onClick={() => setCalendarVisible(false)}>
                     إغلاق
                   </Button>
                 </div>
-                <div className="text-sm text-muted-foreground">انقر على يوم لتصفية الطلبات</div>
               </div>
 
               {/* build calendar grid */}
@@ -631,27 +633,26 @@ export default function AdminOrdersPage() {
           const StatusIcon = getStatusIcon(order.status)
           return (
             <Card key={order.id} className="border-2 border-border hover:border-primary/50 transition-all">
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-lg ${getStatusColor(order.status)}/10`}>
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row items-start justify-between mb-4 gap-4">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className={`p-3 rounded-lg ${getStatusColor(order.status)}/10 flex-shrink-0`}>
                       <StatusIcon className={`h-6 w-6 ${getStatusColor(order.status).replace("bg-", "text-")}`} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <Badge className={`${getStatusColor(order.status)} text-primary-foreground`}>
                           {getStatusLabel(order.status)}
                         </Badge>
                       </div>
-                      <div className="mt-1">
-                        <p className="text-sm text-muted-foreground">معرّف الطلب: <span className="font-mono">{order.id}</span></p>
+                      <div className="mt-1 truncate">
+                        <p className="text-sm text-muted-foreground truncate">معرّف الطلب: <span className="font-mono">{order.id}</span></p>
                       </div>
                       <p className="text-sm text-muted-foreground">{order.created_at}</p>
-            
                     </div>
                   </div>
-                  <div className="text-left mt-3 sm:mt-0 min-w-[90px]">
-                    <p className="-2xl font-botextld text-primary">{order.total} ج.م</p>
+                  <div className="text-right sm:text-left mt-0 min-w-[90px] w-full sm:w-auto flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end">
+                    <p className="text-xl sm:text-2xl font-bold text-primary">{order.total} ج.م</p>
                     <p className="text-sm text-muted-foreground">{order.items ? order.items.length : 0} منتج</p>
                   </div>
                 </div>
@@ -671,11 +672,11 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-2 bg-transparent"
+                    className="gap-2 bg-transparent w-full sm:w-auto"
                     onClick={() => handleViewDetails(order)}
                   >
                     <Eye className="h-4 w-4" />
@@ -683,7 +684,7 @@ export default function AdminOrdersPage() {
                   </Button>
                   {order.status !== "delivered" && (
                     <Select value={order.status} onValueChange={(value) => handleUpdateStatus(order.id, value)}>
-                      <SelectTrigger className="w-auto sm:w-48">
+                      <SelectTrigger className="w-full sm:w-48">
                         <SelectValue placeholder="تحديث الحالة" />
                       </SelectTrigger>
                       <SelectContent>
@@ -711,10 +712,10 @@ export default function AdminOrdersPage() {
       )}
 
       <Dialog open={showOrderDetails} onOpenChange={setShowOrderDetails}>
-        <DialogContent className="max-w-full sm:max-w-2xl">
+        <DialogContent className="max-w-full sm:max-w-2xl w-[95%] md:w-full p-4 md:p-6 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">تفاصيل الطلب</DialogTitle>
-            <DialogDescription>معلومات كاملة عن الطلب</DialogDescription>
+            <DialogTitle className="text-xl md:text-2xl font-bold">تفاصيل الطلب</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">معلومات كاملة عن الطلب</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-6">
@@ -782,7 +783,7 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Select
                   value={selectedOrder.status}
                   onValueChange={(value) => {
@@ -790,7 +791,7 @@ export default function AdminOrdersPage() {
                     setSelectedOrder({ ...selectedOrder, status: value })
                   }}
                 >
-                  <SelectTrigger className="flex-1">
+                  <SelectTrigger className="w-full sm:flex-1">
                     <SelectValue placeholder="تحديث الحالة" />
                   </SelectTrigger>
                   <SelectContent>
@@ -801,7 +802,7 @@ export default function AdminOrdersPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="outline" onClick={() => setShowOrderDetails(false)}>
+                <Button variant="outline" onClick={() => setShowOrderDetails(false)} className="w-full sm:w-auto">
                   إغلاق
                 </Button>
               </div>

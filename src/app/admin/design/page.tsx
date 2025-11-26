@@ -199,10 +199,10 @@ export default function AdminDesignPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">إعدادات التصميم</h1>
-        <p className="text-muted-foreground text-base">تخصيص مظهر وألوان الموقع</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">إعدادات التصميم</h1>
+        <p className="text-muted-foreground text-sm md:text-base">تخصيص مظهر وألوان الموقع</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
