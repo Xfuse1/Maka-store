@@ -17,6 +17,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { uploadPageContentImage } from "./upload-actions"
 import { useToast } from "@/hooks/use-toast"
 
+type ContactInfoConfig = {
+  phone: string;
+  whatsapp: string;
+  whatsappSubtitle?: string;
+  email: string;
+  address: string;
+  workingHours: string;
+};
+
+const DEFAULT_CONTACT_INFO: ContactInfoConfig = {
+  phone: "01234567890",
+  whatsapp: "01234567890",
+  whatsappSubtitle: "تواصل عبر واتساب",
+  email: "info@mecca-fashion.com",
+  address: "القاهرة، مصر",
+  workingHours: "السبت - الخميس: 9:00 ص - 9:00 م\nالجمعة: 2:00 م - 9:00 م"
+};
+
 // Main component for the admin pages management
 export default function AdminPagesPage() {
   const [pages, setPages] = useState<PageContent[]>([])
@@ -201,7 +219,7 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
   const [metaDescAr, setMetaDescAr] = useState(page.meta_description_ar || "")
   const [metaDescEn, setMetaDescEn] = useState(page.meta_description_en || "")
   const [urlImage, setUrlImage] = useState(page.url_image || "")
-  const [sections, setSections] = useState<Record<string, string>>(page.sections || {})
+  const [sections, setSections] = useState<Record<string, any>>(page.sections || {})
   const [sectionsImages, setSectionsImages] = useState<Record<string, string>>(page.sections_images || {})
   const [newKey, setNewKey] = useState("")
   const [newValue, setNewValue] = useState("")
@@ -209,6 +227,24 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
   const [isSeeding, setIsSeeding] = useState(false)
   const [uploadingKey, setUploadingKey] = useState<string | null>(null)
   const [uploadingMainImage, setUploadingMainImage] = useState(false)
+  const [contactErrors, setContactErrors] = useState<Partial<Record<keyof ContactInfoConfig, string>>>({})
+
+  // Contact Info State
+  const [contactInfo, setContactInfo] = useState<ContactInfoConfig>(() => {
+    if (page.page_path === '/contact' && sections['contact_info']) {
+      try {
+        const stored = typeof sections['contact_info'] === 'string' 
+          ? JSON.parse(sections['contact_info']) 
+          : sections['contact_info'];
+        // Ensure we handle the case where stored might be [object Object] string literal if previously saved incorrectly
+        if (stored === '[object Object]') return DEFAULT_CONTACT_INFO;
+        return { ...DEFAULT_CONTACT_INFO, ...stored };
+      } catch (e) {
+        return DEFAULT_CONTACT_INFO;
+      }
+    }
+    return DEFAULT_CONTACT_INFO;
+  });
 
   const availableKeys = page.page_path === '/about/' ? ABOUT_PAGE_KEYS.filter(k => !sections.hasOwnProperty(k)) : []
 
@@ -283,19 +319,68 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
 
   async function handleSave() {
     setIsSaving(true)
+    setContactErrors({});
+
+    // Validation for Contact Page
+    if (page.page_path === '/contact') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^(01[0-2,5][0-9]{8}|\+201[0-2,5][0-9]{8})$/;
+      const errors: Partial<Record<keyof ContactInfoConfig, string>> = {};
+      let hasError = false;
+
+      const cleanPhone = contactInfo.phone.replace(/\s+/g, "");
+      if (!cleanPhone || !phoneRegex.test(cleanPhone)) {
+        errors.phone = "رقم الهاتف غير صحيح (يجب أن يكون رقم مصري)";
+        hasError = true;
+      }
+      
+      const cleanWhatsapp = contactInfo.whatsapp.replace(/\s+/g, "");
+      if (!cleanWhatsapp || !phoneRegex.test(cleanWhatsapp)) {
+        errors.whatsapp = "رقم واتساب غير صحيح (يجب أن يكون رقم مصري)";
+        hasError = true;
+      }
+
+      if (!contactInfo.email || !emailRegex.test(contactInfo.email)) {
+        errors.email = "البريد الإلكتروني غير صحيح";
+        hasError = true;
+      }
+      if (!contactInfo.address) {
+        errors.address = "العنوان مطلوب";
+        hasError = true;
+      }
+      if (!contactInfo.workingHours) {
+        errors.workingHours = "ساعات العمل مطلوبة";
+        hasError = true;
+      }
+
+      if (hasError) {
+        setContactErrors(errors);
+        toast({ title: "خطأ", description: "يرجى تصحيح الأخطاء في النموذج", variant: "destructive" });
+        setIsSaving(false);
+        return;
+      }
+    }
+
     try {
+      const updatedSections = { ...sections };
+      if (page.page_path === '/contact') {
+        // Store as object directly, not stringified JSON
+        updatedSections['contact_info'] = contactInfo;
+      }
+
       await updatePage(page.id, {
         page_title_ar: titleAr, page_title_en: titleEn, page_path: path,
         meta_title_ar: metaTitleAr, meta_title_en: metaTitleEn,
         meta_description_ar: metaDescAr, meta_description_en: metaDescEn,
         url_image: urlImage,
-        sections,
+        sections: updatedSections,
         sections_images: sectionsImages,
       })
+      toast({ title: "تم الحفظ", description: "تم تحديث الصفحة بنجاح" });
       onSave()
     } catch (error) {
       console.error("[v0] Error saving page:", error)
-      alert("حدث خطأ أثناء حفظ التغييرات")
+      toast({ title: "خطأ", description: "حدث خطأ أثناء حفظ التغييرات", variant: "destructive" });
     } finally {
       setIsSaving(false)
     }
@@ -431,9 +516,96 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
         </CardContent>
       </Card>
 
+      {page.page_path === '/contact' && (
+        <Card>
+          <CardHeader><CardTitle>معلومات التواصل</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className={contactErrors.phone ? "text-destructive" : ""}>الهاتف</Label>
+                <Input 
+                  value={contactInfo.phone} 
+                  onChange={(e) => {
+                    setContactInfo({...contactInfo, phone: e.target.value})
+                    if (contactErrors.phone) setContactErrors({...contactErrors, phone: undefined})
+                  }} 
+                  dir="ltr" 
+                  placeholder="01xxxxxxxxx"
+                  className={contactErrors.phone ? "border-destructive" : ""}
+                />
+                {contactErrors.phone && <p className="text-sm text-destructive mt-1">{contactErrors.phone}</p>}
+              </div>
+              <div>
+                <Label className={contactErrors.whatsapp ? "text-destructive" : ""}>واتساب</Label>
+                <Input 
+                  value={contactInfo.whatsapp} 
+                  onChange={(e) => {
+                    setContactInfo({...contactInfo, whatsapp: e.target.value})
+                    if (contactErrors.whatsapp) setContactErrors({...contactErrors, whatsapp: undefined})
+                  }} 
+                  dir="ltr"
+                  placeholder="01xxxxxxxxx"
+                  className={contactErrors.whatsapp ? "border-destructive" : ""}
+                />
+                {contactErrors.whatsapp && <p className="text-sm text-destructive mt-1">{contactErrors.whatsapp}</p>}
+              </div>
+              <div>
+                <Label>نص واتساب (اختياري)</Label>
+                <Input 
+                  value={contactInfo.whatsappSubtitle || ""} 
+                  onChange={(e) => setContactInfo({...contactInfo, whatsappSubtitle: e.target.value})} 
+                  placeholder="تواصل عبر واتساب"
+                />
+              </div>
+              <div>
+                <Label className={contactErrors.email ? "text-destructive" : ""}>البريد الإلكتروني</Label>
+                <Input 
+                  value={contactInfo.email} 
+                  onChange={(e) => {
+                    setContactInfo({...contactInfo, email: e.target.value})
+                    if (contactErrors.email) setContactErrors({...contactErrors, email: undefined})
+                  }} 
+                  dir="ltr"
+                  placeholder="info@example.com"
+                  className={contactErrors.email ? "border-destructive" : ""}
+                />
+                {contactErrors.email && <p className="text-sm text-destructive mt-1">{contactErrors.email}</p>}
+              </div>
+              <div className="md:col-span-2">
+                <Label className={contactErrors.address ? "text-destructive" : ""}>العنوان</Label>
+                <Input 
+                  value={contactInfo.address} 
+                  onChange={(e) => {
+                    setContactInfo({...contactInfo, address: e.target.value})
+                    if (contactErrors.address) setContactErrors({...contactErrors, address: undefined})
+                  }} 
+                  placeholder="العنوان التفصيلي..."
+                  className={contactErrors.address ? "border-destructive" : ""}
+                />
+                {contactErrors.address && <p className="text-sm text-destructive mt-1">{contactErrors.address}</p>}
+              </div>
+              <div className="md:col-span-2">
+                <Label className={contactErrors.workingHours ? "text-destructive" : ""}>ساعات العمل</Label>
+                <Textarea 
+                  value={contactInfo.workingHours} 
+                  onChange={(e) => {
+                    setContactInfo({...contactInfo, workingHours: e.target.value})
+                    if (contactErrors.workingHours) setContactErrors({...contactErrors, workingHours: undefined})
+                  }} 
+                  rows={4}
+                  placeholder="أدخل ساعات العمل..."
+                  className={contactErrors.workingHours ? "border-destructive" : ""}
+                />
+                {contactErrors.workingHours && <p className="text-sm text-destructive mt-1">{contactErrors.workingHours}</p>}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-            <CardTitle>أقسام المحتوى</CardTitle>
+            <CardTitle>أقسام المحتوى الإضافية</CardTitle>
             <p className="text-sm text-muted-foreground pt-1">استخدم مفاتيح معرفة مسبقاً (مثل hero.title) أو أنشئ مفاتيح جديدة خاصة بك.</p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -453,7 +625,7 @@ function PageEditor({ page, onSave }: { page: PageContent; onSave: () => void })
           </div>
 
           <div className="space-y-3 mt-4">
-            {Object.entries(sections).sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => (
+            {Object.entries(sections).filter(([key]) => key !== 'contact_info').sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => (
               <div key={key} className="grid md:grid-cols-[1fr_2fr_auto] gap-3 items-start p-3 bg-transparent rounded-lg border">
                 <Input value={key} disabled className="font-mono text-sm bg-muted self-center" />
                 

@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,8 +11,28 @@ import { Mail, Phone, MapPin, MessageCircle } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { useToast } from "@/hooks/use-toast"
+import { getPageByPath } from "@/lib/supabase/pages"
+
+type ContactInfoConfig = {
+  phone: string;
+  whatsapp: string;
+  whatsappSubtitle?: string;
+  email: string;
+  address: string;
+  workingHours: string;
+};
+
+const DEFAULT_CONTACT_INFO: ContactInfoConfig = {
+  phone: "01234567890",
+  whatsapp: "01234567890",
+  whatsappSubtitle: "تواصل عبر واتساب",
+  email: "info@mecca-fashion.com",
+  address: "القاهرة، مصر",
+  workingHours: "السبت - الخميس: 9:00 ص - 9:00 م\nالجمعة: 2:00 م - 9:00 م"
+};
 
 export default function ContactPage() {
+  const [contactInfo, setContactInfo] = useState<ContactInfoConfig>(DEFAULT_CONTACT_INFO)
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -26,6 +46,23 @@ export default function ContactPage() {
   const [emailError, setEmailError] = useState("")
   const [phoneError, setPhoneError] = useState("")
   const { toast } = useToast()
+
+  useEffect(() => {
+    async function fetchContactInfo() {
+      try {
+        const page = await getPageByPath("/contact")
+        if (page && page.sections && page.sections['contact_info']) {
+          const stored = typeof page.sections['contact_info'] === 'string'
+            ? JSON.parse(page.sections['contact_info'])
+            : page.sections['contact_info'];
+          setContactInfo({ ...DEFAULT_CONTACT_INFO, ...stored });
+        }
+      } catch (error) {
+        console.error("Failed to load contact info:", error);
+      }
+    }
+    fetchContactInfo();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -229,7 +266,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-lg mb-2">الهاتف</h3>
-                      <p className="text-muted-foreground">01234567890</p>
+                      <p className="text-muted-foreground" dir="ltr">{contactInfo.phone}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -243,14 +280,14 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-lg mb-2">واتساب</h3>
-                      <p className="text-muted-foreground">01234567890</p>
+                      <p className="text-muted-foreground" dir="ltr">{contactInfo.whatsapp}</p>
                       <a
-                        href="https://wa.me/201234567890"
+                        href={`https://wa.me/20${contactInfo.whatsapp.replace(/^0+/, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
                       >
-                        تواصل عبر واتساب
+                        {contactInfo.whatsappSubtitle || "تواصل عبر واتساب"}
                       </a>
                     </div>
                   </div>
@@ -265,7 +302,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-lg mb-2">البريد الإلكتروني</h3>
-                      <p className="text-muted-foreground">info@mecca-fashion.com</p>
+                      <p className="text-muted-foreground">{contactInfo.email}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -279,7 +316,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-lg mb-2">العنوان</h3>
-                      <p className="text-muted-foreground">القاهرة، مصر</p>
+                      <p className="text-muted-foreground">{contactInfo.address}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -288,9 +325,8 @@ export default function ContactPage() {
               <Card className="bg-primary/5">
                 <CardContent className="p-6">
                   <h3 className="font-bold text-lg mb-4">ساعات العمل</h3>
-                  <div className="space-y-2 text-muted-foreground">
-                    <p>السبت - الخميس: 9:00 ص - 9:00 م</p>
-                    <p>الجمعة: 2:00 م - 9:00 م</p>
+                  <div className="space-y-2 text-muted-foreground whitespace-pre-line">
+                    {contactInfo.workingHours}
                   </div>
                 </CardContent>
               </Card>
