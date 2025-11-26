@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
               const tb = new Date(b.updated_at || b.created_at || 0).getTime()
               return tb - ta
             })
-            const offer = valid[0]
+            const offer = valid[0] as any
             const dtype = String(offer.discount_type || "").toLowerCase()
             const dval = Number(offer.discount_value || 0)
             let serverDiscount = 0

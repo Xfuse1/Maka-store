@@ -7,6 +7,7 @@ import { Suspense } from "react"
 import DesignProvider from "@/components/providers/design-provider"
 import { DesignSyncProvider } from "@/components/design/design-sync-provider"
 import { WebVitals } from "@/components/web-vitals"
+import { FacebookPixelEvents } from "@/components/FacebookPixelEvents"
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -48,28 +49,33 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${cairo.variable} antialiased text-foreground`} style={{ backgroundColor: 'var(--background-hex)' }}>
         <WebVitals />
-        <Script id="meta-pixel" strategy="lazyOnload">
-          {`
+        <Script
+          id="fb-pixel"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
             n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n.loaded=!0;n.version='2.0';
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
             n.queue=[];t=b.createElement(e);t.async=!0;
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '1184366213586091');
+            fbq('init', '1370339511313553');
             fbq('track', 'PageView');
-          `}
-        </Script>
+            `,
+          }}
+        />
         <noscript>
           <img
             height="1"
             width="1"
             style={{ display: "none" }}
-            src="https://www.facebook.com/tr?id=1184366213586091&ev=PageView&noscript=1"
+            src="https://www.facebook.com/tr?id=1370339511313553&ev=PageView&noscript=1"
           />
         </noscript>
+        <FacebookPixelEvents />
         <DesignProvider />
         <DesignSyncProvider>
           <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>

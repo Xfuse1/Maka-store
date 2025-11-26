@@ -56,7 +56,7 @@ export function SiteFooter() {
           <div>
             <h5 
               className="font-bold text-lg mb-4 transition-colors duration-300"
-              style={{ color: colors.foreground }}
+              style={mounted ? { color: colors.foreground } : undefined}
             >
               روابط سريعة
             </h5>
@@ -110,7 +110,7 @@ export function SiteFooter() {
           <div>
             <h5 
               className="font-bold text-lg mb-4 transition-colors duration-300"
-              style={{ color: colors.foreground }}
+              style={mounted ? { color: colors.foreground } : undefined}
             >
               معلومات
             </h5>
@@ -186,11 +186,11 @@ export function SiteFooter() {
         </div>
         <div 
           className="text-center pt-8 border-t transition-all duration-300"
-          style={{ borderColor: colors.foreground + '20' }}
+          style={mounted ? { borderColor: colors.foreground + '20' } : undefined}
         >
           <p 
             className="text-sm transition-colors duration-300"
-            style={{ color: colors.foreground + 'CC' }}
+            style={mounted ? { color: colors.foreground + 'CC' } : undefined}
           >
             © {new Date().getFullYear()} {settings.siteName}. جميع الحقوق محفوظة.
           </p>

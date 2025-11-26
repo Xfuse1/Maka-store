@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-
+import React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,24 +10,122 @@ import { Label } from "@/components/ui/label"
 import { Mail, Phone, MapPin, MessageCircle } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { useToast } from "@/hooks/use-toast"
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-  })
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [message, setMessage] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<null | "success" | "error">(null)
+  const [errorMsg, setErrorMsg] = useState("")
+
+  const [fullNameError, setFullNameError] = useState("")
+  const [emailError, setEmailError] = useState("")
+  const [phoneError, setPhoneError] = useState("")
+  const { toast } = useToast()
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    setIsSubmitted(true)
-    setTimeout(() => {
-      setIsSubmitted(false)
-      setFormData({ name: "", email: "", phone: "", message: "" })
-    }, 3000)
+    setLoading(true)
+    setStatus(null)
+    setErrorMsg("")
+
+    setFullNameError("")
+    setEmailError("")
+    setPhoneError("")
+
+    const trimmedName = fullName.trim()
+    const trimmedEmail = email.trim()
+    const trimmedPhone = phone.trim()
+    const trimmedMessage = message.trim()
+
+    // 3.1 Full name required
+    if (!trimmedName) {
+      setLoading(false)
+      setStatus("error")
+      setFullNameError("الاسم الكامل مطلوب.")
+      setErrorMsg("يُرجى إدخال الاسم الكامل.")
+      return
+    }
+
+    // 3.2 Message required
+    if (!trimmedMessage) {
+      setLoading(false)
+      setStatus("error")
+      setErrorMsg("الرسالة مطلوبة.")
+      return
+    }
+
+    // 3.3 Email required + format validation
+    if (!trimmedEmail) {
+      setLoading(false)
+      setStatus("error")
+      setEmailError("البريد الإلكتروني مطلوب.")
+      setErrorMsg("يُرجى إدخال البريد الإلكتروني.")
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(trimmedEmail)) {
+      setLoading(false)
+      setStatus("error")
+      setEmailError("من فضلك أدخل بريدًا إلكترونيًا صحيحًا.")
+      setErrorMsg("تحقق من صحة البريد الإلكتروني.")
+      return
+    }
+
+    // 3.4 Egyptian phone required + format validation
+    if (!trimmedPhone) {
+      setLoading(false)
+      setStatus("error")
+      setPhoneError("رقم الهاتف مطلوب.")
+      setErrorMsg("يُرجى إدخال رقم الهاتف.")
+      return
+    }
+
+    const cleanPhone = trimmedPhone.replace(/\s+/g, "")
+    const localRegex = /^01[0125][0-9]{8}$/
+    const intlRegex = /^\+201[0125][0-9]{8}$/
+    const isValidPhone = localRegex.test(cleanPhone) || intlRegex.test(cleanPhone)
+
+    if (!isValidPhone) {
+      setLoading(false)
+      setStatus("error")
+      setPhoneError("من فضلك أدخل رقم هاتف مصري صحيح (مثال: 010xxxxxxxx أو +2010xxxxxxxx).")
+      setErrorMsg("تحقق من رقم الهاتف.")
+      return
+    }
+
+    // All validations passed — submit
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: trimmedName, email: trimmedEmail, phone: trimmedPhone, message: trimmedMessage }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setStatus('error')
+        setErrorMsg(data.error || 'حدث خطأ أثناء إرسال الرسالة.')
+        toast({ title: 'خطأ', description: data.error || 'فشل الإرسال', variant: 'destructive' })
+      } else {
+        setStatus('success')
+        setFullName('')
+        setEmail('')
+        setPhone('')
+        setMessage('')
+        toast({ title: 'تم الإرسال', description: 'تم إرسال رسالتك بنجاح' })
+      }
+    } catch (err: any) {
+      setStatus('error')
+      setErrorMsg(err?.message || 'Unexpected error')
+      toast({ title: 'خطأ', description: err?.message || 'فشل الإرسال', variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -56,11 +153,14 @@ export default function ContactPage() {
                     <Label htmlFor="name">الاسم</Label>
                     <Input
                       id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       placeholder="أدخل اسمك"
                       required
                     />
+                    {fullNameError ? (
+                      <p className="text-sm text-destructive mt-1">{fullNameError}</p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
@@ -68,11 +168,14 @@ export default function ContactPage() {
                     <Input
                       id="email"
                       type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="example@email.com"
                       required
                     />
+                    {emailError ? (
+                      <p className="text-sm text-destructive mt-1">{emailError}</p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
@@ -80,28 +183,38 @@ export default function ContactPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                       placeholder="01234567890"
-                      required
                     />
+                    {phoneError ? (
+                      <p className="text-sm text-destructive mt-1">{phoneError}</p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="message">الرسالة</Label>
                     <Textarea
                       id="message"
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
                       placeholder="اكتب رسالتك هنا..."
                       rows={5}
                       required
                     />
                   </div>
 
-                  <Button type="submit" className="w-full" size="lg">
-                    {isSubmitted ? "تم الإرسال بنجاح!" : "إرسال الرسالة"}
+                  <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                    {status === 'success' ? 'تم الإرسال بنجاح!' : loading ? 'جاري الإرسال...' : 'إرسال الرسالة'}
                   </Button>
+
+                  {/* Status / error message area */}
+                  {status === 'success' && (
+                    <p className="text-sm text-success mt-2">تم إرسال رسالتك بنجاح. سنرد عليك قريبًا.</p>
+                  )}
+                  {status === 'error' && errorMsg && (
+                    <p className="text-sm text-destructive mt-2">{errorMsg}</p>
+                  )}
                 </form>
               </CardContent>
             </Card>

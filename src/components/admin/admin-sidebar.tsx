@@ -28,6 +28,11 @@ const menuItems = [
     icon: FileText,
   },
   {
+    title: "الرسائل",
+    href: "/admin/messages",
+    icon: FileText,
+  },
+  {
     title: "المنتجات",
     href: "/admin/products",
     icon: Package,

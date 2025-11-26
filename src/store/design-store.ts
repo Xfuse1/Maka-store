@@ -34,10 +34,10 @@ type DesignState = {
 
 const defaults: Omit<DesignState, "setColor" | "setFont" | "setLayout" | "setLogo" | "setColors" | "setFonts" | "setLayouts" | "reset"> = {
   colors: {
-    primary: "#f70824", // أحمر (من الصورة)
-    secondary: "#a13030", // ثانوي (أحمر داكن)
-    background: "#d06d6d", // وردي (من الصورة)
-    foreground: "#1a1a1a", // أسود
+    primary: "#FFB6C1",
+    secondary: "#a13030",
+    background: "#FFFFFF",
+    foreground: "#1a1a1a",
   },
   fonts: {
     heading: "Cairo",
