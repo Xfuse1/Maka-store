@@ -10,6 +10,7 @@ import { SiteLogo } from "./site-logo"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import { User as UserIcon } from "lucide-react"
+import ProfileDropdown from "./profile-dropdown.client"
 
 export function SiteHeader() {
   const [user, setUser] = useState<User | null>(null)
@@ -48,20 +49,15 @@ export function SiteHeader() {
 
             {/* Auth Links */}
             <div className="hidden md:block">
-              {user ? (
-                <Button variant="ghost" asChild>
-                  <Link href="/account" className="flex items-center gap-2">
-                    <UserIcon className="h-5 w-5" />
-                    <span>حسابي</span>
-                  </Link>
-                </Button>
-              ) : (
-                <Button variant="outline" asChild>
-                  <Link href="/auth">
-                    تسجيل الدخول
-                  </Link>
-                </Button>
-              )}
+                {user ? (
+                  <ProfileDropdown user={user} profile={null} />
+                ) : (
+                  <Button variant="outline" asChild>
+                    <Link href="/auth">
+                      تسجيل الدخول
+                    </Link>
+                  </Button>
+                )}
             </div>
             
             {/* Mobile Navigation */}

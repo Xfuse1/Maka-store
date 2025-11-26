@@ -5,10 +5,11 @@ import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { ShoppingBag, Search, Loader2 } from "lucide-react"
+import { ShoppingBag, Search, Loader2, User as UserIcon } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useCartStore } from "@/lib/cart-store"
+import ProfileDropdown from "@/components/profile-dropdown.client"
 import { HeroSlider } from "@/components/hero-slider"
 import { MainNavigation } from "@/components/main-navigation"
 import { MobileNavigation } from "@/components/mobile-navigation"
@@ -198,16 +199,14 @@ export default function HomePage() {
 
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden md:block">
-                {user ? (
-                  <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}>
-                    تسجيل الخروج
-                  </Button>
-                ) : (
-                  <Button variant="outline" asChild>
-                    <Link href="/auth">تسجيل الدخول</Link>
-                  </Button>
-                )}
-              </div>
+                  {user ? (
+                    <ProfileDropdown user={user} profile={null} />
+                  ) : (
+                    <Button variant="outline" asChild>
+                      <Link href="/auth">تسجيل الدخول</Link>
+                    </Button>
+                  )}
+                </div>
               <MobileNavigation user={user} />
 
               <Button asChild variant="default" className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground relative shadow-md hover:shadow-lg transition-all">
