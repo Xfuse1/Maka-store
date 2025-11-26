@@ -113,10 +113,10 @@ export function AccountClient({ user, profile, orders }: AccountClientProps) {
 
   return (
     <Tabs defaultValue="profile" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 mb-8">
-        <TabsTrigger value="profile">الملف الشخصي</TabsTrigger>
-        
-        <TabsTrigger value="settings">الإعدادات</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
+        <TabsTrigger value="profile" className="w-full">الملف الشخصي</TabsTrigger>
+        <TabsTrigger value="orders" className="w-full">طلباتي</TabsTrigger>
+        <TabsTrigger value="settings" className="w-full">الإعدادات</TabsTrigger>
       </TabsList>
 
       <TabsContent value="profile">
@@ -182,7 +182,7 @@ export function AccountClient({ user, profile, orders }: AccountClientProps) {
       </TabsContent>
 
       <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl w-full max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>تفاصيل الطلب</DialogTitle>
             <DialogDescription>{selectedOrder && `طلب #${selectedOrder.id.slice(0, 8)} بتاريخ ${new Date(selectedOrder.created_at).toLocaleDateString('ar-EG')}`}</DialogDescription>
@@ -192,7 +192,7 @@ export function AccountClient({ user, profile, orders }: AccountClientProps) {
             <div className="py-8 text-center">جاري التحميل...</div>
           ) : selectedOrder ? (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-semibold mb-1">الحالة</h4>
                   <Badge className={`${getStatusColor(selectedOrder.status)} text-white border-0`}>{getStatusLabel(selectedOrder.status)}</Badge>

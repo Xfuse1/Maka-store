@@ -84,7 +84,7 @@ interface AdminSidebarProps {
   setSidebarOpen: (isOpen: boolean) => void;
 }
 
-function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
+function SidebarContent({ onLinkClick, onClose }: { onLinkClick?: () => void; onClose?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const { toast } = useToast()
@@ -121,7 +121,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
             <p className="text-xs text-muted-foreground">لوحة التحكم</p>
           </div>
         </Link>
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => onLinkClick?.()} type="button">
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => onClose?.()} type="button">
             <X className="h-6 w-6" />
         </Button>
       </div>
@@ -206,10 +206,13 @@ export function AdminSidebar({ isSidebarOpen, setSidebarOpen }: AdminSidebarProp
 
       <aside className={cn(
         "fixed top-0 right-0 h-full bg-background border-l border-border w-64 z-50 transform transition-transform duration-300 ease-in-out",
-        "md:relative md:translate-x-0 md:w-64 md:flex-shrink-0",
+        "md:sticky md:top-0 md:h-screen md:translate-x-0 md:w-64 md:flex-shrink-0",
         isSidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
       )}>
-        <SidebarContent onLinkClick={() => setSidebarOpen(false)} />
+        <SidebarContent 
+          onLinkClick={() => setSidebarOpen(false)} 
+          onClose={() => setSidebarOpen(false)} 
+        />
       </aside>
     </>
   )

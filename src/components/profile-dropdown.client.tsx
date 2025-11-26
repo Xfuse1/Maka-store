@@ -52,7 +52,7 @@ export default function ProfileDropdown({ user, profile }: Props) {
       </Button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-44 bg-background border border-border rounded-md shadow-lg z-50">
+        <div className="absolute ltr:right-0 rtl:left-0 mt-2 min-w-[160px] w-44 bg-background border border-border rounded-md shadow-lg z-50">
           <nav className="flex flex-col">
             <Link href="/account" className="block px-4 py-2 text-sm hover:bg-muted" onClick={() => setOpen(false)}>حسابي</Link>
             <Link href="/orders" className="block px-4 py-2 text-sm hover:bg-muted" onClick={() => setOpen(false)}>طلباتي</Link>

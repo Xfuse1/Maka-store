@@ -43,16 +43,16 @@ export function SiteHeader() {
           {/* Desktop Navigation */}
           <MainNavigation />
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Cart Icon */}
             <CartIcon />
 
             {/* Auth Links */}
-            <div className="hidden md:block">
+            <div>
                 {user ? (
                   <ProfileDropdown user={user} profile={null} />
                 ) : (
-                  <Button variant="outline" asChild>
+                  <Button variant="outline" asChild className="hidden md:inline-flex">
                     <Link href="/auth">
                       تسجيل الدخول
                     </Link>

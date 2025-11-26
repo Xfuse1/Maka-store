@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useSettingsStore } from "@/lib/settings-store"
+import { FooterContactInfo } from "@/components/layout/FooterContactInfo"
 import { useDesignStore } from "@/store/design-store"
 import { getPublishedPages } from "@/lib/supabase/pages"
 
@@ -167,9 +168,7 @@ export function SiteFooter() {
               className="leading-relaxed mb-4 transition-colors duration-300"
               style={mounted ? { color: colors.foreground + 'CC' } : undefined}
             >
-              للاستفسارات والطلبات الخاصة<br />
-              واتساب: {settings.contactWhatsapp}<br />
-              البريد: {settings.contactEmail}
+              <FooterContactInfo />
             </p>
             <Link href="/contact">
               <Button 

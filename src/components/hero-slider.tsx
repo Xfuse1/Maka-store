@@ -40,18 +40,6 @@ export function HeroSlider() {
     return () => clearInterval(interval)
   }, [isAutoPlaying, slides.length])
 
-  // Preload first slide image for better LCP
-  useEffect(() => {
-    if (slides.length > 0 && slides[0]?.image_url) {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
-      link.href = slides[0].image_url;
-      (link as any).fetchPriority = 'high';
-      document.head.appendChild(link);
-    }
-  }, [slides])
-
   const goToSlide = (index: number) => {
     setCurrentSlide(index)
     setIsAutoPlaying(false)

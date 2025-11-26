@@ -47,7 +47,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://connect.facebook.net" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://i.postimg.cc" />
       </head>
-      <body className={`font-sans ${cairo.variable} antialiased text-foreground`} style={{ backgroundColor: 'var(--background-hex)' }}>
+      <body className={`font-sans ${cairo.variable} antialiased text-foreground bg-background`}>
         <WebVitals />
         <Script
           id="fb-pixel"
