@@ -349,7 +349,25 @@ export default function AdminProductsPage() {
 
     try {
       setSaving(true)
-      const imageUrls = await uploadMultipleImages(Array.from(files), editingProduct.id)
+
+      const arr = Array.from(files)
+      const maxAllowed = 4
+      const existing = editingProduct.product_images?.length || 0
+      const remaining = Math.max(0, maxAllowed - existing)
+
+      if (remaining === 0) {
+        try {
+          toast({ title: "مسموح 4 صور فقط", description: "لا يمكنك إضافة المزيد من الصور.", variant: "destructive" })
+        } catch (e) {
+          /* ignore */
+        }
+        return
+      }
+
+      const toUpload = arr.slice(0, remaining)
+      if (toUpload.length === 0) return
+
+      const imageUrls = await uploadMultipleImages(toUpload, editingProduct.id)
 
       for (let i = 0; i < imageUrls.length; i++) {
         await createProductImage({
@@ -362,10 +380,15 @@ export default function AdminProductsPage() {
         })
       }
 
-      toast({
-        title: "تم الرفع",
-        description: "تم رفع الصور بنجاح",
-      })
+      if (toUpload.length < arr.length) {
+        try {
+          toast({ title: "تم الاقتصار على 4 صور", description: `تم قبول ${toUpload.length} صورة فقط (الحد الأقصى 4).` })
+        } catch (e) {
+          /* ignore */
+        }
+      } else {
+        toast({ title: "تم الرفع", description: "تم رفع الصور بنجاح" })
+      }
 
       await loadData()
       // Refresh editing product
@@ -374,11 +397,7 @@ export default function AdminProductsPage() {
       if (updated) setEditingProduct(updated)
     } catch (error) {
       console.error("[v0] Error uploading images:", error)
-      toast({
-        title: "خطأ",
-        description: "فشل رفع الصور",
-        variant: "destructive",
-      })
+      toast({ title: "خطأ", description: "فشل رفع الصور", variant: "destructive" })
     } finally {
       setSaving(false)
     }
@@ -1068,16 +1087,16 @@ export default function AdminProductsPage() {
                       accept="image/*"
                       multiple
                       onChange={(e) => handleAddProductImages(e.target.files)}
-                      disabled={saving}
+                      disabled={saving || editingProduct.product_images.length >= 4}
                       className="flex-1 w-full"
                     />
-                    <Button type="button" disabled={saving} variant="outline" className="w-full sm:w-auto">
+                    <Button type="button" disabled={saving || editingProduct.product_images.length >= 4} variant="outline" className="w-full sm:w-auto">
                       <Upload className="h-4 w-4 ml-2" />
                       رفع
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    يمكنك رفع عدة صور دفعة واحدة. الصورة الأولى ستكون الصورة الرئيسية.
+                    يمكنك رفع حتى 4 صور فقط. الصورة الأولى ستكون الصورة الرئيسية.
                   </p>
                 </div>
 
