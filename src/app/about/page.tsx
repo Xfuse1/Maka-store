@@ -12,6 +12,7 @@ import { getPageByPath } from "@/lib/supabase/pages"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { AnimatedSection } from "@/components/animated-section"
+import { useSettingsStore } from "@/store/settings-store"
 
 type PageContent = {
   sections: Record<string, string>
@@ -20,8 +21,13 @@ type PageContent = {
 }
 
 export default function AboutPage() {
+  const { settings, loadSettings } = useSettingsStore()
   const [pageData, setPageData] = useState<PageContent | null>(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   useEffect(() => {
     async function loadPage() {
@@ -62,7 +68,7 @@ export default function AboutPage() {
   const storyTitle = getSection("story.title", "قصتنا")
   const storyP1 = getSection(
     "story.paragraph1",
-    "بدأت رحلة مكة من حلم بسيط: توفير أزياء نسائية راقية تجمع بين الأناقة العصرية والاحتشام الأصيل. نؤمن بأن كل امرأة تستحق أن تشعر بالثقة والجمال في ملابسها، دون التنازل عن قيمها ومبادئها."
+    `بدأت رحلة ${settings.siteName} من حلم بسيط: توفير أزياء نسائية راقية تجمع بين الأناقة العصرية والاحتشام الأصيل. نؤمن بأن كل امرأة تستحق أن تشعر بالثقة والجمال في ملابسها، دون التنازل عن قيمها ومبادئها.`
   )
   const storyP2 = getSection(
     "story.paragraph2",
@@ -96,10 +102,10 @@ export default function AboutPage() {
 
   // Team Section Content
   const teamTitle = getSection("team.title", "فريقنا وشغفنا")
-  const teamP1 = getSection("team.paragraph1", "وراء كل قطعة فنية من مكة، يقف فريق من المصممين والحرفيين المهرة الذين يجمعهم شغف واحد: إبداع أزياء تعبر عنكِ. نحن عائلة تؤمن بقوة التفاصيل وتكرس وقتها لتحويل أجود الأقمشة إلى تصاميم تحاكي أحلامك.")
+  const teamP1 = getSection("team.paragraph1", `وراء كل قطعة فنية من ${settings.siteName}، يقف فريق من المصممين والحرفيين المهرة الذين يجمعهم شغف واحد: إبداع أزياء تعبر عنكِ. نحن عائلة تؤمن بقوة التفاصيل وتكرس وقتها لتحويل أجود الأقمشة إلى تصاميم تحاكي أحلامك.`)
   const teamP2 = getSection("team.paragraph2", "كل خيط، كل قصة، وكل تطريزة هي جزء من حكايتنا معكِ.")
   const teamImageUrl = getSection("team.image_url", "/placeholder-user.jpg")
-  const teamImageTitle = getSection("team.image_title", "مؤسسي مكة")
+  const teamImageTitle = getSection("team.image_title", `مؤسسي ${settings.siteName}`)
   const teamImageSubtitle = getSection("team.image_subtitle", "شغف يتوارثه الأجيال")
 
   // CTA Section Content

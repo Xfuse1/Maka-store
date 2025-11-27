@@ -10,6 +10,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { SiteLogo } from "@/components/site-logo"
 import { useRouter } from "next/navigation"
+import { useSettingsStore } from "@/store/settings-store"
 
 function formatDate(value: string) {
   try {
@@ -35,9 +36,14 @@ function formatItemAttributes(item: any) {
 export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { settings, loadSettings } = useSettingsStore()
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   useEffect(() => {
     const orderId = params.id as string
@@ -87,7 +93,7 @@ export default function OrderDetailPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <SiteLogo width={80} height={80} />
-              <h1 className="text-2xl font-bold text-primary">مكة</h1>
+              <h1 className="text-2xl font-bold text-primary">{settings.siteName}</h1>
             </Link>
             <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
               <Link href="/orders">
@@ -181,7 +187,7 @@ export default function OrderDetailPage() {
 
       <footer className="border-t border-border bg-background py-8 mt-12">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">© 2025 مكة. جميع الحقوق محفوظة.</p>
+          <p className="text-sm text-muted-foreground">© 2025 {settings.siteName}. جميع الحقوق محفوظة.</p>
         </div>
       </footer>
     </div>

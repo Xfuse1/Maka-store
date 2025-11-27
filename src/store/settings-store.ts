@@ -90,14 +90,16 @@ export const useSettingsStore = create<SettingsStore>((set) => {
     },
   }
 
-  // Kick off loading DB-backed settings immediately (non-blocking)
-  ;(async () => {
-    try {
-      await store.loadSettings()
-    } catch (e) {
-      console.error('Error auto-loading settings store:', e)
-    }
-  })()
+  // Kick off loading DB-backed settings immediately (non-blocking) but only in the browser
+  if (typeof window !== "undefined") {
+    ;(async () => {
+      try {
+        await store.loadSettings()
+      } catch (e) {
+        console.error('Error auto-loading settings store:', e)
+      }
+    })()
+  }
 
   return store
 })

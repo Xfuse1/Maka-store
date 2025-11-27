@@ -10,6 +10,7 @@ import Image from "next/image"
 import { SiteLogo } from "@/components/site-logo"
 import { getOrdersByEmail, type OrderSummary } from "@/lib/supabase/orders"
 import { humanizeOrderStatus, getStatusBadgeClass } from "@/lib/status"
+import { useSettingsStore } from "@/store/settings-store"
 import { CancelOrderButton } from "./cancel-order-button"
 
 function formatDate(value: string) {
@@ -26,6 +27,12 @@ interface OrdersClientProps {
 }
 
 export default function OrdersClient({ initialOrders = [], user }: OrdersClientProps) {
+  const { settings, loadSettings } = useSettingsStore()
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [orders, setOrders] = useState<any[]>(initialOrders)
@@ -76,7 +83,7 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <SiteLogo width={80} height={80} />
-              <h1 className="text-2xl font-bold text-primary">مكة</h1>
+              <h1 className="text-2xl font-bold text-primary">{settings.siteName}</h1>
             </Link>
             <Button asChild variant="outline" size="sm" className="border-border hover:bg-primary/10 bg-transparent">
               <Link href="/">

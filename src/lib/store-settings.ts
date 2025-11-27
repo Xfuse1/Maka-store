@@ -12,20 +12,29 @@ export interface StoreSettings {
   updated_by?: string
 }
 
-export async function getStoreSettingsServer() {
-  const supabase = await createClient()
+export async function getStoreSettingsServer(): Promise<StoreSettings | null> {
+  // Use admin client to avoid RLS/permission issues when reading global settings
+  const supabase = createAdminClient()
+
+  // Robust fetch: get the latest updated row regardless of ID
   const { data, error } = await (supabase
     .from("store_settings") as any)
-    .select("*")
-    .eq("id", SETTINGS_ID)
+    .select("id, store_name, store_description, updated_at")
+    .order("updated_at", { ascending: false })
+    .limit(1)
     .maybeSingle()
 
+  // Debug log to help trace issues when the admin complains settings aren't showing
+  console.log("[DEBUG] store settings from DB >>>", data, " error=", error)
+
   if (error) {
-    console.error("[Server] getStoreSettings error", error.message, error)
+    console.error("[Server] getStoreSettingsServer error", error)
     return null
   }
 
-  return (data as StoreSettings) ?? null
+  if (!data || !data.store_name) return null
+
+  return data as StoreSettings
 }
 
 export async function upsertStoreSettingsServer(

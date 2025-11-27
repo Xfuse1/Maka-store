@@ -7,8 +7,15 @@ import { ShoppingBag, Package, TrendingUp, Users, Eye, ExternalLink } from "luci
 import Image from "next/image"
 import { getAllProducts } from "@/lib/products-data"
 import Link from "next/link"
+import { useSettingsStore } from "@/store/settings-store"
 
 export default function AdminDashboard() {
+  const { settings, loadSettings } = useSettingsStore()
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
   const products = getAllProducts()
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -66,7 +73,7 @@ export default function AdminDashboard() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">مرحباً بك في لوحة التحكم</h1>
-          <p className="text-muted-foreground text-base">نظرة عامة على أداء متجر مكة</p>
+          <p className="text-muted-foreground text-base">نظرة عامة على أداء {settings.siteName}</p>
         </div>
         <Button asChild variant="outline" className="gap-2 bg-transparent">
           <Link href="/" target="_blank">
