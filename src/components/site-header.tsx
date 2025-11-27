@@ -11,10 +11,16 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import { User as UserIcon } from "lucide-react"
 import ProfileDropdown from "./profile-dropdown.client"
+import { useSettingsStore } from "@/store/settings-store"
 
 export function SiteHeader() {
   const [user, setUser] = useState<User | null>(null)
+  const { settings, loadSettings } = useSettingsStore()
   const supabase = getSupabaseBrowserClient()
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   useEffect(() => {
     const getUser = async () => {
@@ -37,7 +43,7 @@ export function SiteHeader() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <SiteLogo width={80} height={80} className="w-10 h-10 sm:w-20 sm:h-20" />
-            <h1 className="text-lg sm:text-2xl font-bold text-primary block">مكة</h1>
+            <h1 className="text-lg sm:text-2xl font-bold text-primary block">{settings.siteName}</h1>
           </Link>
 
           {/* Desktop Navigation */}

@@ -1,13 +1,9 @@
-"use client"
+import { getStoreSettingsServer } from "@/lib/store-settings"
+import { StoreSettingsForm } from "@/components/admin/store-settings-form"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Store, Mail } from "lucide-react"
+export default async function AdminSettingsPage() {
+  const settings = await getStoreSettingsServer()
 
-export default function AdminSettingsPage() {
   return (
     <div className="p-4 md:p-8">
       <div className="mb-8">
@@ -15,35 +11,10 @@ export default function AdminSettingsPage() {
         <p className="text-muted-foreground text-sm md:text-base">إدارة معلومات المتجر والإعدادات</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-2 border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-              <Store className="h-5 w-5 text-primary" />
-              معلومات المتجر
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label className="text-base font-medium mb-2 block">اسم المتجر</Label>
-              <Input type="text" defaultValue="مكة" className="text-base" />
-            </div>
-            <div>
-              <Label className="text-base font-medium mb-2 block">وصف المتجر</Label>
-              <Textarea
-                defaultValue="متجر مكة للأزياء النسائية الراقية - نقدم لكِ أفضل التصاميم العصرية التي تجمع بين الأصالة والحداثة"
-                rows={4}
-                className="text-base"
-              />
-            </div>
-            <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => alert("تم حفظ معلومات المتجر")}>
-              حفظ المعلومات
-            </Button>
-          </CardContent>
-        </Card>
-
-         
-      </div>
+      <StoreSettingsForm
+        initialName={settings?.store_name ?? ""}
+        initialDescription={settings?.store_description ?? ""}
+      />
     </div>
   )
 }

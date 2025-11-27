@@ -215,6 +215,29 @@ export const usePagesStore = create<PagesStore>()(
               id: crypto.randomUUID(),
             })),
           })
+          // After seeding defaults, attempt to fetch the store name and update hero titles.
+          ;(async () => {
+            try {
+              const res = await fetch('/api/store/name')
+              if (res.ok) {
+                const json = await res.json()
+                const storeName = json?.store_name
+                if (storeName) {
+                  set((state) => ({
+                    pages: state.pages.map((p) => ({
+                      ...p,
+                      sections: p.sections.map((s) =>
+                        s.key === 'hero.title' ? { ...s, value: storeName } : s
+                      ),
+                    })),
+                  }))
+                }
+              }
+            } catch (e) {
+              // ignore network errors; defaults remain
+              console.error('Failed to update hero.title with store name:', e)
+            }
+          })()
         }
       },
     }),

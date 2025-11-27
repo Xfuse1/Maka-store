@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useEffect } from "react"
+import { useSettingsStore } from "@/store/settings-store"
 
 const menuItems = [
   {
@@ -82,12 +83,18 @@ const menuItems = [
 interface AdminSidebarProps {
   isSidebarOpen: boolean;
   setSidebarOpen: (isOpen: boolean) => void;
+  storeName: string;
 }
 
-function SidebarContent({ onLinkClick, onClose }: { onLinkClick?: () => void; onClose?: () => void }) {
+function SidebarContent({ onLinkClick, onClose, storeName }: { onLinkClick?: () => void; onClose?: () => void; storeName: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const { toast } = useToast()
+  const { settings, loadSettings } = useSettingsStore()
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   const handleLogout = async () => {
     try {
@@ -128,7 +135,7 @@ function SidebarContent({ onLinkClick, onClose }: { onLinkClick?: () => void; on
         <Link href="/" className="flex items-center gap-3">
           <SiteLogo width={40} height={40} />
           <div>
-            <h2 className="text-xl font-bold text-primary">مكة</h2>
+            <h2 className="text-xl font-bold text-primary">{storeName}</h2>
             <p className="text-xs text-muted-foreground">لوحة التحكم</p>
           </div>
         </Link>
@@ -191,7 +198,7 @@ function SidebarContent({ onLinkClick, onClose }: { onLinkClick?: () => void; on
   )
 }
 
-export function AdminSidebar({ isSidebarOpen, setSidebarOpen }: AdminSidebarProps) {
+export function AdminSidebar({ isSidebarOpen, setSidebarOpen, storeName }: AdminSidebarProps) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -229,7 +236,8 @@ export function AdminSidebar({ isSidebarOpen, setSidebarOpen }: AdminSidebarProp
       )}>
         <SidebarContent 
           onLinkClick={() => setSidebarOpen(false)} 
-          onClose={() => setSidebarOpen(false)} 
+          onClose={() => setSidebarOpen(false)}
+          storeName={storeName}
         />
       </aside>
     </>

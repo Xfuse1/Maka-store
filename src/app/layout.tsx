@@ -3,11 +3,13 @@ import type React from "react"
 import Script from "next/script"
 import type { Metadata } from "next"
 import { Cairo } from "next/font/google"
+import { getStoreSettingsServer } from "@/lib/store-settings"
 import { Suspense } from "react"
 import DesignProvider from "@/components/providers/design-provider"
 import { DesignSyncProvider } from "@/components/design/design-sync-provider"
 import { WebVitals } from "@/components/web-vitals"
 import { FacebookPixelEvents } from "@/components/FacebookPixelEvents"
+import { StoreInitializer } from "@/components/store-initializer"
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -17,23 +19,28 @@ const cairo = Cairo({
   fallback: ['system-ui', 'arial'],
 })
 
-export const metadata: Metadata = {
-  title: "مكة - متجر الأزياء النسائية الراقية",
-  description: "اكتشفي مجموعتنا الحصرية من العبايات والكارديجان والبدل والفساتين",
-  generator: "v0.app",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
-  themeColor: '#FFB6C1',
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getStoreSettingsServer()
+  return {
+    title: settings?.store_name || "مكة - متجر الأزياء النسائية الراقية",
+    description: settings?.store_description || "اكتشفي مجموعتنا الحصرية من العبايات والكارديجان والبدل والفساتين",
+    generator: "v0.app",
+    viewport: {
+      width: 'device-width',
+      initialScale: 1,
+      maximumScale: 5,
+    },
+    themeColor: '#FFB6C1',
+  }
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const settings = await getStoreSettingsServer()
+
   return (
     <html lang="ar" dir="rtl">
       <head>
@@ -80,6 +87,7 @@ export default function RootLayout({
         </Suspense>
         <DesignProvider />
         <DesignSyncProvider>
+          <StoreInitializer settings={settings} />
           <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         </DesignSyncProvider>
       </body>

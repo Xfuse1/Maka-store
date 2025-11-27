@@ -53,7 +53,27 @@ export function initializeDatabase() {
 
   // Initialize settings if not exists
   if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
+    // Save default settings immediately so app has something to read synchronously
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS))
+
+    // Attempt to fetch store name from server and update settings if available.
+    // This runs asynchronously and won't block initialization.
+    ;(async () => {
+      try {
+        const res = await fetch('/api/store/name')
+        if (res.ok) {
+          const json = await res.json()
+          if (json && json.store_name) {
+            const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || "{}")
+            const updated = { ...current, siteName: json.store_name }
+            localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated))
+          }
+        }
+      } catch (e) {
+        // ignore fetch errors and keep defaults
+        console.error('Failed to fetch store name for local settings:', e)
+      }
+    })()
   }
 
   // Initialize empty arrays if not exists
@@ -130,11 +150,11 @@ export function updateOrder(id: string, updates: Partial<Order>) {
   }
 }
 
-export function updateOrderStatus(orderId: string, status: Order["status"]) {
+export function updateOrderStatus(orderId: string, status: Order["orderStatus"]) {
   const orders = getOrders()
   const index = orders.findIndex((o) => o.id === orderId)
   if (index !== -1) {
-    orders[index] = { ...orders[index], status, updatedAt: new Date().toISOString() }
+    orders[index] = { ...orders[index], orderStatus: status, updatedAt: new Date().toISOString() }
     saveOrders(orders)
   }
 }

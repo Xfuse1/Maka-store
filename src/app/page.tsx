@@ -20,7 +20,7 @@ import { DynamicHomepageSection } from "@/components/dynamic-homepage-section"
 import { BestsellerSection } from "@/components/bestseller-section"
 import { Card, CardContent } from "@/components/ui/card"
 import { AnimatedSection } from "@/components/animated-section"
-import { useSettingsStore } from "@/lib/settings-store"
+import { useSettingsStore } from "@/store/settings-store"
 import { SiteFooter } from "@/components/site-footer"
 
 // Create a Supabase client instance
@@ -187,7 +187,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-2 sm:gap-4">
               <SiteLogo width={60} height={60} className="w-10 h-10 sm:w-[80px] sm:h-[80px]" />
-              <h1 className="text-lg sm:text-3xl font-bold text-primary block">مكة</h1>
+              <h1 className="text-lg sm:text-3xl font-bold text-primary block">{settings.siteName}</h1>
             </Link>
 
             <div className="hidden md:flex flex-1 max-w-3xl mx-4 lg:mx-8">

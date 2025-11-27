@@ -1,4 +1,5 @@
 import { create } from "zustand"
+import { getStoreSettingsClient } from "@/lib/settings"
 
 interface SiteSettings {
   siteName: string
@@ -26,7 +27,7 @@ interface SiteSettings {
 
 interface SettingsStore {
   settings: SiteSettings
-  loadSettings: () => void
+  loadSettings: () => Promise<void>
   updateSettings: (updates: Partial<SiteSettings>) => void
 }
 
@@ -54,23 +55,49 @@ const defaultSettings: SiteSettings = {
   },
 }
 
-export const useSettingsStore = create<SettingsStore>((set) => ({
-  settings: defaultSettings,
-  loadSettings: () => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("site-settings")
-      if (stored) {
-        set({ settings: JSON.parse(stored) })
+export const useSettingsStore = create<SettingsStore>((set) => {
+  const store: SettingsStore = {
+    settings: defaultSettings,
+    loadSettings: async () => {
+      try {
+        const dbSettings = await getStoreSettingsClient()
+        if (dbSettings) {
+          set((state) => ({
+            settings: {
+              ...state.settings,
+              siteName: dbSettings.store_name || state.settings.siteName,
+              siteDescription: dbSettings.store_description || state.settings.siteDescription,
+            }
+          }))
+        } else if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("site-settings")
+          if (stored) {
+            set({ settings: JSON.parse(stored) })
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load settings:", error)
       }
+    },
+    updateSettings: (updates) => {
+      set((state) => {
+        const newSettings = { ...state.settings, ...updates }
+        if (typeof window !== "undefined") {
+          localStorage.setItem("site-settings", JSON.stringify(newSettings))
+        }
+        return { settings: newSettings }
+      })
+    },
+  }
+
+  // Kick off loading DB-backed settings immediately (non-blocking)
+  ;(async () => {
+    try {
+      await store.loadSettings()
+    } catch (e) {
+      console.error('Error auto-loading settings store:', e)
     }
-  },
-  updateSettings: (updates) => {
-    set((state) => {
-      const newSettings = { ...state.settings, ...updates }
-      if (typeof window !== "undefined") {
-        localStorage.setItem("site-settings", JSON.stringify(newSettings))
-      }
-      return { settings: newSettings }
-    })
-  },
-}))
+  })()
+
+  return store
+})

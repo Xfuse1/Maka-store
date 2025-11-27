@@ -10,6 +10,7 @@ import Image from "next/image"
 import { CustomerReviews } from "@/components/customer-reviews"
 import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 import { useDesignStore } from "@/store/design-store"
+import { useSettingsStore } from "@/store/settings-store"
 
 interface Product {
   id: string
@@ -56,11 +57,13 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
   if (!section.is_active) return null
 
   const { colors } = useDesignStore()
+  const { settings, loadSettings } = useSettingsStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    loadSettings()
+  }, [loadSettings])
 
   const getFirstImage = (product: Product) => {
     const sortedImages = [...(product.product_images || [])].sort((a, b) => a.display_order - b.display_order)
@@ -154,9 +157,7 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                 className="text-lg leading-relaxed"
                 style={mounted ? { color: colors.foreground + 'CC' } : undefined}
               >
-                بدأت رحلة مكة من حلم بسيط: توفير أزياء نسائية راقية تجمع بين الأناقة العصرية والاحتشام الأصيل. نؤمن بأن كل امرأة تستحق أن تشعر بالثقة والجمال في ملابسها، دون التنازل عن قيمها ومبادئها.
-                <br/><br/>
-                منذ انطلاقتنا، كرسنا جهودنا لتقديم تصاميم فريدة تعكس الذوق الرفيع والجودة العالية. نختار أقمشتنا بعناية فائقة، ونهتم بأدق التفاصيل في كل قطعة نقدمها لكِ.
+                {settings.siteDescription || `بدأت رحلة ${settings.siteName} من حلم بسيط: توفير أزياء نسائية راقية تجمع بين الأناقة العصرية والاحتشام الأصيل.`}
               </p>
             </div>
           </div>

@@ -11,10 +11,24 @@ export function SiteLogo({ width = 80, height = 80, className = "" }: { width?: 
   const { logoUrl } = useDesignStore()
   const [currentLogo, setCurrentLogo] = useState<string>(logoUrl || DEFAULT_LOGO)
   const [imageError, setImageError] = useState(false)
+  const [storeName, setStoreName] = useState<string>("مكة")
 
   useEffect(() => {
     // Load logo from database on mount
     loadLogo()
+    // Load store name for alt text
+    const loadStoreName = async () => {
+      try {
+        const res = await fetch("/api/store/name")
+        if (res.ok) {
+          const json = await res.json()
+          if (json && json.store_name) setStoreName(json.store_name)
+        }
+      } catch (e) {
+        console.error("Error loading store name:", e)
+      }
+    }
+    loadStoreName()
   }, [])
 
   useEffect(() => {
@@ -47,7 +61,7 @@ export function SiteLogo({ width = 80, height = 80, className = "" }: { width?: 
   return (
     <Image 
       src={currentLogo} 
-      alt="مكة" 
+      alt={storeName} 
       width={width} 
       height={height} 
       priority

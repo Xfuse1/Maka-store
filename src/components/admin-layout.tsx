@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/auth-store"
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, LogOut, ShoppingBag } from "lucide-react"
 import Link from "next/link"
+import { useSettingsStore } from "@/store/settings-store"
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -18,6 +19,11 @@ interface AdminLayoutProps {
 export function AdminLayout({ children, title, description }: AdminLayoutProps) {
   const router = useRouter()
   const { isAuthenticated, logout } = useAuthStore()
+  const { settings, loadSettings } = useSettingsStore()
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -54,7 +60,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
               <LayoutDashboard className="w-8 h-8 text-primary" />
               <div>
                 <h1 className="text-2xl font-bold">لوحة التحكم</h1>
-                <p className="text-sm text-muted-foreground">متجر مكة للأزياء</p>
+                <p className="text-sm text-muted-foreground">{settings.siteName}</p>
               </div>
             </Link>
             <div className="flex items-center gap-4">

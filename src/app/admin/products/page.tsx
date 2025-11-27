@@ -938,7 +938,7 @@ export default function AdminProductsPage() {
 
             {/* المقاسات وأسعارها */}
             <div>
-              <Label className="block mb-2">المقاسات وأسعارها </Label>
+              <Label className="block mb-2">المقاسات وأسعارها والكميات </Label>
               <div className="space-y-3">
                 {newProduct.sizes.map((s, idx) => (
                   <div key={idx} className="flex flex-col sm:grid sm:grid-cols-4 gap-2 items-start sm:items-center border p-3 rounded-md sm:border-none sm:p-0">

@@ -1,27 +1,13 @@
+import { getStoreSettingsServer } from "@/lib/store-settings"
+import { AdminLayoutShell } from "@/components/admin/admin-layout-shell"
 
-"use client"
-
-import type React from "react"
-import { useState, useEffect } from "react"
-import dynamic from "next/dynamic"
-const AdminSidebar = dynamic(() => import("@/components/admin/admin-sidebar").then((mod) => mod.AdminSidebar), { ssr: false })
-const AdminHeader = dynamic(() => import("@/components/admin/admin-header").then((mod) => mod.AdminHeader), { ssr: false })
-import { useInitializePages } from "@/lib/use-page-content"
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  useInitializePages()
-  const [isSidebarOpen, setSidebarOpen] = useState(false)
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const settings = await getStoreSettingsServer()
+  const storeName = settings?.store_name ?? "مكة"
 
   return (
-    <div className="flex min-h-screen bg-muted/40" dir="rtl">
-      <AdminSidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      <div className="flex flex-col flex-1">
-        <AdminHeader setSidebarOpen={setSidebarOpen} />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
-          {children}
-        </main>
-      </div>
-    </div>
+    <AdminLayoutShell storeName={storeName}>
+      {children}
+    </AdminLayoutShell>
   )
 }
