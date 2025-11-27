@@ -63,11 +63,42 @@ export default function OrdersClient({ initialOrders = [], user }: OrdersClientP
     setSearched(true)
 
     try {
+      const q = email.trim()
+
+      const isEmail = q.includes("@")
+
+      const normalizeEgyptPhone = (input: string) => {
+        const digits = String(input).replace(/\D/g, "")
+        if (!digits) return null
+
+        let d = digits
+        // remove leading international prefixes if present
+        if (d.startsWith("0020")) d = d.slice(4)
+        else if (d.startsWith("20") && d.length > 10) d = d.slice(2)
+
+        // now d should be like 10xxxxxxxx or 1xxxxxxxxx or 01xxxxxxxxx
+        if (d.length === 10 && d.startsWith("1")) return "0" + d
+        if (d.length === 11 && d.startsWith("01")) return d
+
+        return null
+      }
+
+      let identifier = q
+      if (!isEmail) {
+        const normalized = normalizeEgyptPhone(q)
+        if (!normalized) {
+          setError("من فضلك أدخِل بريدًا إلكترونيًا صالحًا أو رقم هاتف مصري صحيح.")
+          setIsLoading(false)
+          return
+        }
+        identifier = normalized
+      }
+
       // This helper returns raw DB rows (snake_case) not OrderSummary (camelCase)
       // We might need to adapt the type or just handle both in the render
-      const data = await getOrdersByEmail(email.trim())
+      const data = await getOrdersByEmail(identifier)
       setOrders(data || [])
-      localStorage.setItem("orderCustomerEmail", email.trim())
+      localStorage.setItem("orderCustomerEmail", identifier)
     } catch (err: any) {
       console.error("Error fetching orders:", err)
       setError("لم يتم العثور على طلبات بهذا البريد أو رقم الهاتف.")

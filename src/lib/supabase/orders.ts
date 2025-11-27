@@ -88,17 +88,18 @@ export async function getOrderById(id: string) {
 }
 
 export async function getOrdersByEmail(identifier: string) {
-  const supabase = getSupabaseBrowserClient()
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*")
-    .or(`customer_email.eq.${identifier},customer_phone.eq.${identifier}`)
-    .order("created_at", { ascending: false })
-
-  if (error) {
-    throw error
+  try {
+    const res = await fetch(`/api/orders/search?q=${encodeURIComponent(String(identifier))}`)
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      throw new Error(body?.error ?? `HTTP ${res.status}`)
+    }
+    const body = await res.json()
+    return (body.orders || []) as Order[]
+  } catch (err) {
+    console.error('[getOrdersByEmail] error fetching /api/orders/search', err)
+    throw err
   }
-  return data as Order[]
 }
 
 export async function getOrderItems(orderId: string) {
