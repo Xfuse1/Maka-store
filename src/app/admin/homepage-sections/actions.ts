@@ -7,6 +7,7 @@ export interface HomepageSection {
   id: string
   name_ar: string
   name_en: string | null
+  description: string | null
   section_type: string
   display_order: number
   is_active: boolean

@@ -35,9 +35,10 @@ export default function AdminHomepagePage() {
   const { toast } = useToast()
 
   const [formData, setFormData] = useState<SectionForm>({
-    section_type: "best_sellers",
+    section_type: "custom",
     name_ar: "",
     name_en: "",
+    description: "",
     layout_type: "grid",
     background_color: "",
     show_title: true,
@@ -91,9 +92,10 @@ export default function AdminHomepagePage() {
 
   const resetForm = useCallback(() => {
     setFormData({
-      section_type: "best_sellers",
+      section_type: "custom",
       name_ar: "",
       name_en: "",
+      description: "",
       layout_type: "grid",
       background_color: "",
       show_title: true,
@@ -114,6 +116,7 @@ export default function AdminHomepagePage() {
       section_type: section.section_type,
       name_ar: section.name_ar || "",
       name_en: section.name_en || "",
+      description: section.description || "",
       layout_type: section.layout_type || "grid",
       background_color: section.background_color || "",
       show_title: section.show_title,
@@ -188,6 +191,7 @@ export default function AdminHomepagePage() {
 
   const getSectionTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
+      custom: "مخصص",
       best_sellers: "الأكثر مبيعاً",
       new_arrivals: "المنتجات الجديدة",
       featured: "المنتجات المميزة",
@@ -349,13 +353,14 @@ export default function AdminHomepagePage() {
           <form onSubmit={handleSave} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="section_type">نوع القسم *</Label>
+                <Label htmlFor="section_type">نوع القسم</Label>
                 <select
                   id="section_type"
                   value={formData.section_type}
                   onChange={(e) => setFormData((prev) => ({ ...prev, section_type: e.target.value as any }))}
                   className="border-input rounded-md bg-transparent px-3 py-2 text-sm w-full"
                 >
+                  <option value="custom">مخصص (المنتجات المختارة)</option>
                   <option value="best_sellers">الأكثر مبيعاً</option>
                   <option value="new_arrivals">المنتجات الجديدة</option>
                   <option value="featured">المنتجات المميزة</option>
@@ -409,6 +414,16 @@ export default function AdminHomepagePage() {
                   onChange={(e) => setFormData((prev) => ({ ...prev, name_en: e.target.value }))}
                 />
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="description">الوصف</Label>
+              <textarea
+                id="description"
+                value={formData.description || ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

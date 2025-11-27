@@ -149,7 +149,17 @@ export default function AdminCategoriesPage() {
           <Input
             type="file"
             accept="image/*"
-            onChange={e => setNewCategory({ ...newCategory, image: e.target.files?.[0] || null })}
+            onChange={e => {
+              const f = e.target.files?.[0] || null
+              const MAX = 10 * 1024 * 1024 // 10 MB
+              if (f && f.size > MAX) {
+                alert('حجم الملف كبير جداً. الحد الأقصى المسموح به هو 10 ميغابايت.')
+                e.currentTarget.value = ''
+                setNewCategory({ ...newCategory, image: null })
+                return
+              }
+              setNewCategory({ ...newCategory, image: f })
+            }}
           />
         </div>
         <Button type="submit" disabled={saving} className="w-full md:w-auto">
@@ -184,7 +194,17 @@ export default function AdminCategoriesPage() {
                       <Input
                         type="file"
                         accept="image/*"
-                        onChange={e => setEditData({ ...editData, image: e.target.files?.[0] || null })}
+                        onChange={e => {
+                          const f = e.target.files?.[0] || null
+                          const MAX = 10 * 1024 * 1024 // 10 MB
+                          if (f && f.size > MAX) {
+                            alert('حجم الملف كبير جداً. الحد الأقصى المسموح به هو 10 ميغابايت.')
+                            e.currentTarget.value = ''
+                            setEditData({ ...editData, image: null })
+                            return
+                          }
+                          setEditData({ ...editData, image: f })
+                        }}
                       />
                       <div className="flex gap-2">
                         <Button type="button" onClick={() => handleSaveEdit(cat.id)} disabled={saving}>

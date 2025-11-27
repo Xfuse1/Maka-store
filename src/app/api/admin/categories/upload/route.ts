@@ -12,6 +12,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdminClient() as any
 
+    // Enforce a maximum file size to avoid excessive memory usage on the server.
+    // Increased limit to 10 MB to allow larger category images.
+    const MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB
+    if ((file as any).size && (file as any).size > MAX_SIZE_BYTES) {
+      return NextResponse.json({ error: 'حجم الملف كبير جداً. الحد الأقصى المسموح به هو 10 ميغابايت.' }, { status: 400 })
+    }
+
     // Generate unique filename
     const fileExt = file.name.split('.').pop()
     const fileName = `category-${Date.now()}.${fileExt}`

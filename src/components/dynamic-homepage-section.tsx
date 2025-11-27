@@ -42,6 +42,8 @@ interface HomepageSection {
   layout_type: string
   background_color: string
   show_title: boolean
+  description?: string
+  product_ids?: string[]
 }
 
 interface DynamicHomepageSectionProps {
@@ -74,6 +76,11 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
       case "featured":
         return products.filter((p) => p.is_featured).slice(0, section.max_items)
       default:
+        if (section.product_ids && section.product_ids.length > 0) {
+          return products
+            .filter((p) => section.product_ids?.includes(p.id))
+            .slice(0, section.max_items)
+        }
         return products.slice(0, section.max_items)
     }
   }
@@ -256,6 +263,14 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
                 {section.name_ar}
               </h3>
             </div>
+            {section.section_type === "custom" && section.description && (
+              <p 
+                className="homepage-section-description text-center text-lg mb-16 transition-colors duration-300" 
+                style={mounted ? { color: colors.foreground + 'CC' } : undefined}
+              >
+                {section.description}
+              </p>
+            )}
               {section.section_type === "best_sellers" && (
               <p 
                 className="text-center text-lg mb-16 transition-colors duration-300" 

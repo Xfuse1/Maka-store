@@ -50,6 +50,8 @@ interface HomepageSection {
   layout_type: string
   background_color: string
   show_title: boolean
+  description?: string
+  product_ids?: string[]
 }
 
 // Fallback mock data
