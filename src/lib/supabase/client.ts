@@ -26,6 +26,6 @@ export function getSupabaseBrowserClient(): SupabaseClient<Database> {
 }
 
 // Keep the original createClient for backward compatibility
-export function createClient() {
+export function createClient(): SupabaseClient<Database> {
   return getSupabaseBrowserClient()
 }

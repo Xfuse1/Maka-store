@@ -212,13 +212,11 @@ export async function POST(req: NextRequest) {
             if (serverDiscount > 0) {
               console.log("[Orders API] applying payment offer", offer.id, "discount", serverDiscount)
               discount = serverDiscount
-              // attach offer id to notes if orders table doesn't have a dedicated column
-              // we'll prepend a short tag so admin can see it in order notes
-              try {
-                const tag = `offer:${offer.id}`
-                if (!body.notes) body.notes = tag
-                else body.notes = `${tag} | ${body.notes}`
-              } catch (e) {}
+              // Intentionally do NOT modify `body.notes` here. The notes field
+              // must contain only the user's text. If you need to record the
+              // applied offer, store it in a dedicated column (e.g. `applied_offer`)
+              // or a separate audit/log table. Removing the previous behavior
+              // that prefixed `offer:<id>` into the user notes.
             }
           }
         }
@@ -353,7 +351,7 @@ export async function POST(req: NextRequest) {
         shipping_postal_code: ship_postal,
         shipping_country: ship_country,
 
-        notes: body.notes ?? null,
+        notes: body.notes ? String(body.notes).trim() : null,
       })
       .select()
       .single()

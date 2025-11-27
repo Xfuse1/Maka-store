@@ -769,6 +769,7 @@ export default function AdminOrdersPage() {
                   <p className="text-sm text-muted-foreground mb-1">حالة الطلب</p>
                   <p className="font-bold text-foreground">{getStatusLabel(selectedOrder.status)}</p>
                 </div>
+                
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">تاريخ الطلب</p>
                   <p className="font-bold text-foreground">{selectedOrder.created_at}</p><br></br>

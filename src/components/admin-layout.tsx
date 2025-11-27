@@ -26,6 +26,11 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
   }, [isAuthenticated, router])
 
   const handleLogout = () => {
+    // Best-effort clear client data before redirect
+    try {
+      // fire-and-forget
+      import("@/lib/client/clearClientData").then((m) => m.clearClientData()).catch(() => {})
+    } catch (e) {}
     logout()
     router.push("/")
   }

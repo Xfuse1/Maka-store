@@ -24,6 +24,15 @@ export const useAuthStore = create<AuthStore>()(
 
       logout: () => {
         set({ isAuthenticated: false })
+        // Remove persisted store entry and clear client caches (best-effort)
+        try {
+          if (typeof window !== 'undefined') {
+            try { localStorage.removeItem('mecca-auth-storage') } catch (e) {}
+            import('@/lib/client/clearClientData').then((m) => m.clearClientData()).catch(() => {})
+          }
+        } catch (e) {
+          // ignore
+        }
       },
     }),
     {

@@ -265,6 +265,8 @@ export default function CheckoutPage() {
           country: "EG",
         },
         notes: formData.notes.trim(),
+        // send active offer id as a separate field (do NOT tuck it into notes)
+        offerId: activeOffer?.id ?? null,
       }
 
       console.log("[Checkout] Creating order with payload:", orderPayload)

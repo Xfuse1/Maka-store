@@ -150,14 +150,14 @@ export default function AdminProductsPage() {
   const onImagesChange = (files: FileList | null) => {
     if (!files) return
     const arr = Array.from(files)
-    const maxAllowed = 4
+    const maxAllowed = 10
     setNewProduct((p) => {
       const remaining = Math.max(0, maxAllowed - p.images.length)
-      if (remaining === 0) {
+        if (remaining === 0) {
         // notify user via toast if available
         try {
           // toast is available in outer scope
-          toast({ title: "مسموح 4 صور فقط", description: "لا يمكنك إضافة أكثر من 4 صور للمنتج.", variant: "destructive" })
+          toast({ title: "مسموح 10 صور فقط", description: "لا يمكنك إضافة أكثر من 10 صور للمنتج.", variant: "destructive" })
         } catch (e) {
           /* ignore if toast unavailable */
         }
@@ -167,7 +167,7 @@ export default function AdminProductsPage() {
       const toAdd = arr.slice(0, remaining)
       if (toAdd.length < arr.length) {
         try {
-          toast({ title: "تم اقتصار الصور", description: `تم قبول ${toAdd.length} صورة إضافية فقط (الحد الأقصى 4).` })
+          toast({ title: "تم اقتصار الصور", description: `تم قبول ${toAdd.length} صورة إضافية فقط (الحد الأقصى 10).` })
         } catch (e) {
           /* ignore */
         }
@@ -411,13 +411,13 @@ export default function AdminProductsPage() {
       setSaving(true)
 
       const arr = Array.from(files)
-      const maxAllowed = 4
+      const maxAllowed = 10
       const existing = editingProduct.product_images?.length || 0
       const remaining = Math.max(0, maxAllowed - existing)
 
       if (remaining === 0) {
         try {
-          toast({ title: "مسموح 4 صور فقط", description: "لا يمكنك إضافة المزيد من الصور.", variant: "destructive" })
+          toast({ title: "مسموح 10 صور فقط", description: "لا يمكنك إضافة المزيد من الصور.", variant: "destructive" })
         } catch (e) {
           /* ignore */
         }
@@ -442,7 +442,7 @@ export default function AdminProductsPage() {
 
       if (toUpload.length < arr.length) {
         try {
-          toast({ title: "تم الاقتصار على 4 صور", description: `تم قبول ${toUpload.length} صورة فقط (الحد الأقصى 4).` })
+          toast({ title: "تم الاقتصار على 10 صور", description: `تم قبول ${toUpload.length} صورة فقط (الحد الأقصى 10).` })
         } catch (e) {
           /* ignore */
         }
@@ -1195,16 +1195,16 @@ export default function AdminProductsPage() {
                       accept="image/*"
                       multiple
                       onChange={(e) => handleAddProductImages(e.target.files)}
-                      disabled={saving || editingProduct.product_images.length >= 4}
+                      disabled={saving || editingProduct.product_images.length >= 10}
                       className="flex-1 w-full"
                     />
-                    <Button type="button" disabled={saving || editingProduct.product_images.length >= 4} variant="outline" className="w-full sm:w-auto">
+                    <Button type="button" disabled={saving || editingProduct.product_images.length >= 10} variant="outline" className="w-full sm:w-auto">
                       <Upload className="h-4 w-4 ml-2" />
                       رفع
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    يمكنك رفع حتى 4 صور فقط. الصورة الأولى ستكون الصورة الرئيسية.
+                    يمكنك رفع حتى 10 صور فقط. الصورة الأولى ستكون الصورة الرئيسية.
                   </p>
                 </div>
 

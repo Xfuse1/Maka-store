@@ -29,8 +29,14 @@ export default function ProfileDropdown({ user, profile }: Props) {
   const signOut = async () => {
     const supabase = getSupabaseBrowserClient()
     await supabase.auth.signOut()
+    // Clear client caches/storage before redirecting
+    try {
+      const { clearClientData } = await import("@/lib/client/clearClientData")
+      await clearClientData()
+    } catch (e) {
+      // ignore
+    }
     // Force a hard reload / cache-bust after logout
-    // Use replace to avoid keeping the post-logout URL in history
     const target = `/auth?_cb=${Date.now()}`
     if (typeof window !== "undefined") {
       window.location.replace(target)

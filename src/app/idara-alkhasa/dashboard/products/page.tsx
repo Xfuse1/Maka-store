@@ -201,8 +201,8 @@ export default function ProductsManagementPage() {
         uploadedUrls.push(publicUrl)
 
         // حفظ رابط الصورة في جدول product_images
-        const { error: imageError } = await supabase
-          .from('product_images')
+        const { error: imageError } = await (supabase
+          .from('product_images') as any)
           .insert({
             product_id: productId,
             image_url: publicUrl,
@@ -249,8 +249,8 @@ export default function ProductsManagementPage() {
 
       // Create product
       const slug = generateSlug(formData.name_ar)
-      const { data: product, error: productError } = await supabase
-        .from("products")
+      const { data: product, error: productError } = await (supabase
+        .from("products") as any)
         .insert({
           name_ar: formData.name_ar,
           name_en: formData.name_en || formData.name_ar,
@@ -274,7 +274,7 @@ export default function ProductsManagementPage() {
       }
 
       // Create default variant
-      const { error: variantError } = await supabase.from("product_variants").insert({
+      const { error: variantError } = await (supabase.from("product_variants") as any).insert({
         product_id: product.id,
         name_ar: formData.variant_name_ar || "افتراضي",
         name_en: formData.variant_name_en || "Default",
@@ -327,8 +327,8 @@ export default function ProductsManagementPage() {
       const supabase = createClient()
 
       const slug = generateSlug(formData.name_ar)
-      const { error } = await supabase
-        .from("products")
+      const { error } = await (supabase
+        .from("products") as any)
         .update({
           name_ar: formData.name_ar,
           name_en: formData.name_en || formData.name_ar,

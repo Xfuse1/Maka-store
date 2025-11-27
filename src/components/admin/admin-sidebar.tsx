@@ -93,7 +93,13 @@ function SidebarContent({ onLinkClick, onClose }: { onLinkClick?: () => void; on
     try {
       const supabase = getSupabaseBrowserClient()
       await supabase.auth.signOut()
-      
+      // Try to clear client caches/storage (best-effort)
+      try {
+        const { clearClientData } = await import("@/lib/client/clearClientData")
+        await clearClientData()
+      } catch (e) {
+        // ignore
+      }
       toast({
         title: "تم تسجيل الخروج",
         description: "تم تسجيل خروجك بنجاح",
