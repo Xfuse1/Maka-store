@@ -203,7 +203,7 @@ export async function deleteProduct(id: string) {
 
 // Create product variant
 export async function createProductVariant(variantData: CreateVariantData) {
-  console.log("[v0] Creating variant with data:", variantData)
+  console.log("[v0] Creating variant with data:")
   
   try {
     const response = await fetch("/api/admin/products/variants", {
