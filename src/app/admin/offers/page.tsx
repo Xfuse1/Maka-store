@@ -45,6 +45,13 @@ export default function AdminOffersPage() {
 
   const save = async () => {
     try {
+      // validate discount is at least 1
+      const dv = Number(form.discount_value || 0)
+      if (dv < 1) {
+        toast({ title: 'قيمة غير صالحة', description: 'يجب أن تكون نسبة الخصم 1% أو أكثر.', variant: 'destructive' })
+        return
+      }
+
       const payload = { ...form }
       let res
       if (editing) {
@@ -104,7 +111,7 @@ export default function AdminOffersPage() {
                 {offers.map((o) => (
                   <tr key={o.id} className="border-b">
                     <td className="p-3">{o.payment_method}</td>
-                    <td className="p-3">{Number(o.discount_value).toFixed(2)}%</td>
+                    <td className="p-3">{Number(o.discount_value) > 0 ? `${Number(o.discount_value).toFixed(2)}%` : '-'}</td>
                     <td className="p-3">{o.is_active ? 'نعم' : 'لا'}</td>
                     <td className="p-3">
                       <div className="flex gap-2">
@@ -139,7 +146,12 @@ export default function AdminOffersPage() {
 
             <div>
               <Label>نسبة الخصم (%)</Label>
-              <Input type="number" value={form.discount_value} onChange={(e) => setForm((s) => ({ ...s, discount_value: Number(e.target.value || 0) }))} />
+              <Input
+                type="number"
+                min={1}
+                value={form.discount_value === 0 ? "" : String(form.discount_value)}
+                onChange={(e) => setForm((s) => ({ ...s, discount_value: Number(e.target.value || 0) }))}
+              />
             </div>
 
             <div className="flex items-center justify-between">

@@ -256,6 +256,24 @@ export default function AdminProductsPage() {
       return
     }
 
+    // Validation: base_price must be >= 1
+    if (Number(newProduct.base_price || 0) < 1) {
+      toast({ title: "قيمة غير صالحة", description: "يجب أن يكون السعر الأساسي 1 ج.م أو أكثر.", variant: "destructive" })
+      return
+    }
+
+    // Validation: sizes price/stock must be >= 0
+    for (const sz of newProduct.sizes) {
+      if (Number(sz.price || 0) < 0) {
+        toast({ title: "قيمة غير صالحة", description: `سعر المقاس '${sz.name}' لا يمكن أن يكون سالباً.`, variant: "destructive" })
+        return
+      }
+      if (Number(sz.stock || 0) < 0) {
+        toast({ title: "قيمة غير صالحة", description: `الكمية للمقاس '${sz.name}' لا يمكن أن تكون سالبة.`, variant: "destructive" })
+        return
+      }
+    }
+
     try {
       setSaving(true)
 
@@ -361,6 +379,24 @@ export default function AdminProductsPage() {
   const handleSaveEditProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingProduct) return
+
+    // Validation: base_price must be >= 1
+    if (Number(editingProduct.base_price || 0) < 1) {
+      toast({ title: "قيمة غير صالحة", description: "يجب أن يكون السعر الأساسي 1 ج.م أو أكثر.", variant: "destructive" })
+      return
+    }
+
+    // Validation: product variants price/quantity must be >= 0
+    for (const v of editingProduct.product_variants || []) {
+      if (Number(v.price || 0) < 0) {
+        toast({ title: "قيمة غير صالحة", description: `سعر المتغير '${v.name_ar || v.name_en || v.id}' لا يمكن أن يكون سالباً.`, variant: "destructive" })
+        return
+      }
+      if (Number(v.inventory_quantity || 0) < 0) {
+        toast({ title: "قيمة غير صالحة", description: `كمية المتغير '${v.name_ar || v.name_en || v.id}' لا يمكن أن تكون سالبة.`, variant: "destructive" })
+        return
+      }
+    }
 
     try {
       setSaving(true)
@@ -528,6 +564,18 @@ export default function AdminProductsPage() {
   const handleUpdateVariant = async (variantId: string, updates: any) => {
     if (!editingProduct) return
 
+    // validate updates do not contain negative numbers for price or inventory
+    if (updates && typeof updates === 'object') {
+      if (typeof updates.price !== 'undefined' && Number(updates.price) < 0) {
+        toast({ title: 'قيمة غير صالحة', description: 'السعر لا يمكن أن يكون سالباً.', variant: 'destructive' })
+        return
+      }
+      if (typeof updates.inventory_quantity !== 'undefined' && Number(updates.inventory_quantity) < 0) {
+        toast({ title: 'قيمة غير صالحة', description: 'الكمية لا يمكن أن تكون سالبة.', variant: 'destructive' })
+        return
+      }
+    }
+
     try {
       await updateProductVariant(variantId, updates)
 
@@ -675,7 +723,7 @@ export default function AdminProductsPage() {
                       </div>
                     </div>
                     <div className="text-right sm:text-left">
-                      <p className="text-2xl font-bold text-primary">{product.base_price} ج.م</p>
+                      <p className="text-2xl font-bold text-primary">{product.base_price > 0 ? `${product.base_price} ج.م` : '-'}</p>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">
@@ -812,7 +860,8 @@ export default function AdminProductsPage() {
                 <Input
                   id="price"
                   type="number"
-                  value={newProduct.base_price}
+                  value={newProduct.base_price === 0 ? "" : String(newProduct.base_price)}
+                  min={1}
                   onChange={(e) => setNewProduct({ ...newProduct, base_price: Number(e.target.value) })}
                   placeholder="450"
                   required
@@ -983,7 +1032,8 @@ export default function AdminProductsPage() {
                       <Input
                         type="number"
                         placeholder="السعر"
-                        value={s.price}
+                        min={0}
+                        value={s.price === 0 ? "" : String(s.price)}
                         onChange={(e) => updateSize(idx, "price", e.target.value)}
                       />
                     </div>
@@ -992,7 +1042,8 @@ export default function AdminProductsPage() {
                       <Input
                         type="number"
                         placeholder="0"
-                        value={s.stock}
+                        min={0}
+                        value={s.stock === 0 ? "" : String(s.stock)}
                         onChange={(e) => updateSize(idx, "stock", e.target.value)}
                       />
                     </div>
@@ -1101,7 +1152,8 @@ export default function AdminProductsPage() {
                       <Input
                         id="edit-price"
                         type="number"
-                        value={editingProduct.base_price}
+                        value={editingProduct.base_price === 0 ? "" : String(editingProduct.base_price)}
+                        min={1}
                         onChange={(e) => setEditingProduct({ ...editingProduct, base_price: Number(e.target.value) })}
                         required
                       />
@@ -1298,7 +1350,8 @@ export default function AdminProductsPage() {
                             {/* Price */}
                             <Input 
                               type="number" 
-                              value={variant.price} 
+                              min={0}
+                              value={variant.price === 0 ? "" : String(variant.price)} 
                               onChange={(e) => handleUpdateVariant(variant.id, { price: Number(e.target.value) })} 
                               placeholder="السعر"
                             />
@@ -1306,7 +1359,8 @@ export default function AdminProductsPage() {
                             {/* Quantity */}
                             <Input 
                               type="number" 
-                              value={variant.inventory_quantity} 
+                              min={0}
+                              value={variant.inventory_quantity === 0 ? "" : String(variant.inventory_quantity)} 
                               onChange={(e) => handleUpdateVariant(variant.id, { inventory_quantity: Number(e.target.value) })}
                               placeholder="الكمية"
                             />
@@ -1379,7 +1433,7 @@ export default function AdminProductsPage() {
                       </div>
                     </div>
                     <div className="text-right sm:text-left">
-                      <p className="text-2xl font-bold text-primary">{product.base_price} ج.م</p>
+                      <p className="text-2xl font-bold text-primary">{product.base_price > 0 ? `${product.base_price} ج.م` : '-'}</p>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">

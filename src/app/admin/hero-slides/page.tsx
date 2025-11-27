@@ -161,6 +161,13 @@ export default function AdminHeroSlidesPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // validate display_order >= 1
+    const dv = Number(formData.display_order || 0)
+    if (dv < 1) {
+      toast({ title: 'قيمة غير صالحة', description: 'يجب أن يكون ترتيب الشريحة 1 أو أكثر.', variant: 'destructive' })
+      return
+    }
+
     try {
       setSaving(true)
 
@@ -286,7 +293,7 @@ export default function AdminHeroSlidesPage() {
                       </div>
                       {slide.title_en && <p className="text-sm text-muted-foreground mb-2">{slide.title_en}</p>}
                     </div>
-                    <div className="text-sm text-muted-foreground">ترتيب: {slide.display_order}</div>
+                      <div className="text-sm text-muted-foreground">ترتيب: {Number(slide.display_order) > 0 ? slide.display_order : '-'}</div>
                   </div>
                   <div className="text-sm text-muted-foreground mb-4">
                     {slide.subtitle_ar}
@@ -561,8 +568,9 @@ export default function AdminHeroSlidesPage() {
                 <Input
                   id="display_order"
                   type="number"
-                  value={formData.display_order}
-                  onChange={(e) => setFormData({ ...formData, display_order: Number(e.target.value) })}
+                  min={1}
+                  value={formData.display_order === 0 ? "" : String(formData.display_order)}
+                  onChange={(e) => setFormData({ ...formData, display_order: Number(e.target.value || 0) })}
                 />
               </div>
               <div className="flex items-center space-x-2 space-x-reverse pt-6">
