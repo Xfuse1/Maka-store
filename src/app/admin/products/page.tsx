@@ -471,13 +471,43 @@ export default function AdminProductsPage() {
   const handleDeleteProductImage = async (imageId: string) => {
     if (!editingProduct || !confirm("هل أنت متأكد من حذف هذه الصورة؟")) return
 
+    const image = editingProduct.product_images.find((img) => img.id === imageId)
+    if (!image) return
+
+    // Optimistic UI: remove image locally immediately
+    const prevProductImages = editingProduct.product_images
+    const newImages = prevProductImages.filter((img) => img.id !== imageId)
+    setEditingProduct({ ...editingProduct, product_images: newImages })
+    setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, product_images: newImages } : p)))
+
     try {
+      setSaving(true)
+
+      // First delete from storage via server API
+      try {
+        const res = await fetch("/api/admin/storage/delete", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrl: image.image_url }),
+        })
+
+        if (!res.ok) {
+          const body = await res.text().catch(() => null)
+          throw new Error(body || "Failed to delete image from storage")
+        }
+      } catch (storageErr) {
+        // If storage deletion fails, revert optimistic update and throw
+        setEditingProduct((p) => (p ? { ...p, product_images: prevProductImages } : p))
+        setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, product_images: prevProductImages } : p)))
+        throw storageErr
+      }
+
+      // Then delete DB record
       await deleteProductImage(imageId)
-      toast({
-        title: "تم الحذف",
-        description: "تم حذف الصورة بنجاح",
-      })
-      // Refresh current page (cache-busted) and update editing product
+
+      toast({ title: "تم الحذف", description: "تم حذف الصورة بنجاح" })
+
+      // Refresh product list counts/totals (non-blocking)
       try {
         const productsResultReload = await getAllProducts(page, perPage, true)
         setProducts(productsResultReload.data)
@@ -489,11 +519,9 @@ export default function AdminProductsPage() {
       }
     } catch (error) {
       console.error("[v0] Error deleting image:", error)
-      toast({
-        title: "خطأ",
-        description: "فشل حذف الصورة",
-        variant: "destructive",
-      })
+      toast({ title: "خطأ", description: "فشل حذف الصورة", variant: "destructive" })
+    } finally {
+      setSaving(false)
     }
   }
 
