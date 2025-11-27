@@ -118,10 +118,9 @@ export function AccountClient({ user, profile, orders }: AccountClientProps) {
 
   return (
     <Tabs defaultValue="profile" className="w-full">
-      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
+      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-1 gap-2 mb-6">
         <TabsTrigger value="profile" className="w-full">الملف الشخصي</TabsTrigger>
-        <TabsTrigger value="orders" className="w-full">طلباتي</TabsTrigger>
-        <TabsTrigger value="settings" className="w-full">الإعدادات</TabsTrigger>
+     
       </TabsList>
 
       <TabsContent value="profile">
@@ -149,108 +148,6 @@ export function AccountClient({ user, profile, orders }: AccountClientProps) {
               <Button type="submit" disabled={isLoading}>{isLoading ? "جاري الحفظ..." : "حفظ التغييرات"}</Button>
             </CardFooter>
           </form>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="orders">
-        <Card>
-          <CardHeader>
-            <CardTitle>سجل الطلبات</CardTitle>
-            <CardDescription>اضغط "طلباتي" للانتقال إلى صفحة الطلبات أو افتح تفاصيل طلب من هنا.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {orders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">لا توجد طلبات حتى الآن.</div>
-            ) : (
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <div key={order.id} className="border rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => handleViewOrder(order.id)}>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold">طلب #{order.id.slice(0, 8)}</span>
-                        <Badge className={`${getStatusColor(order.status)} text-white border-0`}>{getStatusLabel(order.status)}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                    </div>
-                    <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                      <div className="font-bold text-lg">{order.total || order.total_price} ج.م</div>
-                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleViewOrder(order.id); }}>
-                        <Eye className="h-4 w-4 ml-2" />التفاصيل
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
-        <DialogContent className="max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>تفاصيل الطلب</DialogTitle>
-            <DialogDescription>{selectedOrder && `طلب #${selectedOrder.id.slice(0, 8)} بتاريخ ${new Date(selectedOrder.created_at).toLocaleDateString('ar-EG')}`}</DialogDescription>
-          </DialogHeader>
-
-          {isOrderLoading ? (
-            <div className="py-8 text-center">جاري التحميل...</div>
-          ) : selectedOrder ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-1">الحالة</h4>
-                  <Badge className={`${getStatusColor(selectedOrder.status)} text-white border-0`}>{getStatusLabel(selectedOrder.status)}</Badge>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-1">الإجمالي</h4>
-                  <p className="text-lg font-bold text-primary">{selectedOrder.total || selectedOrder.total_price} ج.م</p>
-                </div>
-              </div>
-
-              {selectedOrder.shipping_address && (
-                <div>
-                  <h4 className="font-semibold mb-2">عنوان الشحن</h4>
-                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">{selectedOrder.shipping_address}</p>
-                </div>
-              )}
-
-              <div>
-                <h4 className="font-semibold mb-2">المنتجات</h4>
-                <div className="space-y-3">
-                  {Array.isArray(selectedOrder.items) && selectedOrder.items.map((item: any, idx: number) => (
-                    <div key={idx} className="flex justify-between items-start border-b pb-3 last:border-0">
-                      <div>
-                        <p className="font-medium">{item.name || item.title || item.product_name || "منتج"}</p>
-                        <p className="text-sm text-muted-foreground">{item.quantity} × {item.price || item.unit_price} ج.م</p>
-                        {(item.size || item.color) && (
-                          <p className="text-xs text-muted-foreground mt-1">{item.size && `المقاس: ${item.size} `}{item.color && `اللون: ${item.color}`}</p>
-                        )}
-                      </div>
-                      <p className="font-semibold">{(item.quantity || 1) * (item.price || item.unit_price || 0)} ج.م</p>
-                    </div>
-                  ))}
-                  {(!selectedOrder.items || selectedOrder.items.length === 0) && (<p className="text-sm text-muted-foreground">لا توجد تفاصيل للمنتجات</p>)}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center text-red-500">حدث خطأ في تحميل التفاصيل</div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <TabsContent value="settings">
-        <Card>
-          <CardHeader>
-            <CardTitle>إعدادات الحساب</CardTitle>
-            <CardDescription>إدارة أمان حسابك وتسجيل الخروج.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col gap-4">
-              <Button variant="destructive" onClick={handleLogout} className="w-full sm:w-auto">تسجيل الخروج</Button>
-            </div>
-          </CardContent>
         </Card>
       </TabsContent>
     </Tabs>
