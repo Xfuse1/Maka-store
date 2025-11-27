@@ -64,6 +64,7 @@ interface Order {
   address: string
   payment_method: string
   shipping_address: string
+  notes?: string | null
 }
 
 const orderStatuses = [
@@ -244,6 +245,22 @@ export default function AdminOrdersPage() {
       const day = String(d.getDate()).padStart(2, '0')
       return `${y}-${m}-${day}`
     } catch { return '' }
+  }
+
+  const formatDate = (dateLike: any) => {
+    try {
+      const d = new Date(dateLike)
+      if (isNaN(d.getTime())) return '-'
+      // localized Arabic short date + time
+      return new Intl.DateTimeFormat('ar-EG', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(d)
+    } catch (e) {
+      try {
+        return new Date(String(dateLike)).toLocaleString('ar-EG')
+      } catch { return '-'}
+    }
   }
 
   const filteredOrders = orders.filter((order) => {
@@ -673,7 +690,7 @@ export default function AdminOrdersPage() {
                       <div className="mt-1 truncate">
                         <p className="text-sm text-muted-foreground truncate">معرّف الطلب: <span className="font-mono">{order.id}</span></p>
                       </div>
-                      <p className="text-sm text-muted-foreground">{order.created_at}</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
                     </div>
                   </div>
                   <div className="text-right sm:text-left mt-0 min-w-[90px] w-full sm:w-auto flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end">
@@ -772,7 +789,7 @@ export default function AdminOrdersPage() {
                 
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">تاريخ الطلب</p>
-                  <p className="font-bold text-foreground">{selectedOrder.created_at}</p><br></br>
+                  <p className="font-bold text-foreground">{formatDate(selectedOrder.created_at)}</p><br></br>
                   <div className="text-sm text-muted-foreground mb-1">
                     <p className="font-bold text-foreground">معرّف الطلب: <span className="font-mono">{selectedOrder.id}</span></p>
                   </div>
@@ -787,6 +804,11 @@ export default function AdminOrdersPage() {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">طريقة الدفع</p>
                 <p className="font-bold text-foreground">{selectedOrder.payment_method}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">ملاحظات إضافية</p>
+                <p className="font-bold text-foreground whitespace-pre-wrap">{selectedOrder.notes ?? '-'}</p>
               </div>
 
               <div className="border-t-2 border-border pt-4">
