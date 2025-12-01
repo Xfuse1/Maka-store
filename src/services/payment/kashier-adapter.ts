@@ -85,12 +85,34 @@ export function buildKashierPaymentUrl(
 export function verifyKashierWebhookSignature(
   rawBody: string,
   signature: string,
-  timestamp: string
+  timestamp: string,
+  options?: { toleranceSeconds?: number }
 ): boolean {
   const config = getKashierConfig();
   const signingKey = config.apiSecret ?? config.apiKey;
   if (!signingKey) {
     console.error("[KashierAdapter] No signing key configured");
+    return false;
+  }
+
+  if (!signature || !timestamp) {
+    console.error("[KashierAdapter] Missing signature headers");
+    return false;
+  }
+
+  const toleranceMs = (options?.toleranceSeconds ?? 300) * 1000;
+  const parsedTimestamp = Number(timestamp);
+  const timestampMs = Number.isFinite(parsedTimestamp)
+    ? (parsedTimestamp > 1e12 ? parsedTimestamp : parsedTimestamp * 1000)
+    : Date.parse(timestamp);
+
+  if (!Number.isFinite(timestampMs)) {
+    console.error("[KashierAdapter] Invalid webhook timestamp");
+    return false;
+  }
+
+  if (Math.abs(Date.now() - timestampMs) > toleranceMs) {
+    console.error("[KashierAdapter] Webhook timestamp outside allowed window");
     return false;
   }
 

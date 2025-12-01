@@ -35,35 +35,7 @@ export default async function OrderSuccessPage({
   if (orderNumber) {
     const supabase = await createClient()
     
-    // إذا كان الدفع نجح من Kashier، حدّث حالة الطلب
-    if (paymentStatus === 'SUCCESS' && transactionId) {
-      console.log('[OrderSuccess] Payment successful, updating order:', orderNumber)
-      
-      // حدّث حالة الطلب
-      await (supabase as any)
-        .from('orders')
-        .update({
-          payment_status: 'paid',
-          status: 'processing',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', orderNumber)
-      
-      // حدّث حالة معاملة الدفع
-      await (supabase as any)
-        .from('payment_transactions')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          gateway_response: {
-            transactionId: String(transactionId),
-            amount: String(amount),
-            paymentStatus: String(paymentStatus),
-          },
-          updated_at: new Date().toISOString(),
-        })
-        .eq('order_id', orderNumber)
-    }
+    // Payment state is updated only via secure webhooks; client callbacks are read-only.
     
     // Fetch order details
     const { data: orderData } = await supabase

@@ -9,6 +9,7 @@ import {
   KashierPaymentResult,
   KashierWebhookPayload 
 } from "./kashier-adapter"
+import { auditLogger } from "./audit-logger"
 import { encryptPaymentData, generateSignature, generateSecureToken } from "./encryption"
 
 export interface KashierWebhookResult {
@@ -95,123 +96,264 @@ export class PaymentService {
     payload: KashierWebhookPayload,
     rawBody: string,
     signature: string,
-    timestamp: string
+    timestamp: string,
+    context?: { ipAddress?: string; userAgent?: string }
   ): Promise<KashierWebhookResult> {
-    // 1. Verify signature
+    const supabase = this.supabase as any
+
+    if (!signature || !timestamp) {
+      console.error("[PaymentService] Missing webhook signature headers")
+      await auditLogger.logSecurityEvent({
+        eventType: "kashier_webhook_missing_signature",
+        description: "Webhook missing signature or timestamp header",
+        actor: "kashier_webhook",
+        ipAddress: context?.ipAddress,
+        details: { hasSignature: Boolean(signature), hasTimestamp: Boolean(timestamp) },
+      })
+      return { ok: false, statusCode: 400, message: "Missing signature headers" }
+    }
+
+    // 1. Verify signature (with timestamp tolerance)
     const isValid = verifyKashierWebhookSignature(rawBody, signature, timestamp)
-    
     if (!isValid) {
       console.error("[PaymentService] Invalid webhook signature")
+      await auditLogger.logSecurityEvent({
+        eventType: "kashier_webhook_invalid_signature",
+        description: "Rejected Kashier webhook due to invalid signature",
+        actor: "kashier_webhook",
+        ipAddress: context?.ipAddress,
+        details: { signature, timestamp },
+      })
       return { ok: false, statusCode: 401, message: "Invalid signature" }
     }
 
+    // Best-effort webhook logging for traceability
     try {
-      // 2. Log webhook
-      const supabase = this.supabase as any
-
       await supabase.from("payment_webhooks").insert({
         source: "cashier",
-        event_type: payload.event_type,
+        event_type: payload?.event_type,
         payload: payload as any,
         signature,
         signature_verified: true,
         status: "processing",
       } as any)
+    } catch (e) {
+      console.warn("[PaymentService] Failed to log webhook row", e)
+    }
 
-      // 3. Process event
-      const { transaction_id, order_id, status: paymentStatus } = payload.data
+    const transactionId = payload?.data?.transaction_id
+    const orderId = payload?.data?.order_id
+    const payloadAmount = Number(payload?.data?.amount ?? NaN)
+    const payloadCurrency = String(payload?.data?.currency || "").toUpperCase()
 
-      switch (payload.event_type) {
+    if (!orderId) {
+      await auditLogger.logSecurityEvent({
+        eventType: "kashier_webhook_missing_order",
+        description: "Webhook payload missing order_id",
+        actor: "kashier_webhook",
+        ipAddress: context?.ipAddress,
+        details: { transactionId },
+      })
+      return { ok: false, statusCode: 400, message: "Missing order_id" }
+    }
+
+    try {
+      // Validate order and transaction details
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .select("id, order_number, total, currency, payment_status, payment_method")
+        .eq("id", orderId)
+        .single()
+
+      if (orderError || !order) {
+        await auditLogger.logSecurityEvent({
+          eventType: "kashier_webhook_order_not_found",
+          description: "Received webhook for unknown order",
+          actor: "kashier_webhook",
+          ipAddress: context?.ipAddress,
+          details: { orderId, transactionId },
+        })
+        return { ok: false, statusCode: 404, message: "Order not found" }
+      }
+
+      const normalizedMethod = String(order.payment_method || "").toLowerCase()
+      if (normalizedMethod && !["cashier", "kashier"].includes(normalizedMethod)) {
+        await auditLogger.logSecurityEvent({
+          eventType: "kashier_webhook_payment_method_mismatch",
+          description: "Webhook payment method does not match order",
+          actor: "kashier_webhook",
+          ipAddress: context?.ipAddress,
+          details: { orderId, paymentMethod: order.payment_method },
+        })
+        return { ok: false, statusCode: 400, message: "Payment method mismatch" }
+      }
+
+      const expectedAmount = Number(order.total ?? 0)
+      const amountMatches = Number.isFinite(payloadAmount) && Math.abs(payloadAmount - expectedAmount) < 0.01
+      const expectedCurrency = (order.currency || "EGP").toUpperCase()
+      const currencyMatches = (payloadCurrency || expectedCurrency) === expectedCurrency
+
+      if (!amountMatches || !currencyMatches) {
+        await auditLogger.logSecurityEvent({
+          eventType: "kashier_webhook_amount_mismatch",
+          description: "Webhook amount or currency did not match order",
+          actor: "kashier_webhook",
+          ipAddress: context?.ipAddress,
+          details: {
+            orderId,
+            payloadAmount,
+            expectedAmount,
+            payloadCurrency: payloadCurrency || null,
+            expectedCurrency,
+          },
+        })
+        return { ok: false, statusCode: 400, message: "Payment details mismatch" }
+      }
+
+      const { data: txRows, error: txError } = await supabase
+        .from("payment_transactions")
+        .select("*")
+        .eq("order_id", orderId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+
+      if (txError) {
+        console.error("[PaymentService] Failed to read payment transaction:", txError)
+      }
+
+      const transaction = txRows?.[0]
+      if (!transaction) {
+        await auditLogger.logSecurityEvent({
+          eventType: "kashier_webhook_transaction_not_found",
+          description: "Webhook referenced order with no payment transaction",
+          actor: "kashier_webhook",
+          ipAddress: context?.ipAddress,
+          details: { orderId, transactionId },
+        })
+        return { ok: false, statusCode: 404, message: "Payment transaction not found" }
+      }
+
+      const eventType = payload.event_type
+      const nowIso = new Date().toISOString()
+
+      switch (eventType) {
         case "payment.completed":
-        case "payment.success":
-          console.log("[PaymentService] Payment completed:")
-          
-          // Update payment transaction status using transaction_id
-          const { error: txError } = await supabase
+        case "payment.success": {
+          console.log("[PaymentService] Payment completed")
+          const alreadyPaid = order.payment_status === "paid"
+
+          const { error: txUpdateError } = await supabase
             .from("payment_transactions")
             .update({
               status: "completed",
-              completed_at: new Date().toISOString(),
+              completed_at: nowIso,
               gateway_response: payload.data,
-              updated_at: new Date().toISOString(),
+              updated_at: nowIso,
             })
-            .eq("transaction_id", transaction_id)
-          
-          if (txError) {
-            console.error("[PaymentService] Failed to update transaction:", txError)
-          } else {
-            console.log("[PaymentService] Transaction status updated to completed")
+            .eq("id", transaction.id)
+
+          if (txUpdateError) {
+            console.error("[PaymentService] Failed to update transaction:", txUpdateError)
+            return { ok: false, statusCode: 500, message: "Failed to update transaction" }
           }
-          
-          // Update order status
-          if (order_id) {
-            const { error: orderError } = await supabase
+
+          if (!alreadyPaid) {
+            const { error: orderUpdateError } = await supabase
               .from("orders")
               .update({
                 payment_status: "paid",
                 status: "processing",
-                updated_at: new Date().toISOString(),
+                updated_at: nowIso,
               })
-              .eq("id", order_id)
-            
-            if (orderError) {
-              console.error("[PaymentService] Failed to update order:", orderError)
-            } else {
-              console.log("[PaymentService] Order status updated to paid")
+              .eq("id", orderId)
+
+            if (orderUpdateError) {
+              console.error("[PaymentService] Failed to update order:", orderUpdateError)
+              return { ok: false, statusCode: 500, message: "Failed to update order" }
             }
           }
-          break
 
-        case "payment.failed":
+          await auditLogger.logPaymentStatusChange({
+            transactionId: transaction.transaction_id || transaction.id,
+            oldStatus: transaction.status || "pending",
+            newStatus: "completed",
+            actor: "kashier_webhook",
+            reason: alreadyPaid ? "idempotent" : undefined,
+          })
+
+          return { ok: true, statusCode: 200, message: alreadyPaid ? "Already processed" : "Payment processed" }
+        }
+
+        case "payment.failed": {
           console.log("[PaymentService] Payment failed")
-          
-          // Update transaction status
-          await supabase
+          const { error: txFailError } = await supabase
             .from("payment_transactions")
             .update({
               status: "failed",
-              failed_at: new Date().toISOString(),
+              failed_at: nowIso,
               gateway_response: payload.data,
-              updated_at: new Date().toISOString(),
+              updated_at: nowIso,
             })
-            .eq("transaction_id", transaction_id)
-          
-          // Update order
-          if (order_id) {
-            await supabase
-              .from("orders")
-              .update({
-                payment_status: "failed",
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", order_id)
-          }
-          break
+            .eq("id", transaction.id)
 
-        case "payment.refunded":
+          if (txFailError) {
+            console.error("[PaymentService] Failed to update transaction failure:", txFailError)
+          }
+
+          const { error: orderFailError } = await supabase
+            .from("orders")
+            .update({
+              payment_status: "failed",
+              updated_at: nowIso,
+            })
+            .eq("id", orderId)
+
+          if (orderFailError) {
+            console.error("[PaymentService] Failed to update order failure:", orderFailError)
+          }
+
+          await auditLogger.logPaymentStatusChange({
+            transactionId: transaction.transaction_id || transaction.id,
+            oldStatus: transaction.status || "pending",
+            newStatus: "failed",
+            actor: "kashier_webhook",
+            reason: payload?.data?.failure_reason,
+          })
+
+          return { ok: true, statusCode: 200, message: "Failure recorded" }
+        }
+
+        case "payment.refunded": {
           console.log("[PaymentService] Payment refunded")
           await supabase.from("payment_refunds").insert({
-            transaction_id,
+            transaction_id: transactionId || transaction.transaction_id,
             refund_amount: payload.data.refund_amount,
             status: "completed",
-            completed_at: new Date().toISOString(),
+            completed_at: nowIso,
           } as any)
           
-          // Update transaction
           await supabase
             .from("payment_transactions")
             .update({
               status: "refunded",
-              updated_at: new Date().toISOString(),
+              updated_at: nowIso,
             })
-            .eq("transaction_id", transaction_id)
-          break
+            .eq("id", transaction.id)
+
+          await auditLogger.logPaymentStatusChange({
+            transactionId: transaction.transaction_id || transaction.id,
+            oldStatus: transaction.status || "pending",
+            newStatus: "refunded",
+            actor: "kashier_webhook",
+          })
+
+          return { ok: true, statusCode: 200, message: "Refund recorded" }
+        }
 
         default:
-          console.log("[PaymentService] Unhandled event type:", payload.event_type)
+          console.log("[PaymentService] Unhandled event type:", eventType)
+          return { ok: true, statusCode: 200, message: "Event ignored" }
       }
-
-      return { ok: true, statusCode: 200, message: "OK" }
 
     } catch (error: any) {
       console.error("[PaymentService] Error processing webhook:", error)
