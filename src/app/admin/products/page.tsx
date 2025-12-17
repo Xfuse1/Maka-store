@@ -60,6 +60,9 @@ export default function AdminProductsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null)
   const [saving, setSaving] = useState(false)
+  const [aiRewriteLoading, setAiRewriteLoading] = useState(false)
+  const [aiTranslateLoading, setAiTranslateLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
   const { toast } = useToast()
 
   const [newProduct, setNewProduct] = useState<NewProductForm>({
@@ -132,6 +135,164 @@ export default function AdminProductsPage() {
       shipping_type: "free",
       shipping_cost: 0,
     })
+
+  // AI Functions for Add Product
+  const handleAiRewrite = async () => {
+    if (!newProduct.description_ar || newProduct.description_ar.trim().length < 10) {
+      setAiError("الوصف العربي قصير جداً (على الأقل 10 أحرف)")
+      return
+    }
+
+    try {
+      setAiRewriteLoading(true)
+      setAiError(null)
+
+      const res = await fetch("/api/ai/rewrite-ar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.NEXT_PUBLIC_ADMIN_API_SECRET ? { "x-admin-secret": process.env.NEXT_PUBLIC_ADMIN_API_SECRET } : {}),
+        },
+        body: JSON.stringify({
+          name_ar: newProduct.name_ar,
+          name_en: newProduct.name_en,
+          description_ar: newProduct.description_ar,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "فشل تحسين الوصف")
+      }
+
+      const data = await res.json()
+      setNewProduct({ ...newProduct, description_ar: data.rewritten })
+      toast({ title: "تم التحسين", description: "تم تحسين الوصف بنجاح" })
+    } catch (error: any) {
+      setAiError(error.message || "حدث خطأ")
+      toast({ title: "خطأ", description: error.message || "حدث خطأ", variant: "destructive" })
+    } finally {
+      setAiRewriteLoading(false)
+    }
+  }
+
+  const handleAiTranslate = async () => {
+    if (!newProduct.description_ar || newProduct.description_ar.trim().length < 10) {
+      setAiError("الوصف العربي قصير جداً (على الأقل 10 أحرف)")
+      return
+    }
+
+    try {
+      setAiTranslateLoading(true)
+      setAiError(null)
+
+      const res = await fetch("/api/ai/translate-to-en", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.NEXT_PUBLIC_ADMIN_API_SECRET ? { "x-admin-secret": process.env.NEXT_PUBLIC_ADMIN_API_SECRET } : {}),
+        },
+        body: JSON.stringify({
+          name_ar: newProduct.name_ar,
+          name_en: newProduct.name_en,
+          description_ar: newProduct.description_ar,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "فشل الترجمة")
+      }
+
+      const data = await res.json()
+      setNewProduct({ ...newProduct, description_en: data.translated })
+      toast({ title: "تمت الترجمة", description: "تمت الترجمة بنجاح" })
+    } catch (error: any) {
+      setAiError(error.message || "حدث خطأ")
+      toast({ title: "خطأ", description: error.message || "حدث خطأ", variant: "destructive" })
+    } finally {
+      setAiTranslateLoading(false)
+    }
+  }
+
+  // AI Functions for Edit Product
+  const handleAiRewriteEdit = async () => {
+    if (!editingProduct || !editingProduct.description_ar || editingProduct.description_ar.trim().length < 10) {
+      setAiError("الوصف العربي قصير جداً (على الأقل 10 أحرف)")
+      return
+    }
+
+    try {
+      setAiRewriteLoading(true)
+      setAiError(null)
+
+      const res = await fetch("/api/ai/rewrite-ar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.NEXT_PUBLIC_ADMIN_API_SECRET ? { "x-admin-secret": process.env.NEXT_PUBLIC_ADMIN_API_SECRET } : {}),
+        },
+        body: JSON.stringify({
+          name_ar: editingProduct.name_ar,
+          name_en: editingProduct.name_en,
+          description_ar: editingProduct.description_ar,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "فشل تحسين الوصف")
+      }
+
+      const data = await res.json()
+      setEditingProduct({ ...editingProduct, description_ar: data.rewritten })
+      toast({ title: "تم التحسين", description: "تم تحسين الوصف بنجاح" })
+    } catch (error: any) {
+      setAiError(error.message || "حدث خطأ")
+      toast({ title: "خطأ", description: error.message || "حدث خطأ", variant: "destructive" })
+    } finally {
+      setAiRewriteLoading(false)
+    }
+  }
+
+  const handleAiTranslateEdit = async () => {
+    if (!editingProduct || !editingProduct.description_ar || editingProduct.description_ar.trim().length < 10) {
+      setAiError("الوصف العربي قصير جداً (على الأقل 10 أحرف)")
+      return
+    }
+
+    try {
+      setAiTranslateLoading(true)
+      setAiError(null)
+
+      const res = await fetch("/api/ai/translate-to-en", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.NEXT_PUBLIC_ADMIN_API_SECRET ? { "x-admin-secret": process.env.NEXT_PUBLIC_ADMIN_API_SECRET } : {}),
+        },
+        body: JSON.stringify({
+          name_ar: editingProduct.name_ar,
+          name_en: editingProduct.name_en,
+          description_ar: editingProduct.description_ar,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "فشل الترجمة")
+      }
+
+      const data = await res.json()
+      setEditingProduct({ ...editingProduct, description_en: data.translated })
+      toast({ title: "تمت الترجمة", description: "تمت الترجمة بنجاح" })
+    } catch (error: any) {
+      setAiError(error.message || "حدث خطأ")
+      toast({ title: "خطأ", description: error.message || "حدث خطأ", variant: "destructive" })
+    } finally {
+      setAiTranslateLoading(false)
+    }
+  }
 
   // Helper to generate a safe, unique SKU for variants to avoid DB duplicate errors
   const makeVariantSKU = (productSku: string, sizeName: string, colorName: string) => {
@@ -931,6 +1092,28 @@ export default function AdminProductsPage() {
                 rows={3}
                 required
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2 gap-2 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 border-purple-300"
+                onClick={handleAiRewrite}
+                disabled={aiRewriteLoading || !newProduct.description_ar || newProduct.description_ar.trim().length < 10}
+              >
+                {aiRewriteLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    جاري التحسين...
+                  </>
+                ) : (
+                  <>
+                    ✨ تحسين الوصف بالذكاء الاصطناعي
+                  </>
+                )}
+              </Button>
+              {aiError && aiRewriteLoading === false && aiTranslateLoading === false && (
+                <p className="text-xs text-red-500 mt-1">{aiError}</p>
+              )}
             </div>
 
             <div>
@@ -942,6 +1125,25 @@ export default function AdminProductsPage() {
                 placeholder="Product description..."
                 rows={2}
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2 gap-2 bg-gradient-to-r from-green-500/10 to-teal-500/10 hover:from-green-500/20 hover:to-teal-500/20 border-green-300"
+                onClick={handleAiTranslate}
+                disabled={aiTranslateLoading || !newProduct.description_ar || newProduct.description_ar.trim().length < 10}
+              >
+                {aiTranslateLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    جاري الترجمة...
+                  </>
+                ) : (
+                  <>
+                    🌐 ترجمة عربي → إنجليزي (احترافي)
+                  </>
+                )}
+              </Button>
             </div>
 
             {/* الصور */}
@@ -1236,6 +1438,28 @@ export default function AdminProductsPage() {
                       onChange={(e) => setEditingProduct({ ...editingProduct, description_ar: e.target.value })}
                       rows={4}
                     />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 gap-2 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 border-purple-300"
+                      onClick={handleAiRewriteEdit}
+                      disabled={aiRewriteLoading || !editingProduct.description_ar || editingProduct.description_ar.trim().length < 10}
+                    >
+                      {aiRewriteLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          جاري التحسين...
+                        </>
+                      ) : (
+                        <>
+                          ✨ تحسين الوصف بالذكاء الاصطناعي
+                        </>
+                      )}
+                    </Button>
+                    {aiError && aiRewriteLoading === false && aiTranslateLoading === false && (
+                      <p className="text-xs text-red-500 mt-1">{aiError}</p>
+                    )}
                   </div>
 
                   <div>
@@ -1246,6 +1470,25 @@ export default function AdminProductsPage() {
                       onChange={(e) => setEditingProduct({ ...editingProduct, description_en: e.target.value })}
                       rows={3}
                     />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 gap-2 bg-gradient-to-r from-green-500/10 to-teal-500/10 hover:from-green-500/20 hover:to-teal-500/20 border-green-300"
+                      onClick={handleAiTranslateEdit}
+                      disabled={aiTranslateLoading || !editingProduct.description_ar || editingProduct.description_ar.trim().length < 10}
+                    >
+                      {aiTranslateLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          جاري الترجمة...
+                        </>
+                      ) : (
+                        <>
+                          🌐 ترجمة عربي → إنجليزي (احترافي)
+                        </>
+                      )}
+                    </Button>
                   </div>
 
                   <div className="flex flex-col-reverse sm:flex-row gap-4 pt-4 border-t">

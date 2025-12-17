@@ -65,6 +65,8 @@ export default function ProductDetailPage() {
   const params = useParams()
   const [product, setProduct] = useState<Product | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
+  const [aiRecommendations, setAiRecommendations] = useState<Product[]>([])
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false)
   const [loading, setLoading] = useState(true)
   const addItem = useCartStore((state) => state.addItem)
 
@@ -168,6 +170,31 @@ export default function ProductDetailPage() {
     fetchReviews()
   }, [product])
 
+  useEffect(() => {
+    async function fetchAIRecommendations() {
+      if (!product) return
+
+      try {
+        setLoadingRecommendations(true)
+        const response = await fetch(`/api/products/${product.id}/recommendations`)
+
+        if (!response.ok) {
+          console.error('Failed to fetch AI recommendations')
+          return
+        }
+
+        const data = await response.json()
+        setAiRecommendations(data.items || [])
+      } catch (err) {
+        console.error('Error fetching AI recommendations:', err)
+      } finally {
+        setLoadingRecommendations(false)
+      }
+    }
+
+    fetchAIRecommendations()
+  }, [product])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -196,6 +223,11 @@ export default function ProductDetailPage() {
   const sortedImages = [...product.product_images].sort((a, b) => a.display_order - b.display_order)
   const uniqueColors = Array.from(new Map(product.product_variants.map((v) => [v.color_hex, v])).values())
   const uniqueSizes = Array.from(new Set(product.product_variants.map((v) => v.size)))
+
+  const getFirstImage = (prod: Product) => {
+    const sorted = [...(prod.product_images || [])].sort((a, b) => a.display_order - b.display_order)
+    return sorted[0]?.image_url || "/placeholder.svg"
+  }
 
   const handleAddToCart = async () => {
     if (!selectedVariant) {
@@ -480,6 +512,60 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* AI Recommendations Section */}
+        {aiRecommendations.length > 0 && (
+          <div className="mt-16">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-2">منتجات مشابهة ✨</h2>
+                <p className="text-muted-foreground">توصيات مدعومة بالذكاء الاصطناعي</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {aiRecommendations.map((recommendedProduct) => (
+                <Link
+                  key={recommendedProduct.id}
+                  href={`/product/${recommendedProduct.id}`}
+                  className="group"
+                >
+                  <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
+                    <CardContent className="p-0">
+                      <div className="relative aspect-[3/4] bg-muted">
+                        <Image
+                          src={getFirstImage(recommendedProduct)}
+                          alt={recommendedProduct.name_ar}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      </div>
+                      <div className="p-4 bg-background">
+                        <h4 className="text-lg font-bold mb-2 text-foreground line-clamp-2">
+                          {recommendedProduct.name_ar}
+                        </h4>
+                        {recommendedProduct.category && (
+                          <Badge variant="secondary" className="mb-2 text-xs">
+                            {recommendedProduct.category[0]?.name_ar || recommendedProduct.category.name_ar}
+                          </Badge>
+                        )}
+                        <p className="text-xl font-bold text-primary">{recommendedProduct.base_price} ج.م</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+
+            {loadingRecommendations && (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                <p className="text-sm text-muted-foreground mt-2">جاري تحميل التوصيات...</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Reviews Section */}
         <div className="mt-16">
