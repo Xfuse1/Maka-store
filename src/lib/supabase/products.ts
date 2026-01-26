@@ -15,6 +15,7 @@ export type ProductWithDetails = {
   free_shipping?: boolean
   shipping_type?: "free" | "paid" | null
   shipping_cost?: number | null
+  video_url: string | null
   created_at: string
   category?: {
     name_ar: string
@@ -54,6 +55,7 @@ export type CreateProductData = {
   inventory_quantity?: number
   shipping_type?: "free" | "paid" | null
   shipping_cost?: number | null
+  video_url?: string | null
 }
 
 export type CreateVariantData = {

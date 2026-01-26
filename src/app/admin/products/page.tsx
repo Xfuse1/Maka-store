@@ -43,6 +43,9 @@ type NewProductForm = {
   colors: ColorEntry[]
   sizes: SizeEntry[]
   images: File[]
+  video: File | null
+  video_url_manual: string
+  video_input_type: "upload" | "url"
   is_featured: boolean
   shipping_type: "free" | "paid"
   shipping_cost: number
@@ -79,6 +82,9 @@ export default function AdminProductsPage() {
       { name: "L", price: 0, stock: 0 },
     ],
     images: [],
+    video: null,
+    video_url_manual: "",
+    video_input_type: "upload",
     is_featured: false,
     shipping_type: "free",
     shipping_cost: 0,
@@ -131,6 +137,9 @@ export default function AdminProductsPage() {
         { name: "L", price: 0, stock: 0 },
       ],
       images: [],
+      video: null,
+      video_url_manual: "",
+      video_input_type: "upload",
       is_featured: false,
       shipping_type: "free",
       shipping_cost: 0,
@@ -314,7 +323,7 @@ export default function AdminProductsPage() {
     const maxAllowed = 10
     setNewProduct((p) => {
       const remaining = Math.max(0, maxAllowed - p.images.length)
-        if (remaining === 0) {
+      if (remaining === 0) {
         // notify user via toast if available
         try {
           // toast is available in outer scope
@@ -898,7 +907,7 @@ export default function AdminProductsPage() {
                       <span className="font-medium">المتغيرات:</span> {product.product_variants.length}
                     </div>
                   </div>
-                  
+
                   {/* ملخص المقاسات */}
                   <div className="mb-4 bg-muted/30 p-2 rounded-md">
                     <div className="text-xs font-semibold mb-1 text-muted-foreground">المقاسات المتاحة:</div>
@@ -1064,7 +1073,7 @@ export default function AdminProductsPage() {
                   </Label>
                   {newProduct.shipping_type === "paid" && (
                     <div className="flex-1">
-                      
+
                     </div>
                   )}
                 </div>
@@ -1144,6 +1153,36 @@ export default function AdminProductsPage() {
                   </>
                 )}
               </Button>
+            </div>
+
+            {/* الفيديو */}
+            <div className="space-y-4 border p-4 rounded-lg bg-muted/20">
+              <Label className="text-base font-semibold">فيديو المنتج</Label>
+              <Tabs
+                value={newProduct.video_input_type}
+                onValueChange={(v) => setNewProduct({ ...newProduct, video_input_type: v as "upload" | "url" })}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload">رفع ملف فيديو</TabsTrigger>
+                  <TabsTrigger value="url">رابط فيديو (YouTube/Direct)</TabsTrigger>
+                </TabsList>
+                <TabsContent value="upload" className="pt-2">
+                  <Input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => setNewProduct({ ...newProduct, video: e.target.files?.[0] || null })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">يظهر الفيديو كأول عنصر في المعرض.</p>
+                </TabsContent>
+                <TabsContent value="url" className="pt-2">
+                  <Input
+                    placeholder="ضع رابط الفيديو هنا (مثلاً: https://youtube.com/...)"
+                    value={newProduct.video_url_manual}
+                    onChange={(e) => setNewProduct({ ...newProduct, video_url_manual: e.target.value })}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
 
             {/* الصور */}
@@ -1249,7 +1288,7 @@ export default function AdminProductsPage() {
                         onChange={(e) => updateSize(idx, "stock", e.target.value)}
                       />
                     </div>
-                    
+
                     <Button type="button" variant="outline" size="icon" onClick={() => removeSize(idx)} className="self-end sm:self-auto mt-2 sm:mt-0">
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -1396,7 +1435,7 @@ export default function AdminProductsPage() {
                         </Label>
                         {editingProduct.shipping_type === "paid" && (
                           <div className="flex-1">
-                             
+
                           </div>
                         )}
                       </div>
@@ -1578,7 +1617,7 @@ export default function AdminProductsPage() {
                       {editingProduct.product_variants.map((variant) => (
                         <div key={variant.id} className="border rounded-lg p-3 mb-3">
                           <div className="flex items-start gap-3 mb-2">
-                            <div 
+                            <div
                               className="w-10 h-10 rounded border-2 flex-shrink-0"
                               style={{ backgroundColor: variant.color_hex || '#000' }}
                             ></div>
@@ -1591,35 +1630,35 @@ export default function AdminProductsPage() {
 
                           <div className="grid grid-cols-3 md:grid-cols-4 gap-3 items-center">
                             {/* Price */}
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
                               min={0}
-                              value={variant.price === 0 ? "" : String(variant.price)} 
-                              onChange={(e) => handleUpdateVariant(variant.id, { price: Number(e.target.value) })} 
+                              value={variant.price === 0 ? "" : String(variant.price)}
+                              onChange={(e) => handleUpdateVariant(variant.id, { price: Number(e.target.value) })}
                               placeholder="السعر"
                             />
 
                             {/* Quantity */}
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
                               min={0}
-                              value={variant.inventory_quantity === 0 ? "" : String(variant.inventory_quantity)} 
+                              value={variant.inventory_quantity === 0 ? "" : String(variant.inventory_quantity)}
                               onChange={(e) => handleUpdateVariant(variant.id, { inventory_quantity: Number(e.target.value) })}
                               placeholder="الكمية"
                             />
 
                             {/* Size */}
-                            <Input 
-                              type="text" 
-                              value={variant.size || ""} 
+                            <Input
+                              type="text"
+                              value={variant.size || ""}
                               onChange={(e) => handleUpdateVariant(variant.id, { size: e.target.value })}
                               placeholder="المقاس"
                             />
 
                             {/* Delete */}
-                            <Button 
-                              variant="ghost" 
-                              className="text-red-500 justify-self-end" 
+                            <Button
+                              variant="ghost"
+                              className="text-red-500 justify-self-end"
                               onClick={() => handleDeleteVariant(variant.id)}
                             >
                               <Trash2 className="w-5 h-5" />

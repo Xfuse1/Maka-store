@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
         *,
         category:categories(name_ar, name_en),
         product_images(id, image_url, alt_text_ar, display_order, is_primary),
-        product_variants(id, name_ar, name_en, size, color, color_hex, price, inventory_quantity, sku)
+        product_variants(id, name_ar, name_en, size, color, color_hex, price, inventory_quantity, sku),
+        video_url
       `,
         { count: "exact" }
       )
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
           inventory_quantity: body.inventory_quantity,
           shipping_type: body.shipping_type,
           shipping_cost: body.shipping_cost,
+          video_url: body.video_url,
         },
       ])
       .select()

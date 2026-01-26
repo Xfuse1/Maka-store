@@ -83,6 +83,16 @@ export async function middleware(request: NextRequest) {
 
   // حماية API الخاصة بالـ admin — تمنع الوصول للعامة وتعيد 401/403
   if (pathname.startsWith("/api/admin")) {
+    // Exception: Allow GET requests for design settings (publicly needed for site colors/fonts)
+    if (pathname === "/api/admin/design/settings" && request.method === "GET") {
+      return NextResponse.next()
+    }
+
+    // Exception: Allow POST requests for admin creation (initial setup)
+    if (pathname === "/api/admin/users/create-admin" && request.method === "POST") {
+      return NextResponse.next()
+    }
+
     try {
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,

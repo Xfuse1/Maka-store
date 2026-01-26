@@ -48,7 +48,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       "sku",
       "inventory_quantity",
       "shipping_type",
-      "shipping_cost"
+      "shipping_cost",
+      "video_url"
     ]
     const updateData: Record<string, any> = {}
     for (const key of allowedFields) {

@@ -31,6 +31,33 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Input } from "@/components/ui/input"
 
+// مكون لمشغل الفيديو يدعم الروابط المباشرة و YouTube
+function VideoPlayer({ url }: { url: string }) {
+  const isYouTube = url.includes("youtube.com") || url.includes("youtu.be")
+
+  if (isYouTube) {
+    let videoId = ""
+    if (url.includes("v=")) videoId = url.split("v=")[1].split("&")[0]
+    else if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1].split("?")[0]
+
+    return (
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}`}
+        className="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      ></iframe>
+    )
+  }
+
+  return (
+    <video className="w-full h-full object-cover" controls autoPlay muted loop>
+      <source src={url} type="video/mp4" />
+      عذراً، متصفحك لا يدعم تشغيل الفيديو.
+    </video>
+  )
+}
+
 interface ProductImage {
   id: string
   image_url: string
@@ -59,6 +86,7 @@ interface Product {
   product_images: ProductImage[]
   product_variants: ProductVariant[]
   category_id: string
+  video_url?: string | null
 }
 
 export default function ProductDetailPage() {
@@ -71,7 +99,7 @@ export default function ProductDetailPage() {
   const addItem = useCartStore((state) => state.addItem)
 
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0)
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0) // 0 means first image, -1 means video
   const [quantity, setQuantity] = useState(1)
   const [isFavorite, setIsFavorite] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
@@ -142,6 +170,13 @@ export default function ProductDetailPage() {
     fetchProduct()
   }, [params.id])
 
+  useEffect(() => {
+    if (product?.video_url) {
+      setSelectedImageIndex(-1)
+    } else {
+      setSelectedImageIndex(0)
+    }
+  }, [product])
   useEffect(() => {
     async function fetchReviews() {
       if (!product) return
@@ -301,10 +336,10 @@ export default function ProductDetailPage() {
         {
           product_id: product!.id,
           rating: userRating,
-            review_text: userReview,
-            customer_name: reviewerName,
-            customer_email: reviewerEmail,
-            // reviews are moderated via `is_approved` in the DB; leave unset (null) or false
+          review_text: userReview,
+          customer_name: reviewerName,
+          customer_email: reviewerEmail,
+          // reviews are moderated via `is_approved` in the DB; leave unset (null) or false
         },
       ])
 
@@ -359,25 +394,45 @@ export default function ProductDetailPage() {
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="space-y-4">
             <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-muted border-2 border-border">
-              <Image
-                src={sortedImages[selectedImageIndex]?.image_url || "/placeholder.svg"}
-                alt={sortedImages[selectedImageIndex]?.alt_text_ar || product.name_ar}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
+              {selectedImageIndex === -1 ? (
+                /* عرض الفيديو */
+                <VideoPlayer url={product.video_url!} />
+              ) : (
+                /* عرض الصور */
+                <Image
+                  src={sortedImages[selectedImageIndex]?.image_url || "/placeholder.svg"}
+                  alt={sortedImages[selectedImageIndex]?.alt_text_ar || product.name_ar}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              )}
             </div>
 
-            {sortedImages.length > 1 && (
-              <div className="grid grid-cols-3 gap-4">
+            {(sortedImages.length > 0 || product.video_url) && (
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                {/* مصغر الفيديو */}
+                {product.video_url && (
+                  <button
+                    onClick={() => setSelectedImageIndex(-1)}
+                    className={`relative aspect-[3/4] rounded-lg overflow-hidden bg-black border-2 transition-all flex items-center justify-center ${selectedImageIndex === -1 ? "border-primary" : "border-border hover:border-primary/50"
+                      }`}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <Loader2 className="h-6 w-6 text-white animate-pulse" />
+                      <span className="text-[10px] text-white">فيديو</span>
+                    </div>
+                  </button>
+                )}
+
+                {/* مصغرات الصور */}
                 {sortedImages.map((image, index) => (
                   <button
                     key={image.id}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`relative aspect-[3/4] rounded-lg overflow-hidden bg-muted border-2 transition-all ${
-                      selectedImageIndex === index ? "border-primary" : "border-border hover:border-primary/50"
-                    }`}
+                    className={`relative aspect-[3/4] rounded-lg overflow-hidden bg-muted border-2 transition-all ${selectedImageIndex === index ? "border-primary" : "border-border hover:border-primary/50"
+                      }`}
                   >
                     <Image
                       src={image.image_url || "/placeholder.svg"}
@@ -424,11 +479,10 @@ export default function ProductDetailPage() {
                     <button
                       key={variant.color_hex}
                       onClick={() => handleColorChange(variant.color_hex)}
-                      className={`relative w-12 h-12 rounded-full border-2 transition-all ${
-                        selectedVariant.color_hex === variant.color_hex
-                          ? "border-primary scale-110 shadow-lg"
-                          : "border-border hover:border-primary/50 hover:scale-105"
-                      }`}
+                      className={`relative w-12 h-12 rounded-full border-2 transition-all ${selectedVariant.color_hex === variant.color_hex
+                        ? "border-primary scale-110 shadow-lg"
+                        : "border-border hover:border-primary/50 hover:scale-105"
+                        }`}
                       style={{ backgroundColor: variant.color_hex }}
                       title={variant.color}
                     >
@@ -459,13 +513,12 @@ export default function ProductDetailPage() {
                         key={size}
                         onClick={() => isAvailable && handleSizeChange(size)}
                         disabled={!isAvailable}
-                        className={`py-3 px-4 rounded-lg border-2 font-medium transition-all ${
-                          selectedVariant.size === size
-                            ? "border-primary bg-primary text-primary-foreground shadow-md"
-                            : isAvailable
-                              ? "border-border hover:border-primary hover:bg-primary/5"
-                              : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60"
-                        }`}
+                        className={`py-3 px-4 rounded-lg border-2 font-medium transition-all ${selectedVariant.size === size
+                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                          : isAvailable
+                            ? "border-border hover:border-primary hover:bg-primary/5"
+                            : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60"
+                          }`}
                       >
                         <div className="flex flex-col items-center">
                           <span>{size}</span>
@@ -587,24 +640,24 @@ export default function ProductDetailPage() {
                   <CardContent className="p-6">
                     <h4 className="font-bold text-lg mb-4 text-foreground">تقييمك للمنتج</h4>
                     <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2 text-foreground">اسمك</label>
-                          <Input
-                              value={reviewerName}
-                              onChange={(e) => setReviewerName(e.target.value)}
-                              placeholder="مثال: فاطمة أحمد"
-                              className="border-2 border-border focus:border-primary"
-                          />
-                        </div>
-                         <div>
-                          <label className="block text-sm font-medium mb-2 text-foreground">بريدك الإلكتروني (اختياري)</label>
-                          <Input
-                              value={reviewerEmail}
-                              onChange={(e) => setReviewerEmail(e.target.value)}
-                              placeholder="...بريدك الإلكتروني"
-                              className="border-2 border-border focus:border-primary"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-foreground">اسمك</label>
+                        <Input
+                          value={reviewerName}
+                          onChange={(e) => setReviewerName(e.target.value)}
+                          placeholder="مثال: فاطمة أحمد"
+                          className="border-2 border-border focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-foreground">بريدك الإلكتروني (اختياري)</label>
+                        <Input
+                          value={reviewerEmail}
+                          onChange={(e) => setReviewerEmail(e.target.value)}
+                          placeholder="...بريدك الإلكتروني"
+                          className="border-2 border-border focus:border-primary"
+                        />
+                      </div>
                       <div>
                         <label className="block text-sm font-medium mb-2 text-foreground">التقييم</label>
                         <div className="flex items-center gap-2">
@@ -615,11 +668,10 @@ export default function ProductDetailPage() {
                               className="transition-transform hover:scale-110"
                             >
                               <Star
-                                className={`h-8 w-8 ${
-                                  rating <= userRating
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "fill-muted text-muted"
-                                }`}
+                                className={`h-8 w-8 ${rating <= userRating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "fill-muted text-muted"
+                                  }`}
                               />
                             </button>
                           ))}

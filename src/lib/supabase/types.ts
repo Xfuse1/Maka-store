@@ -97,6 +97,7 @@ export interface Database {
           meta_title_en: string | null
           meta_description_ar: string | null
           meta_description_en: string | null
+          video_url: string | null
           created_at: string
           updated_at: string
         }
@@ -123,6 +124,7 @@ export interface Database {
           meta_title_en?: string | null
           meta_description_ar?: string | null
           meta_description_en?: string | null
+          video_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -149,6 +151,7 @@ export interface Database {
           meta_title_en?: string | null
           meta_description_ar?: string | null
           meta_description_en?: string | null
+          video_url?: string | null
           created_at?: string
           updated_at?: string
         }

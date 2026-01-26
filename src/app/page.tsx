@@ -14,7 +14,7 @@ import { HeroSlider } from "@/components/hero-slider"
 import { MainNavigation } from "@/components/main-navigation"
 import { MobileNavigation } from "@/components/mobile-navigation"
 import { SiteLogo } from "@/components/site-logo"
-import { createClient } from "@/lib/supabase/client" 
+import { createClient } from "@/lib/supabase/client"
 import { getActiveCategories, type Category } from "@/lib/supabase/categories"
 import { DynamicHomepageSection } from "@/components/dynamic-homepage-section"
 import { BestsellerSection } from "@/components/bestseller-section"
@@ -114,6 +114,7 @@ export default function HomePage() {
           console.error("Error fetching products:", productsResponse.error)
           setProducts(FALLBACK_PRODUCTS)
         } else {
+          console.log("Fetched Products Count:", productsResponse.data?.length);
           setProducts(productsResponse.data || FALLBACK_PRODUCTS)
         }
 
@@ -166,7 +167,7 @@ export default function HomePage() {
     const sortedImages = [...(product.product_images || [])].sort((a, b) => a.display_order - b.display_order)
     return sortedImages[0]?.image_url || "/placeholder.svg"
   }
-  
+
   const bestsellerProduct = products.find(p => p.is_featured) || products[0];
 
   if (loading) {
@@ -197,18 +198,18 @@ export default function HomePage() {
               </div>
             </div>
 
-              <MainNavigation />
+            <MainNavigation />
 
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden md:block">
-                  {user ? (
-                    <ProfileDropdown user={user} profile={null} />
-                  ) : (
-                    <Button variant="outline" asChild>
-                      <Link href="/auth">تسجيل الدخول</Link>
-                    </Button>
-                  )}
-                </div>
+                {user ? (
+                  <ProfileDropdown user={user} profile={null} />
+                ) : (
+                  <Button variant="outline" asChild>
+                    <Link href="/auth">تسجيل الدخول</Link>
+                  </Button>
+                )}
+              </div>
               <MobileNavigation user={user} />
 
               <Button asChild variant="default" className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground relative shadow-md hover:shadow-lg transition-all">
