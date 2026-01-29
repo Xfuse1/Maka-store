@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import type React from "react"
 import Script from "next/script"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Cairo } from "next/font/google"
 import { getStoreSettingsServer } from "@/lib/store-settings"
 import { Suspense } from "react"
@@ -13,7 +13,7 @@ import { StoreInitializer } from "@/components/store-initializer"
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
-  variable: "--font-cairo", 
+  variable: "--font-cairo",
   display: "swap",
   preload: true,
   fallback: ['system-ui', 'arial'],
@@ -25,13 +25,14 @@ export async function generateMetadata(): Promise<Metadata> {
     title: settings?.store_name || "مكة - متجر الأزياء النسائية الراقية",
     description: settings?.store_description || "اكتشفي مجموعتنا الحصرية من العبايات والكارديجان والبدل والفساتين",
     generator: "v0.app",
-    viewport: {
-      width: 'device-width',
-      initialScale: 1,
-      maximumScale: 5,
-    },
-    themeColor: '#FFB6C1',
   }
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#FFB6C1',
 }
 
 export default async function RootLayout({

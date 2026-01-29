@@ -57,6 +57,7 @@ nextConfig.headers = async () => {
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net; " +
             "connect-src 'self' https://bbzjxcjfmeoiojjnfvfa.supabase.co wss://bbzjxcjfmeoiojjnfvfa.supabase.co http://localhost:* ws://localhost:* https://connect.facebook.net https://www.facebook.com https://signals.birchub.events https://7pdiumnsps.us-east-2.awsapprunner.com; " +
             "img-src 'self' data: blob: https: https://www.facebook.com; " +
+            "media-src 'self' https://bbzjxcjfmeoiojjnfvfa.supabase.co; " +
             "style-src 'self' 'unsafe-inline'; " +
             "font-src 'self' data:;",
         },
