@@ -1,5 +1,6 @@
 
 import { getSupabaseBrowserClient } from "./client"
+import { isYouTubeUrl, extractYouTubeId } from "./video-upload"
 
 export type ProductWithDetails = {
   id: string
@@ -96,6 +97,10 @@ export async function getAllProducts(page = 1, perPage = 50, forceReload = false
       const body = await response.text().catch(() => null)
       try {
         const parsed = body ? JSON.parse(body) : null
+        // Check for video_url column error specifically
+        if (parsed?.error?.includes("video_url")) {
+          console.error("[v0] getAllProducts: database schema error - video_url column missing. Please run migration: 29-add-video-url-column.sql")
+        }
         console.error("[v0] getAllProducts: server error", parsed?.error ?? parsed)
       } catch (e) {
         console.error("[v0] getAllProducts: non-json error body", body)
@@ -104,7 +109,23 @@ export async function getAllProducts(page = 1, perPage = 50, forceReload = false
     }
 
     const json = await response.json().catch(() => ({ data: [] }))
-    return { data: (json.data || []) as ProductWithDetails[], total: json.total ?? undefined, page: json.page ?? page, perPage: json.perPage ?? perPage }
+    const products = json.data || []
+    
+    // Validate video URLs if present
+    const validatedProducts = products.map((product: ProductWithDetails) => {
+      if (product.video_url) {
+        // Log YouTube URLs for reference
+        if (isYouTubeUrl(product.video_url)) {
+          const videoId = extractYouTubeId(product.video_url)
+          if (!videoId) {
+            console.warn(`[v0] Invalid YouTube URL for product ${product.id}: ${product.video_url}`)
+          }
+        }
+      }
+      return product
+    })
+    
+    return { data: validatedProducts as ProductWithDetails[], total: json.total ?? undefined, page: json.page ?? page, perPage: json.perPage ?? perPage }
   } catch (err) {
     console.error("[v0] getAllProducts: fetch failed", err)
     return { data: [], total: 0, page, perPage }

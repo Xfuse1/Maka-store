@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const end = start + perPage - 1
 
     // Use exact count to return total number of products for pagination
+    // video_url is included via * wildcard (all columns from products table)
     const { data, error, count } = await supabase
       .from("products")
       .select(
@@ -20,8 +21,7 @@ export async function GET(request: NextRequest) {
         *,
         category:categories(name_ar, name_en),
         product_images(id, image_url, alt_text_ar, display_order, is_primary),
-        product_variants(id, name_ar, name_en, size, color, color_hex, price, inventory_quantity, sku),
-        video_url
+        product_variants(id, name_ar, name_en, size, color, color_hex, price, inventory_quantity, sku)
       `,
         { count: "exact" }
       )

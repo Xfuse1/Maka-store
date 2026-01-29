@@ -66,6 +66,8 @@ export default function AdminProductsPage() {
   const [aiRewriteLoading, setAiRewriteLoading] = useState(false)
   const [aiTranslateLoading, setAiTranslateLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
+  const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [uploadingEditVideo, setUploadingEditVideo] = useState(false)
   const { toast } = useToast()
 
   const [newProduct, setNewProduct] = useState<NewProductForm>({
@@ -470,6 +472,48 @@ export default function AdminProductsPage() {
 
       console.log("[v0] Product created")
 
+      // Upload video if provided
+      if (newProduct.video || newProduct.video_url_manual) {
+        setUploadingVideo(true)
+        try {
+          let videoUrl = newProduct.video_url_manual
+          
+          if (newProduct.video && newProduct.video_input_type === "upload") {
+            const formData = new FormData()
+            formData.append("file", newProduct.video)
+            formData.append("productId", product.id)
+            
+            const videoRes = await fetch("/api/admin/products/video-upload", {
+              method: "POST",
+              body: formData,
+            })
+            
+            if (!videoRes.ok) {
+              const videoError = await videoRes.json()
+              throw new Error(videoError.error || "فشل رفع الفيديو")
+            }
+            
+            const videoData = await videoRes.json()
+            videoUrl = videoData.url
+          }
+          
+          // Update product with video URL
+          if (videoUrl) {
+            await updateProduct(product.id, { video_url: videoUrl })
+            console.log("[v0] Video uploaded and linked")
+          }
+        } catch (videoErr: any) {
+          console.error("[v0] Video upload error:", videoErr)
+          toast({ 
+            title: "تحذير", 
+            description: `تم إنشاء المنتج لكن حدث خطأ في الفيديو: ${videoErr.message}`,
+            variant: "destructive"
+          })
+        } finally {
+          setUploadingVideo(false)
+        }
+      }
+
       // Upload images
       if (newProduct.images.length > 0) {
         const imageUrls = await uploadMultipleImages(newProduct.images, product.id)
@@ -571,6 +615,40 @@ export default function AdminProductsPage() {
     try {
       setSaving(true)
 
+      // Handle video upload if needed
+      let videoUrl = editingProduct.video_url
+      if (editingProduct.video) {
+        setUploadingEditVideo(true)
+        try {
+          const formData = new FormData()
+          formData.append("file", editingProduct.video)
+          formData.append("productId", editingProduct.id)
+          
+          const videoRes = await fetch("/api/admin/products/video-upload", {
+            method: "POST",
+            body: formData,
+          })
+          
+          if (!videoRes.ok) {
+            const videoError = await videoRes.json()
+            throw new Error(videoError.error || "فشل رفع الفيديو")
+          }
+          
+          const videoData = await videoRes.json()
+          videoUrl = videoData.url
+          console.log("[v0] Video uploaded in edit")
+        } catch (videoErr: any) {
+          console.error("[v0] Video upload error:", videoErr)
+          toast({ 
+            title: "تحذير", 
+            description: `تم التحديث لكن حدث خطأ في الفيديو: ${videoErr.message}`,
+            variant: "destructive"
+          })
+        } finally {
+          setUploadingEditVideo(false)
+        }
+      }
+
       await updateProduct(editingProduct.id, {
         name_ar: editingProduct.name_ar,
         name_en: editingProduct.name_en,
@@ -582,6 +660,7 @@ export default function AdminProductsPage() {
         is_active: editingProduct.is_active,
         shipping_type: editingProduct.shipping_type || null,
         shipping_cost: editingProduct.shipping_cost || null,
+        video_url: videoUrl || null,
       })
 
       toast({
@@ -1311,13 +1390,18 @@ export default function AdminProductsPage() {
                   setShowAddDialog(false)
                   resetNewProduct()
                 }}
-                disabled={saving}
+                disabled={saving || uploadingVideo}
                 className="w-full sm:w-auto"
               >
                 إلغاء
               </Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={saving}>
-                {saving ? (
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={saving || uploadingVideo}>
+                {uploadingVideo ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                    جاري رفع الفيديو...
+                  </>
+                ) : saving ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin ml-2" />
                     جاري الحفظ...
@@ -1531,11 +1615,16 @@ export default function AdminProductsPage() {
                   </div>
 
                   <div className="flex flex-col-reverse sm:flex-row gap-4 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)} disabled={saving} className="w-full sm:w-auto">
+                    <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)} disabled={saving || uploadingEditVideo} className="w-full sm:w-auto">
                       إلغاء
                     </Button>
-                    <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={saving}>
-                      {saving ? (
+                    <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 w-full sm:w-auto" disabled={saving || uploadingEditVideo}>
+                      {uploadingEditVideo ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                          جاري رفع الفيديو...
+                        </>
+                      ) : saving ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin ml-2" />
                           جاري الحفظ...

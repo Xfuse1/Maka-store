@@ -31,7 +31,8 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Input } from "@/components/ui/input"
 
-// مكون لمشغل الفيديو يدعم الروابط المباشرة و YouTube
+// مكون لمشغل الفيديو يدعم الروابط المباشرة و YouTube وملفات Supabase Storage
+// يعرض الفيديو مثل Reels بحجم كامل مع محاذاة رأسية
 function VideoPlayer({ url }: { url: string }) {
   const isYouTube = url.includes("youtube.com") || url.includes("youtu.be")
 
@@ -41,18 +42,30 @@ function VideoPlayer({ url }: { url: string }) {
     else if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1].split("?")[0]
 
     return (
-      <iframe
-        src={`https://www.youtube.com/embed/${videoId}`}
-        className="w-full h-full"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      ></iframe>
+      <div className="w-full h-full bg-black flex items-center justify-center">
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      </div>
     )
   }
 
+  // Support for direct video files (MP4, WebM) from Supabase Storage or other sources
+  // عرض الفيديو بشكل Reels - يملأ الفضاء المتاح مع المحافظة على النسبة
+  const videoType = url.endsWith(".webm") ? "video/webm" : "video/mp4"
+
   return (
-    <video className="w-full h-full object-cover" controls autoPlay muted loop>
-      <source src={url} type="video/mp4" />
+    <video 
+      className="w-full h-full object-cover bg-black" 
+      controls 
+      autoPlay 
+      muted={false}
+      crossOrigin="anonymous"
+    >
+      <source src={url} type={videoType} />
       عذراً، متصفحك لا يدعم تشغيل الفيديو.
     </video>
   )
@@ -299,6 +312,7 @@ export default function ProductDetailPage() {
   }
 
   const handleColorChange = (colorHex: string) => {
+    if (!product) return
     const variantIndex = product.product_variants.findIndex((v) => v.color_hex === colorHex)
     if (variantIndex !== -1) {
       setSelectedVariantIndex(variantIndex)
@@ -307,6 +321,7 @@ export default function ProductDetailPage() {
   }
 
   const handleSizeChange = (size: string) => {
+    if (!product || !selectedVariant) return
     const variantIndex = product.product_variants.findIndex(
       (v) => v.size === size && v.color_hex === selectedVariant.color_hex
     )
@@ -391,37 +406,56 @@ export default function ProductDetailPage() {
       </div>
 
       <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div className="space-y-4">
-            <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-muted border-2 border-border">
-              {selectedImageIndex === -1 ? (
-                /* عرض الفيديو */
-                <VideoPlayer url={product.video_url!} />
-              ) : (
-                /* عرض الصور */
-                <Image
-                  src={sortedImages[selectedImageIndex]?.image_url || "/placeholder.svg"}
-                  alt={sortedImages[selectedImageIndex]?.alt_text_ar || product.name_ar}
-                  fill
-                  className="object-cover"
-                  priority
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              )}
-            </div>
-
-            {(sortedImages.length > 0 || product.video_url) && (
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
-                {/* مصغر الفيديو */}
-                {product.video_url && (
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : !product ? (
+          <div className="text-center py-20">
+            <p className="text-lg text-muted-foreground">المنتج غير موجود</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div className="space-y-4">
+                {/* صندوق عرض الفيديو/الصور الرئيسي */}
+                {selectedImageIndex === -1 && product?.video_url ? (
+                  // عندما يكون الفيديو مختاراً - عرض كامل الشاشة تقريباً مثل Reels
+                  <div className="relative w-full rounded-2xl overflow-hidden bg-black shadow-2xl">
+                    <div className="aspect-[9/16] sm:aspect-[3/4] lg:aspect-[9/16]">
+                      <VideoPlayer url={product.video_url!} />
+                    </div>
+                  </div>
+                ) : (
+                  // عندما تكون صورة مختارة - عرض الصورة
+                  <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-muted border-2 border-border">
+                    <Image
+                      src={sortedImages[selectedImageIndex]?.image_url || "/placeholder.svg"}
+                      alt={sortedImages[selectedImageIndex]?.alt_text_ar || product?.name_ar || "المنتج"}
+                      fill
+                      className="object-cover"
+                      priority
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                  </div>
+                )}
+                {(sortedImages.length > 0 || product?.video_url) && (
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 px-1">
+                {/* مصغر الفيديو - برز بشكل أوضح */}
+                {product?.video_url && (
                   <button
                     onClick={() => setSelectedImageIndex(-1)}
-                    className={`relative aspect-[3/4] rounded-lg overflow-hidden bg-black border-2 transition-all flex items-center justify-center ${selectedImageIndex === -1 ? "border-primary" : "border-border hover:border-primary/50"
+                    className={`relative aspect-[9/16] sm:aspect-square rounded-lg overflow-hidden bg-black border-2 transition-all flex items-center justify-center ${selectedImageIndex === -1 ? "border-red-500 scale-110 shadow-lg" : "border-border hover:border-primary/50"
                       }`}
+                    title="مشاهدة الفيديو"
                   >
-                    <div className="flex flex-col items-center gap-1">
-                      <Loader2 className="h-6 w-6 text-white animate-pulse" />
-                      <span className="text-[10px] text-white">فيديو</span>
+                    <div className="flex flex-col items-center gap-1 absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white fill-current ml-0.5" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                      <span className="text-[9px] text-white font-medium mt-1">فيديو</span>
                     </div>
                   </button>
                 )}
@@ -431,7 +465,7 @@ export default function ProductDetailPage() {
                   <button
                     key={image.id}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`relative aspect-[3/4] rounded-lg overflow-hidden bg-muted border-2 transition-all ${selectedImageIndex === index ? "border-primary" : "border-border hover:border-primary/50"
+                    className={`relative aspect-[3/4] rounded-lg overflow-hidden bg-muted border-2 transition-all ${selectedImageIndex === index ? "border-primary scale-105 shadow-lg" : "border-border hover:border-primary/50"
                       }`}
                   >
                     <Image
@@ -444,15 +478,15 @@ export default function ProductDetailPage() {
                   </button>
                 ))}
               </div>
-            )}
-          </div>
+                )}
+              </div>
 
-          <div className="space-y-6">
+              <div className="space-y-6">
             <div>
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold mb-3 text-foreground">{product.name_ar}</h1>
-                  {product.category && <Badge variant="secondary" className="mb-4">{product.category.name_ar}</Badge>}
+                  <h1 className="text-3xl font-bold mb-3 text-foreground">{product?.name_ar}</h1>
+                  {product?.category && <Badge variant="secondary" className="mb-4">{product.category.name_ar}</Badge>}
                 </div>
                 <Button
                   variant="outline"
@@ -463,8 +497,8 @@ export default function ProductDetailPage() {
                   <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500" : ""}`} />
                 </Button>
               </div>
-              <p className="text-lg text-muted-foreground mb-4 leading-relaxed">{product.description_ar}</p>
-              <div className="text-4xl font-bold text-primary mb-2">{selectedVariant.price} ج.م</div>
+              <p className="text-lg text-muted-foreground mb-4 leading-relaxed">{product?.description_ar}</p>
+              <div className="text-4xl font-bold text-primary mb-2">{selectedVariant?.price} ج.م</div>
             </div>
 
             <Separator />
@@ -472,21 +506,21 @@ export default function ProductDetailPage() {
             {uniqueColors.length > 1 && (
               <div>
                 <h3 className="text-lg font-bold mb-4 text-foreground">
-                  اللون: <span className="text-primary">{selectedVariant.color}</span>
+                  اللون: <span className="text-primary">{selectedVariant?.color}</span>
                 </h3>
                 <div className="flex items-center gap-3 flex-wrap">
                   {uniqueColors.map((variant) => (
                     <button
                       key={variant.color_hex}
                       onClick={() => handleColorChange(variant.color_hex)}
-                      className={`relative w-12 h-12 rounded-full border-2 transition-all ${selectedVariant.color_hex === variant.color_hex
+                      className={`relative w-12 h-12 rounded-full border-2 transition-all ${selectedVariant?.color_hex === variant.color_hex
                         ? "border-primary scale-110 shadow-lg"
                         : "border-border hover:border-primary/50 hover:scale-105"
                         }`}
                       style={{ backgroundColor: variant.color_hex }}
                       title={variant.color}
                     >
-                      {selectedVariant.color_hex === variant.color_hex && (
+                      {selectedVariant?.color_hex === variant.color_hex && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Check className="h-5 w-5 text-white drop-shadow-lg" strokeWidth={3} />
                         </div>
@@ -502,8 +536,8 @@ export default function ProductDetailPage() {
                 <h3 className="text-lg font-bold mb-4 text-foreground">المقاس</h3>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3">
                   {uniqueSizes.map((size) => {
-                    const variant = product.product_variants.find(
-                      (v) => v.size === size && v.color_hex === selectedVariant.color_hex
+                    const variant = product?.product_variants.find(
+                      (v) => v.size === size && v.color_hex === selectedVariant?.color_hex
                     )
                     const isAvailable = variant && variant.inventory_quantity > 0
                     const stock = variant ? variant.inventory_quantity : 0
@@ -513,7 +547,7 @@ export default function ProductDetailPage() {
                         key={size}
                         onClick={() => isAvailable && handleSizeChange(size)}
                         disabled={!isAvailable}
-                        className={`py-3 px-4 rounded-lg border-2 font-medium transition-all ${selectedVariant.size === size
+                        className={`py-3 px-4 rounded-lg border-2 font-medium transition-all ${selectedVariant?.size === size
                           ? "border-primary bg-primary text-primary-foreground shadow-md"
                           : isAvailable
                             ? "border-border hover:border-primary hover:bg-primary/5"
@@ -541,11 +575,11 @@ export default function ProductDetailPage() {
               <Button
                 onClick={handleAddToCart}
                 size="lg"
-                disabled={isAdding || selectedVariant.inventory_quantity === 0}
+                disabled={isAdding || !selectedVariant || selectedVariant.inventory_quantity === 0}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-6"
               >
                 <ShoppingBag className="h-5 w-5 ml-2" />
-                {selectedVariant.inventory_quantity === 0
+                {!selectedVariant || selectedVariant.inventory_quantity === 0
                   ? "غير متوفر"
                   : isAdding
                     ? "جاري الإضافة..."
@@ -600,7 +634,7 @@ export default function ProductDetailPage() {
                         </h4>
                         {recommendedProduct.category && (
                           <Badge variant="secondary" className="mb-2 text-xs">
-                            {recommendedProduct.category[0]?.name_ar || recommendedProduct.category.name_ar}
+                            {recommendedProduct.category.name_ar}
                           </Badge>
                         )}
                         <p className="text-xl font-bold text-primary">{recommendedProduct.base_price} ج.م</p>
@@ -730,6 +764,8 @@ export default function ProductDetailPage() {
             </CardContent>
           </Card>
         </div>
+        </>
+        )}
       </div>
 
       <SiteFooter />
